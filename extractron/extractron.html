@@ -197,6 +197,34 @@
                 
                 <div class="divider"></div>
                 
+                <div class="card bg-base-200 mb-4">
+                    <div class="card-body">
+                        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h3 class="card-title text-sm">Concorrência do processamento</h3>
+                                <p class="text-sm opacity-70">Defina quantos PDFs serão processados em paralelo por lote.</p>
+                            </div>
+                            <div class="badge badge-primary badge-outline">Lote atual: <span id="batchSizeValue" class="ml-1 font-bold">50</span></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-[1fr_120px] gap-4 items-center">
+                            <div>
+                                <input type="range" id="batchSizeRange" min="1" max="100" value="50" class="range range-primary" />
+                                <div class="w-full flex justify-between text-xs px-2 mt-2 opacity-60">
+                                    <span>1</span>
+                                    <span>25</span>
+                                    <span>50</span>
+                                    <span>75</span>
+                                    <span>100</span>
+                                </div>
+                            </div>
+                            <label class="form-control">
+                                <span class="label-text text-xs opacity-70 mb-1">Arquivos por lote</span>
+                                <input type="number" id="batchSizeInput" min="1" max="100" value="50" class="input input-bordered input-primary w-full" />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
                 <p class="text-center text-sm opacity-70 mb-4">Selecione os arquivos PDF para extrair as informações</p>
                 <input type="file" id="pdfInput" accept=".pdf" multiple />
                 <button class="btn btn-primary btn-lg w-full gap-2" onclick="document.getElementById('pdfInput').click()">
@@ -215,13 +243,83 @@
         // Configurar o PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+        const LIMITE_MINIMO_LOTE = 1;
+        const LIMITE_MAXIMO_LOTE = 100;
+        const LOTE_PADRAO = 50;
+
+        function normalizarTamanhoLote(valor) {
+            const lote = Number.parseInt(valor, 10);
+            if (Number.isNaN(lote)) return LOTE_PADRAO;
+            return Math.min(LIMITE_MAXIMO_LOTE, Math.max(LIMITE_MINIMO_LOTE, lote));
+        }
+
+        function sincronizarControleLote(valor) {
+            const lote = normalizarTamanhoLote(valor);
+            const range = document.getElementById('batchSizeRange');
+            const input = document.getElementById('batchSizeInput');
+            const label = document.getElementById('batchSizeValue');
+
+            if (range) range.value = String(lote);
+            if (input) input.value = String(lote);
+            if (label) label.textContent = String(lote);
+
+            return lote;
+        }
+
+        function obterTamanhoLoteSelecionado() {
+            const input = document.getElementById('batchSizeInput');
+            return sincronizarControleLote(input ? input.value : LOTE_PADRAO);
+        }
+
+        document.getElementById('batchSizeRange').addEventListener('input', function(e) {
+            sincronizarControleLote(e.target.value);
+        });
+
+        document.getElementById('batchSizeInput').addEventListener('change', function(e) {
+            sincronizarControleLote(e.target.value);
+        });
+
+        document.getElementById('batchSizeInput').addEventListener('blur', function(e) {
+            sincronizarControleLote(e.target.value);
+        });
+
+        sincronizarControleLote(LOTE_PADRAO);
+
+        async function processarArquivosEmLotes(files, tamanhoLote, processarArquivo, onBatchStart) {
+            const resultados = [];
+            const totalLotes = Math.ceil(files.length / tamanhoLote);
+
+            for (let inicio = 0; inicio < files.length; inicio += tamanhoLote) {
+                const indiceLote = Math.floor(inicio / tamanhoLote) + 1;
+                const lote = files.slice(inicio, inicio + tamanhoLote);
+
+                if (typeof onBatchStart === 'function') {
+                    onBatchStart({
+                        indiceLote,
+                        totalLotes,
+                        quantidadeNoLote: lote.length
+                    });
+                }
+
+                const resultadosLote = await Promise.all(lote.map(processarArquivo));
+                resultados.push(...resultadosLote);
+            }
+
+            return resultados;
+        }
+
         document.getElementById('pdfInput').addEventListener('change', async function(e) {
             const files = Array.from(e.target.files);
             const totalFiles = files.length;
             let processedCount = 0;
             let errorCount = 0;
+            const tamanhoLote = obterTamanhoLoteSelecionado();
             const numeroDocumento = document.getElementById('select').value;
             const urlDocumentos = document.getElementById('urlDocumentos').value.trim();
+
+            if (totalFiles === 0) {
+                return;
+            }
 
             // Determinar o tipo do documento a partir da lista carregada
             let tipoDocumento = null;
@@ -297,7 +395,7 @@
                     <div class="card-body">
                         <div class="flex items-center justify-center gap-3">
                             <span class="loading loading-spinner loading-lg"></span>
-                            <p class="text-lg">Processando arquivos em paralelo...</p>
+                            <p class="text-lg">Processando arquivos em lotes de ${tamanhoLote}...</p>
                         </div>
                         <div id="progressContainer" class="mt-4" style="display:none;">
                             <div id="progressText" class="text-sm opacity-70 mb-2"></div>
@@ -307,7 +405,7 @@
                 </div>
             `;
             // Exibir banner global de processamento
-            updateProgress(0, totalFiles, 'Iniciando...');
+            updateProgress(0, totalFiles, `Iniciando processamento em lotes de ${tamanhoLote}...`);
 
             
             // Obter campos obrigatórios
@@ -320,9 +418,11 @@
             };
             const configuracaoSaida = obterConfiguracaoSaida(numeroDocumento);
             
-            // Processar todos os arquivos em paralelo
-            const decretos = await Promise.all(
-                files.map(async (file) => {
+            // Processar arquivos em lotes com limite de concorrência configurável
+            const decretos = await processarArquivosEmLotes(
+                files,
+                tamanhoLote,
+                async (file) => {
                     try {
                         const decreto = await processarPDF(file, numeroDocumento, urlDocumentos, tipoDocumento);
                         processedCount++;
@@ -337,11 +437,19 @@
                             arquivo: file.name,
                             numeroDoDocumento: 'Erro no processamento',
                             data: 'Erro',
-                            descricao: error.message,
+                            descricao: error?.message || String(error),
                             erro: true
                         };
                     }
-                })
+                },
+                ({ indiceLote, totalLotes, quantidadeNoLote }) => {
+                    updateProgress(
+                        processedCount,
+                        totalFiles,
+                        `Processando lote ${indiceLote}/${totalLotes} (${quantidadeNoLote} arquivo${quantidadeNoLote > 1 ? 's' : ''})`,
+                        errorCount
+                    );
+                }
             );
             
             // Filtrar valores nulos

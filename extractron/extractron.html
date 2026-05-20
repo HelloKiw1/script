@@ -555,7 +555,7 @@
             const normalizarAno = (valorAno) => String(valorAno || '').replace(/\D/g, '').slice(0, 4);
 
             // Ex.: "Plenária das Sessões ... Amazonas, 11 de fevereiro de 2025."
-            const matchExtensoComLocal = fonte.match(/(?:[A-Za-zÀ-ÿ\s\-]+,\s*)?(\d{1,2})\s+de\s+([A-Za-zçÇãÃõÕáÁéÉíÍóÓúÚâÂêÊôÔàÀ]+)\s+de\s+((?:\d\s*){4})/i);
+            const matchExtensoComLocal = fonte.match(/(?:[A-Za-zÀ-ÿ\s\-]+,\s*)?(\d{1,2})\s+de\s+([A-Za-zçÇãÃõÕáÁéÉíÍóÓúÚâÂêÊôÔàÀ]+)\s+de\s+((?:\d[\s\.,]*){4})/i);
             if (matchExtensoComLocal) {
                 const dia = String(parseInt(matchExtensoComLocal[1], 10)).padStart(2, '0');
                 const mesNome = matchExtensoComLocal[2].toLowerCase().replace(/\s+/g, '');
@@ -574,7 +574,7 @@
             }
 
             // Ex.: "13 de fevereiro - 2025" ou "13 de fevereiro 2025"
-            const matchExtensoComSeparador = fonte.match(/(\d{1,2})\s+de\s+([A-Za-zçÇãÃõÕáÁéÉíÍóÓúÚâÂêÊôÔàÀ]+)\s*(?:de|[-–—]|\s)\s*((?:\d\s*){4})/i);
+            const matchExtensoComSeparador = fonte.match(/(\d{1,2})\s+de\s+([A-Za-zçÇãÃõÕáÁéÉíÍóÓúÚâÂêÊôÔàÀ]+)\s*(?:de|[-–—]|\s)\s*((?:\d[\s\.,]*){4})/i);
             if (matchExtensoComSeparador) {
                 const dia = String(parseInt(matchExtensoComSeparador[1], 10)).padStart(2, '0');
                 const mesNome = matchExtensoComSeparador[2].toLowerCase().replace(/\s+/g, '');
@@ -583,15 +583,15 @@
                 if (mes && ano.length === 4) return `${dia}/${mes}/${ano}`;
             }
 
-            const matchNumerico = fonte.match(/\b(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})\b/);
+            const matchNumerico = fonte.match(/\b(\d{1,2})[\.\/-](\d{1,2})[\.\/-]((?:\d[\s\.,]*){4})\b/);
             if (matchNumerico) {
                 const dia = String(parseInt(matchNumerico[1], 10)).padStart(2, '0');
                 const mes = String(parseInt(matchNumerico[2], 10)).padStart(2, '0');
-                const ano = matchNumerico[3];
-                return `${dia}/${mes}/${ano}`;
+                const ano = normalizarAno(matchNumerico[3]);
+                if (ano.length === 4) return `${dia}/${mes}/${ano}`;
             }
 
-            const matchExtensoSemDe = fonte.match(/\b(\d{1,2})\s+([A-Za-zçÇãÃõÕáÁéÉíÍóÓúÚâÂêÊôÔàÀ]+)\s+((?:\d\s*){4})\b/i);
+            const matchExtensoSemDe = fonte.match(/\b(\d{1,2})\s+([A-Za-zçÇãÃõÕáÁéÉíÍóÓúÚâÂêÊôÔàÀ]+)\s+((?:\d[\s\.,]*){4})\b/i);
             if (matchExtensoSemDe) {
                 const dia = String(parseInt(matchExtensoSemDe[1], 10)).padStart(2, '0');
                 const mesNome = matchExtensoSemDe[2].toLowerCase().replace(/\s+/g, '');
@@ -681,11 +681,11 @@
                 }
             };
 
-            for (const match of fonte.matchAll(/\b(\d{1,2})[\/\.-](\d{1,2})[\/\.-]((?:\d\s*){4})\b/g)) {
+            for (const match of fonte.matchAll(/\b(\d{1,2})[\/\.-](\d{1,2})[\/\.-]((?:\d[\s\.,]*){4})\b/g)) {
                 adicionar(match.index || 0, match[1], match[2], normalizarAno(match[3]));
             }
 
-            for (const match of fonte.matchAll(/\b(\d{1,2})\s+(?:de\s+)?([A-Za-z\u00C0-\u00FF]+)\s+(?:de\s+)?((?:\d\s*){4})\b/gi)) {
+            for (const match of fonte.matchAll(/\b(\d{1,2})\s+(?:de\s+)?([A-Za-z\u00C0-\u00FF]+)\s+(?:de\s+)?((?:\d[\s\.,]*){4})\b/gi)) {
                 const mesNome = normalizarSemAcentos(match[2]).toLowerCase().replace(/\s+/g, '');
                 const mes = meses[mesNome] || meses[match[2].toLowerCase()];
                 if (mes) adicionar(match.index || 0, match[1], mes, normalizarAno(match[3]));
@@ -829,9 +829,9 @@
             const normalizarAno = (valorAno) => String(valorAno || '').replace(/\D/g, '').slice(0, 4);
 
             const padroes = [
-                /EMENDA(?:\s+[A-ZÇÃÕÁÉÍÓÚÂÊÔÀ]+){0,3}\s+N[º°ª\s\.]*(\d{1,4})(?:\s*[-\/]\s*((?:\d\s*){4}))?/i,
-                /REGIMENTO(?:\s+INTERNO)?\s+N[º°ª\s\.]*(\d{1,4})(?:\s*[-\/]\s*((?:\d\s*){4}))?/i,
-                /(?:EMENDA|REGIMENTO)[^\n\r\d]{0,40}(\d{1,4})(?:\s*[-\/]\s*((?:\d\s*){4}))?/i
+                /EMENDA(?:\s+[A-ZÇÃÕÁÉÍÓÚÂÊÔÀ]+){0,3}\s+N[º°ª\s\.]*?(\d{1,4})(?:\s*[-\/]\s*((?:\d[\s\.,]*){4}))?/i,
+                /REGIMENTO(?:\s+INTERNO)?\s+N[º°ª\s\.]*?(\d{1,4})(?:\s*[-\/]\s*((?:\d[\s\.,]*){4}))?/i,
+                /(?:EMENDA|REGIMENTO)[^\n\r\d]{0,40}(\d{1,4})(?:\s*[-\/]\s*((?:\d[\s\.,]*){4}))?/i
             ];
 
             for (const regex of padroes) {
@@ -845,7 +845,7 @@
             }
 
             const nomeLimpo = limparDescricaoArquivo(nomeArquivo);
-            const matchNome = nomeLimpo.match(/(?:EMENDA|REGIMENTO)[^\d]{0,30}(\d{1,4})(?:\s*[-\/]\s*((?:\d\s*){4}))?/i);
+            const matchNome = nomeLimpo.match(/(?:EMENDA|REGIMENTO)[^\d]{0,30}(\d{1,4})(?:\s*[-\/]\s*((?:\d[\s\.,]*){4}))?/i);
             if (matchNome) {
                 const numero = matchNome[1] ? String(parseInt(matchNome[1], 10)) : null;
                 const ano = normalizarAno(matchNome[2]);
@@ -1194,17 +1194,54 @@
             };
         }
 
+        // Regra de normalização do campo "numero": deve ser inteiro puro (somente dígitos).
+        // - Remove separadores ("/", "-", "—") e sufixos.
+        // - Rejeita valores que parecem data ou ano.
+        // - Ex.: "001/2025" -> "1".
+        function normalizarNumeroInteiro(valor) {
+            if (valor === null || valor === undefined) return null;
+
+            let texto = String(valor).trim();
+            if (!texto) return null;
+
+            texto = texto.replace(/[ºª°]/g, '').replace(/\s+/g, ' ');
+
+            // Rejeitar quando o "numero" na verdade é uma data.
+            if (/\b\d{1,2}\s*[\/\.-]\s*\d{1,2}\s*[\/\.-]\s*\d{2,4}\b/.test(texto)) return null;
+            if (/\b\d{4}\s*[\/\.-]\s*\d{1,2}\s*[\/\.-]\s*\d{1,2}\b/.test(texto)) return null;
+
+            // Rejeitar anos isolados (incluindo OCR quebrado: "2.026", "2 0 2 6").
+            const matchAnoIsolado = texto.match(/^((?:\d[\s\.,]*){4})$/);
+            if (matchAnoIsolado) {
+                const anoLimpo = String(matchAnoIsolado[1]).replace(/\D/g, '').slice(0, 4);
+                if (/^(19|20)\d{2}$/.test(anoLimpo)) return null;
+            }
+
+            // Para casos como "001/2025", "001-2025", "123-A": pega só a primeira parte.
+            const primeiraParte = texto.split(/[\/\-–—]/)[0];
+            const matchNumero = primeiraParte.match(/\d{1,10}/);
+            if (!matchNumero) return null;
+
+            const numero = parseInt(matchNumero[0], 10);
+            if (Number.isNaN(numero) || numero <= 0) return null;
+
+            // Evitar que um ano apareça como número.
+            if (matchNumero[0].length === 4 && numero >= 1900 && numero <= 2100) return null;
+
+            return String(numero);
+        }
+
         function converterDataParaISO(valor) {
             if (valor === null || valor === undefined) return null;
 
             const texto = String(valor).trim();
             if (!texto) return null;
 
-            const matchBr = texto.match(/^(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{4})$/);
+            const matchBr = texto.match(/^(\d{1,2})[\/\.-](\d{1,2})[\/\.-]((?:\d[\s\.,]*){4})$/);
             if (matchBr) {
                 const dia = Number(matchBr[1]);
                 const mes = Number(matchBr[2]);
-                const ano = Number(matchBr[3]);
+                const ano = Number(String(matchBr[3]).replace(/\D/g, '').slice(0, 4));
                 const data = new Date(Date.UTC(ano, mes - 1, dia));
 
                 if (data.getUTCFullYear() === ano && (data.getUTCMonth() + 1) === mes && data.getUTCDate() === dia) {
@@ -1229,6 +1266,12 @@
 
             const matchAno = texto.match(/^\d{4}$/);
             if (matchAno) return `${texto}-01-01`;
+
+            const matchAnoQuebrado = texto.match(/^((?:\d[\s\.,]*){4})$/);
+            if (matchAnoQuebrado) {
+                const ano = String(matchAnoQuebrado[1]).replace(/\D/g, '').slice(0, 4);
+                if (ano.length === 4) return `${ano}-01-01`;
+            }
 
             const dataNativa = new Date(texto);
             if (!Number.isNaN(dataNativa.getTime())) {
@@ -1294,12 +1337,13 @@
             const tipoDocumentoIdNumero = Number(tipoDocumentoId);
             const dataInferidaPorTitulo = obterDataCompetenciaArquivo(doc?.arquivo || doc?.arquivo_original || doc?.descricao || '');
             const dataFinal = converterDataParaISO(doc?.data || dataInferidaPorTitulo);
+            const numeroFinal = normalizarNumeroInteiro(numero);
 
             return {
                 publicar_portal: Boolean(configuracaoSaida?.publicarPortal),
                 data: dataFinal,
                 url: doc?.url || null,
-                numero: numero !== null && numero !== undefined && String(numero).trim() !== '' ? String(numero).trim() : null,
+                numero: numeroFinal,
                 descricao: doc?.descricao || null,
                 conteudo: doc?.conteudo || null,
                 tipo_documento_id: Number.isNaN(tipoDocumentoIdNumero) ? (tipoDocumentoId || null) : tipoDocumentoIdNumero,
@@ -1487,30 +1531,71 @@
         }
 
         function extrairInformacoesAta(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
-            // Extrair número da sessão - formatos: "Iº", "IIº", "1º", "2ª", etc.
-            const regexNumeroAta = /ATA\s+DA?\s+([IVXivx]+|[\d]+)[ºª°]/i;
-            const matchNumero = texto.match(regexNumeroAta);
-            
+            const textoCompleto = normalizarTextoCompleto(texto);
+            const fonteSemAcentos = normalizarSemAcentos(`${nomeArquivo || ''} ${textoCompleto || ''}`).toUpperCase();
+
+            const extrairAnoProvavelDoTexto = () => {
+                const candidatos = fonteSemAcentos.matchAll(/\b((?:\d[\s\.,]*){4})\b/g);
+                for (const match of candidatos) {
+                    const anoLimpo = String(match[1] || '').replace(/\D/g, '').slice(0, 4);
+                    if (/^(19|20)\d{2}$/.test(anoLimpo)) return anoLimpo;
+                }
+                return null;
+            };
+
+            // Extrair número da ata/sessão.
+            // Suporta padrões antigos: "ATA DA 1ª", "ATA DA IIº", etc.
+            // E o padrão comum em cabeçalho: "ATA 004 DA SESSAO ...".
+            const regexNumeroOrdinalOuRomano = /\bATA\s+DA?\s+([IVX]+|\d+)[ºª°]\b/i;
+            const regexNumeroCabecalhoComSessao = /\bATA\s*(?:N[º°O]\s*)?0*(\d{1,6})\b(?=[^\n\r]{0,140}\bSESSAO\b)/i;
+            const regexNumeroCabecalhoSolto = /\bATA\s*(?:N[º°O]\s*)?0*(\d{1,6})\b/i;
+
+            const matchNumero = textoCompleto.match(regexNumeroOrdinalOuRomano)
+                || fonteSemAcentos.match(regexNumeroCabecalhoComSessao)
+                || fonteSemAcentos.match(regexNumeroCabecalhoSolto);
+
             let numeroDoDocumento = null;
-            if (matchNumero) {
-                const numeroTexto = matchNumero[1];
-                // Converter romano para número se necessário
-                numeroDoDocumento = converterRomanoParaNumero(numeroTexto);
+            if (matchNumero && matchNumero[1]) {
+                const numeroTexto = String(matchNumero[1]).trim();
+                const convertido = converterRomanoParaNumero(numeroTexto);
+                const numeroLimpo = String(convertido || '').replace(/\D/g, '');
+                if (numeroLimpo) numeroDoDocumento = String(parseInt(numeroLimpo, 10));
             }
-            
-            // Extrair data no formato "30.01.2025" ou "dd/mm/yyyy" ou "dd.mm.yyyy"
-            const regexDataSimples = /(?:REALIZADA\s+EM\s+)?(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{4})/i;
-            const matchDataSimples = texto.match(regexDataSimples);
-            
+
+            // Extrair data (prioriza a data próxima de "REALIZADA EM" / "REALIZADO EM" etc.)
+            const regexDataContextual = /\bREALIZAD[AO]\s+(?:EM|NO\s+DIA|NA\s+DATA\s+DE)\s*(\d{1,2})\s*[\.\/\-]\s*(\d{1,2})\s*[\.\/\-]\s*((?:\d[\s\.,]*){4})\b/i;
+            const regexDataSimples = /\b(\d{1,2})\s*[\.\/\-]\s*(\d{1,2})\s*[\.\/\-]\s*((?:\d[\s\.,]*){4})\b/i;
+
+            const regexDataAnoIncompletoContextual = /\bREALIZAD[AO]\s+(?:EM|NO\s+DIA|NA\s+DATA\s+DE)\s*(\d{1,2})\s*[\.\/\-]\s*(\d{1,2})\s*[\.\/\-]\s*(\d{1,3})\b/i;
+            const regexDataAnoIncompletoSimples = /\b(\d{1,2})\s*[\.\/\-]\s*(\d{1,2})\s*[\.\/\-]\s*(\d{1,3})\b/i;
+
+            const matchData = fonteSemAcentos.match(regexDataContextual) || fonteSemAcentos.match(regexDataSimples);
+
             let data = null;
-            
-            if (matchDataSimples) {
-                const dia = parseInt(matchDataSimples[1]);
-                const mes = parseInt(matchDataSimples[2]);
-                const ano = parseInt(matchDataSimples[3]);
-                
-                // Converter para formato dd/mm/yyyy (formato brasileiro)
-                data = `${dia.toString().padStart(2, '0')}/${mes.toString().padStart(2, '0')}/${ano}`;
+
+            if (matchData) {
+                const dia = parseInt(matchData[1], 10);
+                const mes = parseInt(matchData[2], 10);
+                const ano = parseInt(String(matchData[3]).replace(/\D/g, '').slice(0, 4), 10);
+
+                if (!Number.isNaN(dia) && !Number.isNaN(mes) && !Number.isNaN(ano)) {
+                    data = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${String(ano)}`;
+                }
+            }
+
+            // Fallback: OCR às vezes retorna o ano truncado (ex.: ".../2").
+            // Se isso acontecer, tenta inferir um ano 19xx/20xx presente em outra parte do texto.
+            if (!data) {
+                const matchAnoIncompleto = fonteSemAcentos.match(regexDataAnoIncompletoContextual) || fonteSemAcentos.match(regexDataAnoIncompletoSimples);
+                if (matchAnoIncompleto) {
+                    const dia = parseInt(matchAnoIncompleto[1], 10);
+                    const mes = parseInt(matchAnoIncompleto[2], 10);
+                    const anoProvavel = extrairAnoProvavelDoTexto();
+                    const ano = anoProvavel ? parseInt(anoProvavel, 10) : NaN;
+                    if (!Number.isNaN(dia) && !Number.isNaN(mes) && !Number.isNaN(ano)) {
+                        data = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${String(ano)}`;
+                    }
+                }
             }
 
             // Fallback para datas em extenso no texto ou no nome do arquivo.
@@ -1526,23 +1611,25 @@
                 }
             }
             
-            // Extrair descrição até o primeiro ponto
-            let descricao = '';
-            const regexDescricao = /ATA\s+DA?\s+[^\.]+?\.([^\.]+?)\./i;
-            const matchDescricao = texto.match(regexDescricao);
-            
-            if (matchDescricao) {
-                descricao = matchDescricao[0].trim();
+            // Extrair descrição: tenta capturar a linha/cabeçalho onde aparece "ATA ...".
+            let descricao = null;
+            const matchLinhaAta = textoCompleto.match(/^\s*ATA[^\n\r]{0,220}/im);
+            if (matchLinhaAta && matchLinhaAta[0]) {
+                descricao = matchLinhaAta[0].replace(/\s+/g, ' ').trim();
             } else {
-                // Se não encontrou, pegar até o primeiro ponto depois de ATA
-                const inicioAta = texto.search(/ATA\s+DA?\s+/i);
-                if (inicioAta !== -1) {
-                    const textoAposAta = texto.substring(inicioAta);
-                    const primeiroPonto = textoAposAta.indexOf('.');
-                    if (primeiroPonto !== -1) {
-                        descricao = textoAposAta.substring(0, primeiroPonto + 1).trim();
-                    }
+                const matchTrechoAta = textoCompleto.match(/\bATA\b[^\.\n\r]{0,220}/i);
+                if (matchTrechoAta && matchTrechoAta[0]) {
+                    descricao = matchTrechoAta[0].replace(/\s+/g, ' ').trim();
                 }
+            }
+
+            if (!descricao) {
+                const numeroFmt = numeroDoDocumento ? String(numeroDoDocumento).padStart(3, '0') : null;
+                const partes = [];
+                partes.push(numeroFmt ? `ATA ${numeroFmt}` : 'ATA');
+                partes.push('DA SESSAO');
+                if (data) partes.push(`REALIZADA EM ${data}`);
+                descricao = partes.join(' ');
             }
             
             return {
@@ -1551,7 +1638,7 @@
                 numeroDoDocumento: numeroDoDocumento,
                 data: data,
                 letra: null,
-                descricao: descricao.toUpperCase() || null,
+                descricao: descricao ? descricao.toUpperCase() : null,
                 url: `${urlDocumentos}${encodeURIComponent(nomeArquivo)}`,
                 tipoDocumento: tipoDocumento
             };
@@ -2032,19 +2119,21 @@
         }
 
         function extrairInformacoesPortaria(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
+            const textoCompleto = normalizarTextoCompleto(texto);
+
             // Extrair número da portaria - MÚLTIPLOS PADRÕES para maior cobertura
             const regexPatterns = [
                 // Padrão 1: PORTARIA [MUNICIPAL] N° 123/2024 ou N° 123-A
-                /PORTARIA(?:\s+MUNICIPAL)?\s+N[°ºª\s]*[\s.]*(\d+)(?:[-\/](\d{4}))?(?:[-\/]([A-Z]))?/i,
+                /PORTARIA(?:\s+MUNICIPAL)?\s+N[°ºª\s]*[\s.]*(\d+)(?:[-\/]((?:\d[\s\.,]*){4}))?(?:[-\/]([A-Z]))?/i,
                 
                 // Padrão 2: PORTARIA [MUNICIPAL] No 123 (letra O maiúscula)
-                /PORTARIA(?:\s+MUNICIPAL)?\s+N[oO][\s.]*(\d+)(?:[-\/](\d{4}))?(?:[-\/]([A-Z]))?/i,
+                /PORTARIA(?:\s+MUNICIPAL)?\s+N[oO][\s.]*(\d+)(?:[-\/]((?:\d[\s\.,]*){4}))?(?:[-\/]([A-Z]))?/i,
                 
                 // Padrão 3: Com quebras de linha entre PORTARIA e número
-                /PORTARIA(?:\s+MUNICIPAL)?[\s\n]+N[°ºªoO\s.]*[\s\n]*(\d+)(?:[-\/](\d{4}))?/i,
+                /PORTARIA(?:\s+MUNICIPAL)?[\s\n]+N[°ºªoO\s.]*[\s\n]*(\d+)(?:[-\/]((?:\d[\s\.,]*){4}))?/i,
                 
-                // Padrão 4: Apenas "N° 123/2024" sem palavra PORTARIA antes
-                /\bN[°ºª\s]*[\s.]*(\d+)\/(\d{4})(?:-([A-Z]))?/i,
+                // Padrão 4: Variante abreviada mas ainda exigindo contexto de PORTARIA
+                /PORTARIA[^\n\r]{0,140}\bN[°ºª\s]*[\s.]*(\d+)\/[\s.]*(?:((?:\d[\s\.,]*){4}))(?:-([A-Z]))?/i,
                 
                 // Padrão 5: Número no nome do arquivo (fallback)
                 null // Será tratado separadamente
@@ -2058,11 +2147,11 @@
             
             // Tentar cada padrão
             for (let i = 0; i < regexPatterns.length - 1; i++) {
-                matchNumero = texto.match(regexPatterns[i]);
+                matchNumero = textoCompleto.match(regexPatterns[i]);
                 if (matchNumero) {
                     padraoUsado = i + 1;
                     numeroDoDocumento = matchNumero[1];
-                    anoPortaria = matchNumero[2];
+                    anoPortaria = matchNumero[2] ? String(matchNumero[2]).replace(/\D/g, '').slice(0, 4) : null;
                     letraPortaria = matchNumero[3];
                     break;
                 }
@@ -2079,6 +2168,16 @@
                     padraoUsado = 6; // Padrão do nome do arquivo
                 }
             }
+
+            // Fallback adicional: "portaria19.pdf" -> 19
+            if (!numeroDoDocumento) {
+                const matchPortariaNoNome = String(nomeArquivo || '').match(/portaria\s*(\d{1,6})(?:[^\d]+((?:20|19)\d{2}))?/i);
+                if (matchPortariaNoNome) {
+                    numeroDoDocumento = matchPortariaNoNome[1];
+                    anoPortaria = matchPortariaNoNome[2] || null;
+                    padraoUsado = 7;
+                }
+            }
             
             // Guardar o número original antes de montar número completo
             const numeroOriginal = numeroDoDocumento;
@@ -2093,25 +2192,34 @@
             
             // Mapa de meses em português
             const meses = {
-                'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
+                'janeiro': '01', 'fevereiro': '02', 'marco': '03', 'março': '03', 'abril': '04',
                 'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
                 'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12'
             };
             
             // Extrair data no formato "DE 08 DE JANEIRO DE 2025" ou ", 08 DE JANEIRO DE 2025"
-            const regexDataExtenso = /(?:DE\s+|,\s*)(\d{1,2})\s+DE\s+([A-ZÇÃÕÁÉÍÓÚÂÊÔÀ]+)\s+DE\s+(\d{4})/i;
-            const matchDataExtenso = texto.match(regexDataExtenso);
-            
+            const regexDataExtenso = /(?:DE\s+|,\s*)(\d{1,2})\s+DE\s+([A-ZÇÃÕÁÉÍÓÚÂÊÔÀ]+)\s+DE\s+((?:\d[\s\.,]*){4})/i;
+            const matchDataExtenso = textoCompleto.match(regexDataExtenso);
+
             let data = null;
-            
+
             if (matchDataExtenso) {
-                const dia = parseInt(matchDataExtenso[1]);
-                const mesNome = matchDataExtenso[2].toLowerCase();
+                const dia = parseInt(matchDataExtenso[1], 10);
+                const mesNome = String(matchDataExtenso[2] || '').toLowerCase();
                 const mes = meses[mesNome] || '01';
-                const ano = parseInt(matchDataExtenso[3]);
-                
-                // Converter para formato dd/mm/yyyy (formato brasileiro)
-                data = `${dia.toString().padStart(2, '0')}/${mes}/${ano}`;
+                const ano = String(matchDataExtenso[3] || '').replace(/\D/g, '').slice(0, 4);
+                if (ano.length === 4) data = `${String(dia).padStart(2, '0')}/${mes}/${ano}`;
+            }
+
+            // Fallback: tentar pegar a última data encontrada no documento (normalmente no rodapé)
+            if (!data) {
+                const datasOrdenadas = extrairDatasPadraoOrdenadas(textoCompleto);
+                if (datasOrdenadas.length) data = datasOrdenadas[datasOrdenadas.length - 1].data;
+            }
+
+            // Fallback final: regras genéricas de data
+            if (!data) {
+                data = extrairDataPadrao(textoCompleto, nomeArquivo);
             }
             
             // Descrição - melhorada para capturar o conteúdo principal
@@ -2120,7 +2228,9 @@
             // Procurar palavras-chave comuns em portarias
             const palavrasChave = [
                 'dispõe sobre',
+                'dispoe sobre',
                 'dispõe',
+                'dispoe',
                 'altera',
                 'revoga',
                 'autorizada',
@@ -2147,7 +2257,7 @@
             let palavraEncontrada = '';
             
             for (const palavra of palavrasChave) {
-                const index = texto.toLowerCase().indexOf(palavra.toLowerCase());
+                const index = textoCompleto.toLowerCase().indexOf(palavra.toLowerCase());
                 if (index !== -1 && (inicioDescricao === -1 || index < inicioDescricao)) {
                     inicioDescricao = index;
                     palavraEncontrada = palavra;
@@ -2156,7 +2266,7 @@
             
             if (inicioDescricao !== -1) {
                 // Extrair do início da descrição
-                let textoDescricao = texto.substring(inicioDescricao);
+                let textoDescricao = textoCompleto.substring(inicioDescricao);
                 
                 // Limpar espaços extras e quebras de linha
                 textoDescricao = textoDescricao.replace(/\s+/g, ' ').trim();
@@ -2210,6 +2320,17 @@
                     } else {
                         descricao += '.';
                     }
+                }
+            }
+
+            // Fallback: se não achou palavra-chave, tenta capturar a linha/título do documento
+            if (!descricao) {
+                const matchLinha = textoCompleto.match(/^\s*PORTARIA[^\n\r]{0,220}/im)
+                    || textoCompleto.match(/^\s*DISP[ÕO]E[^\n\r]{0,220}/im)
+                    || textoCompleto.match(/^\s*DISPOE[^\n\r]{0,220}/im);
+
+                if (matchLinha && matchLinha[0]) {
+                    descricao = matchLinha[0].replace(/\s+/g, ' ').trim();
                 }
             }
             
@@ -2752,7 +2873,7 @@
             }
 
             const n = normalize(raw);
-            resultado.numeroDoDocumento = n.numero ? (String(n.numero).includes('/') ? String(n.numero) : String(n.numero)) : null;
+            resultado.numeroDoDocumento = normalizarNumeroInteiro(n.numero);
             resultado.letra = resultado.letra || letra || n.letra || null;
             return resultado;
         }

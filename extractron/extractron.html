@@ -247,6 +247,39 @@
         const LIMITE_MAXIMO_LOTE = 100;
         const LOTE_PADRAO = 50;
 
+        // Fail-safe: evita travar o processamento em PDFs problemáticos (ex.: OCR que nunca termina)
+        // ou tarefas do PDF.js que ficam penduradas. Em caso de timeout, o arquivo é marcado como falha
+        // e o processamento segue para os próximos.
+        const TEMPO_MAXIMO_POR_ARQUIVO_MS = 3 * 60 * 1000; // 3 min
+        const TEMPO_MAXIMO_OCR_POR_PAGINA_MS = 60 * 1000; // 1 min
+        const TEMPO_MAXIMO_PDFJS_POR_ETAPA_MS = 60 * 1000; // 1 min
+
+        function withTimeout(promise, timeoutMs, message, onTimeout) {
+            const ms = Number(timeoutMs);
+            if (!Number.isFinite(ms) || ms <= 0) {
+                const err = new Error(message || 'Timeout');
+                if (typeof onTimeout === 'function') {
+                    try { onTimeout(err); } catch (_) {}
+                }
+                return Promise.reject(err);
+            }
+
+            let timeoutId = null;
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    const err = new Error(message || `Timeout (${ms}ms)`);
+                    if (typeof onTimeout === 'function') {
+                        try { onTimeout(err); } catch (_) {}
+                    }
+                    reject(err);
+                }, ms);
+            });
+
+            return Promise.race([Promise.resolve(promise), timeoutPromise]).finally(() => {
+                if (timeoutId) clearTimeout(timeoutId);
+            });
+        }
+
         function normalizarTamanhoLote(valor) {
             const lote = Number.parseInt(valor, 10);
             if (Number.isNaN(lote)) return LOTE_PADRAO;
@@ -306,6 +339,62 @@
             }
 
             return resultados;
+        }
+
+        async function calcularHashArquivo(file) {
+            const buffer = await file.arrayBuffer();
+            if (!globalThis.crypto?.subtle) {
+                let hash = 2166136261;
+                const bytes = new Uint8Array(buffer);
+                for (const byte of bytes) {
+                    hash ^= byte;
+                    hash = Math.imul(hash, 16777619);
+                }
+                return `fnv-${file.size}-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+            }
+
+            const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', buffer);
+            return Array.from(new Uint8Array(hashBuffer))
+                .map((byte) => byte.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        async function separarArquivosDuplicadosPorConteudo(files, onProgress) {
+            const arquivosUnicos = [];
+            const documentosDuplicados = [];
+            const vistos = new Map();
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (typeof onProgress === 'function') {
+                    onProgress(i, files.length, file.name);
+                }
+
+                const hash = await calcularHashArquivo(file);
+                const original = vistos.get(hash);
+
+                if (original) {
+                    documentosDuplicados.push({
+                        arquivo: file.name,
+                        arquivo_duplicado_de: original.file.name,
+                        motivo: 'Documento duplicado por conteudo',
+                        hash_sha256: hash,
+                        tamanho_bytes: file.size,
+                        ultima_modificacao: file.lastModified ? new Date(file.lastModified).toISOString() : null,
+                        indice_original: original.index + 1,
+                        indice_duplicado: i + 1
+                    });
+                } else {
+                    vistos.set(hash, { file, index: i });
+                    arquivosUnicos.push(file);
+                }
+            }
+
+            if (typeof onProgress === 'function') {
+                onProgress(files.length, files.length, null);
+            }
+
+            return { arquivosUnicos, documentosDuplicados };
         }
 
         document.getElementById('pdfInput').addEventListener('change', async function(e) {
@@ -417,22 +506,32 @@
                 letra: document.getElementById('obrigatorio_letra').checked
             };
             const configuracaoSaida = obterConfiguracaoSaida(numeroDocumento);
+            updateProgress(0, totalFiles, 'Verificando documentos duplicados...');
+            const { arquivosUnicos, documentosDuplicados } = await separarArquivosDuplicadosPorConteudo(
+                files,
+                (atual, total, nomeArquivoAtual) => {
+                    const sufixo = nomeArquivoAtual ? ` (${nomeArquivoAtual})` : '';
+                    updateProgress(atual, total, `Verificando duplicados${sufixo}`, errorCount);
+                }
+            );
+            const totalProcessamento = arquivosUnicos.length || 1;
+            processedCount = 0;
             
             // Processar arquivos em lotes com limite de concorrência configurável
             const decretos = await processarArquivosEmLotes(
-                files,
+                arquivosUnicos,
                 tamanhoLote,
                 async (file) => {
                     try {
                         const decreto = await processarPDF(file, numeroDocumento, urlDocumentos, tipoDocumento);
                         processedCount++;
-                        updateProgress(processedCount, totalFiles, `Processados: ${processedCount}/${totalFiles}` , errorCount);
+                        updateProgress(processedCount, totalProcessamento, `Processados: ${processedCount}/${arquivosUnicos.length}` , errorCount);
                         return decreto;
                     } catch (error) {
                         console.error(`Erro ao processar ${file.name}:`, error);
                         processedCount++;
                         errorCount++;
-                        updateProgress(processedCount, totalFiles, `Processados: ${processedCount}/${totalFiles}` , errorCount);
+                        updateProgress(processedCount, totalProcessamento, `Processados: ${processedCount}/${arquivosUnicos.length}` , errorCount);
                         return {
                             arquivo: file.name,
                             numeroDoDocumento: 'Erro no processamento',
@@ -445,7 +544,7 @@
                 ({ indiceLote, totalLotes, quantidadeNoLote }) => {
                     updateProgress(
                         processedCount,
-                        totalFiles,
+                        totalProcessamento,
                         `Processando lote ${indiceLote}/${totalLotes} (${quantidadeNoLote} arquivo${quantidadeNoLote > 1 ? 's' : ''})`,
                         errorCount
                     );
@@ -459,17 +558,18 @@
             const { documentosValidos, documentosFalhos } = validarDocumentos(decretosValidos, camposObrigatorios);
 
             errorCount = documentosFalhos.length;
-            updateProgress(totalFiles, totalFiles, `Finalizado: ${documentosValidos.length} ok, ${documentosFalhos.length} falhas`, errorCount);
+            updateProgress(totalProcessamento, totalProcessamento, `Finalizado: ${documentosValidos.length} ok, ${documentosFalhos.length} falhas, ${documentosDuplicados.length} duplicados`, errorCount);
             
-            exibirResultados(documentosValidos, documentosFalhos);
+            exibirResultados(documentosValidos, documentosFalhos, documentosDuplicados);
             
             // Download automático dos arquivos
-            downloadArquivos(documentosValidos, documentosFalhos, configuracaoSaida);
+            downloadArquivos(documentosValidos, documentosFalhos, configuracaoSaida, documentosDuplicados);
             hideProgress();
             
             console.log('ID de Documentação:', numeroDocumento);
             console.log('Documentos válidos:', documentosValidos);
             console.log('Documentos com falhas:', documentosFalhos);
+            console.log('Documentos duplicados:', documentosDuplicados);
         });
 
         function updateProgress(current, total, message, errors = 0) {
@@ -531,9 +631,19 @@
                 .replace(/[\u0300-\u036f]/g, '');
         }
 
+        function isTipoOficio(tipoDocumento) {
+            const nome = normalizarSemAcentos(tipoDocumento).toLowerCase();
+            return /\boficio\b/.test(nome);
+        }
+
         function isTipoProjetoPoliticoPedagogico(tipoDocumento) {
             const nome = normalizarSemAcentos(tipoDocumento).toLowerCase();
             return /projeto\s+politico\s+pedagogico|\bppp\b/.test(nome);
+        }
+
+        function isTipoResolucao(tipoDocumento) {
+            const nome = normalizarSemAcentos(tipoDocumento).toLowerCase();
+            return /\bresoluc(?:ao|oes)\b|\bprojeto\s+de\s+resoluc(?:ao|oes)\b/.test(nome);
         }
 
         function normalizarTextoCompleto(texto) {
@@ -608,12 +718,24 @@
             return /regimento|emenda/.test(nome);
         }
 
+        function isTipoProjetoDeLei(tipoDocumento) {
+            const nome = normalizarSemAcentos(tipoDocumento).toLowerCase();
+            return /projeto\s*de\s*lei|\bproj\b|\bp\s*\.?\s*l\s*\.?\b/.test(nome);
+        }
+
         function limparDescricaoArquivo(nomeArquivo) {
             return String(nomeArquivo || '')
                 .replace(/\.pdf$/i, '')
+                .replace(/^[a-f0-9]{32}[_\-]/i, '')
                 .replace(/^\d{4}_[^_]+_/, '')
                 .replace(/[_\-]+/g, ' ')
                 .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function removerPrefixoHashNomeArquivo(nomeArquivo) {
+            return String(nomeArquivo || '')
+                .replace(/^[a-f0-9]{32}[_\-]/i, '')
                 .trim();
         }
 
@@ -633,6 +755,120 @@
 
         function escaparRegex(valor) {
             return String(valor || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function decodificarNomeArquivoLegado(nomeArquivo) {
+            const semHash = removerPrefixoHashNomeArquivo(nomeArquivo)
+                .replace(/\.pdf(?:\.pdf)?$/i, '')
+                .trim();
+            const comoUrl = semHash.replace(/_(20|C2|B0|C3|[89A-Fa-f][0-9A-Fa-f])/g, '%$1');
+            let decodificado = comoUrl;
+
+            try {
+                decodificado = decodeURIComponent(comoUrl);
+            } catch (_) {}
+
+            return decodificado
+                .replace(/_/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function montarDataBrValida(dia, mes, ano) {
+            const d = Number(dia);
+            const m = Number(mes);
+            const a = Number(ano);
+            const anoAtual = new Date().getFullYear();
+
+            if (!Number.isInteger(d) || !Number.isInteger(m) || !Number.isInteger(a)) return null;
+            if (a < 1900 || a > anoAtual + 1) return null;
+            if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+
+            const data = new Date(Date.UTC(a, m - 1, d));
+            if (data.getUTCFullYear() !== a || data.getUTCMonth() + 1 !== m || data.getUTCDate() !== d) {
+                return null;
+            }
+
+            return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${String(a).padStart(4, '0')}`;
+        }
+
+        function extrairDataDoNomeLeiDecodificado(nomeDecodificado) {
+            const meses = {
+                janeiro: '01', fevereiro: '02', marco: '03', marcoo: '03', abril: '04',
+                maio: '05', junho: '06', julho: '07', agosto: '08',
+                setembro: '09', outubro: '10', novembro: '11', dezembro: '12'
+            };
+
+            const nomeNormalizado = normalizarSemAcentos(nomeDecodificado).toLowerCase();
+            const dataExtenso = nomeNormalizado.match(/\b(\d{1,2})\s+de\s+([a-z]+)\s+de\s+((?:19|20)\d{2})\b/i);
+            if (dataExtenso) {
+                const mes = meses[dataExtenso[2]];
+                const data = mes ? montarDataBrValida(dataExtenso[1], mes, dataExtenso[3]) : null;
+                if (data) return data;
+            }
+
+            const dataNumerica = nomeNormalizado.match(/\b(\d{1,2})[\/\.-](\d{1,2})[\/\.-]((?:19|20)\d{2})\b/);
+            if (dataNumerica) {
+                const data = montarDataBrValida(dataNumerica[1], dataNumerica[2], dataNumerica[3]);
+                if (data) return data;
+            }
+
+            return null;
+        }
+
+        function extrairDadosLeiDoNomeArquivo(nomeArquivo) {
+            const nomeDecodificado = decodificarNomeArquivoLegado(nomeArquivo);
+            const nomeSemAcentos = normalizarSemAcentos(nomeDecodificado);
+            const rawSemHash = removerPrefixoHashNomeArquivo(nomeArquivo);
+            let numero = null;
+            let letra = null;
+            let data = extrairDataDoNomeLeiDecodificado(nomeDecodificado);
+
+            const numeroDataCompacta = nomeSemAcentos.match(/\blei\s+(?:n\s*[º°ªo.]?\s*)?0*(\d{3})(20\d{6})(?=\D|$)/i);
+            if (numeroDataCompacta) {
+                numero = String(parseInt(numeroDataCompacta[1], 10));
+                data = data || montarDataBrValida(
+                    numeroDataCompacta[2].slice(6, 8),
+                    numeroDataCompacta[2].slice(4, 6),
+                    numeroDataCompacta[2].slice(0, 4)
+                );
+            }
+
+            if (!numero) {
+                const padroesNome = [
+                    /\blei\s+(?:complementar\s+)?(?:municipal\s+)?(?:organica\s+)?(?:n\s*[º°ªo.]?\s*)?0*(\d{1,4})(?:\s*[-\/\.]\s*((?:19|20)\d{2}))?(?:\s*(?:-|\b)\s*([A-Z])\b(?![A-Z]))?(?=\s*(?:de\b|$|[-\/\.]|\D))/i,
+                    /\blei\s*[-\s]\s*(?:n\s*[º°ªo.]?\s*)?0*(\d{1,4})(?:\s*[-\/\.]\s*((?:19|20)\d{2}))?(?:\s*(?:-|\b)\s*([A-Z])\b(?![A-Z]))?/i
+                ];
+
+                for (const regex of padroesNome) {
+                    const match = nomeSemAcentos.match(regex);
+                    if (!match) continue;
+
+                    numero = String(parseInt(match[1], 10));
+                    if (match[3]) letra = match[3].toUpperCase();
+                    if (!data && match[2]) data = `01/01/${match[2]}`;
+                    break;
+                }
+            }
+
+            if (!numero) {
+                const sufixoHashLegado = rawSemHash.match(/(?:^|[_\-\s])26(\d{1,4})(?:[-_]\d{2,5})?(?=\.pdf(?:\.pdf)?$|$)/i);
+                if (sufixoHashLegado) {
+                    numero = String(parseInt(sufixoHashLegado[1], 10));
+                }
+            }
+
+            if (!data) {
+                const anos = Array.from(nomeSemAcentos.matchAll(/\b((?:19|20)\d{2})\b/g)).map(match => match[1]);
+                if (anos.length) data = `01/01/${anos[anos.length - 1]}`;
+            }
+
+            return {
+                numero: normalizarNumeroInteiro(numero),
+                data,
+                letra,
+                nomeDecodificado
+            };
         }
 
         function extrairDataLeiContextual(texto, nomeArquivo, numeroLei) {
@@ -710,6 +946,34 @@
                 return `${String(ultimoDia).padStart(2, '0')}/${mes}/${ano}`;
             };
 
+            const dataValida = (dia, mes, ano) => {
+                const d = Number(dia);
+                const m = Number(mes);
+                const a = Number(ano);
+                if (!Number.isInteger(d) || !Number.isInteger(m) || !Number.isInteger(a)) return false;
+                if (a < 1900 || a > 2100) return false;
+                if (m < 1 || m > 12) return false;
+                if (d < 1 || d > 31) return false;
+                const data = new Date(Date.UTC(a, m - 1, d));
+                return data.getUTCFullYear() === a && (data.getUTCMonth() + 1) === m && data.getUTCDate() === d;
+            };
+
+            // Se o nome do arquivo contiver uma data de 8 dígitos (ex.: 02092025 ou 20250902), usar como fallback.
+            // Evita falsos positivos como "CCF02092025" virando competência 02/2092.
+            const token8 = nome.match(/(?:^|[^0-9])(\d{8})(?=[^0-9]|$)/);
+            if (token8) {
+                const digits = token8[1];
+                const ymd = digits.match(/^((?:19|20)\d{2})(0[1-9]|1[0-2])([0-3]\d)$/);
+                if (ymd && dataValida(ymd[3], ymd[2], ymd[1])) {
+                    return `${ymd[3]}/${ymd[2]}/${ymd[1]}`;
+                }
+
+                const dmy = digits.match(/^([0-3]\d)(0[1-9]|1[0-2])((?:19|20)\d{2})$/);
+                if (dmy && dataValida(dmy[1], dmy[2], dmy[3])) {
+                    return `${dmy[1]}/${dmy[2]}/${dmy[3]}`;
+                }
+            }
+
             const semestre = nome.match(/((?:19|20)\d{2})[_\-\s]+0?([12])\s*semestre\b/i)
                 || nome.match(/((?:19|20)\d{2}).{0,12}\b([12])(?:o|º)?\s*semestre\b/i);
             if (semestre) {
@@ -718,22 +982,21 @@
                 return numeroSemestre === '1' ? `30/06/${ano}` : `31/12/${ano}`;
             }
 
-            const matchAnoMesColado = nome.match(/((?:19|20)\d{2})[_\-\s]*(\d{1,2})\s*([a-z]+)?/i);
-            if (matchAnoMesColado) {
-                const ano = matchAnoMesColado[1];
-                let mes = matchAnoMesColado[2] ? String(parseInt(matchAnoMesColado[2], 10)).padStart(2, '0') : null;
-                const mesNome = String(matchAnoMesColado[3] || '').replace(/[^a-z]/g, '');
-
-                if (mesNome && meses[mesNome]) {
-                    mes = meses[mesNome];
-                }
-
-                if (mes && Number(mes) >= 1 && Number(mes) <= 12) {
-                    return ultimoDiaMes(ano, mes);
-                }
+            const matchAnoMesCompacto = nome.match(/(?:^|[^0-9])((?:19|20)\d{2})(0[1-9]|1[0-2])(?=[^0-9]|$)/);
+            if (matchAnoMesCompacto) {
+                const ano = matchAnoMesCompacto[1];
+                const mes = matchAnoMesCompacto[2];
+                return ultimoDiaMes(ano, mes);
             }
 
-            const match = nome.match(/\b((?:19|20)\d{2})[_\-\s]+(\d{1,2})?\s*([a-z]+)?/i);
+            const matchAnoMesSeparado = nome.match(/(?:^|[^0-9])((?:19|20)\d{2})[_\-\s]+(0?[1-9]|1[0-2])(?=[^0-9]|$)/);
+            if (matchAnoMesSeparado) {
+                const ano = matchAnoMesSeparado[1];
+                const mes = String(parseInt(matchAnoMesSeparado[2], 10)).padStart(2, '0');
+                return ultimoDiaMes(ano, mes);
+            }
+
+            const match = nome.match(/(?:^|[^0-9])((?:19|20)\d{2})[_\-\s]+(\d{1,2})?\s*([a-z]+)?/i);
             if (match) {
                 const ano = match[1];
                 let mes = match[2] ? String(parseInt(match[2], 10)).padStart(2, '0') : null;
@@ -896,6 +1159,121 @@
                 descricao: extrairDescricaoRegimentoEmenda(texto, nomeArquivo),
                 url: `${urlDocumentos}${encodeURIComponent(nomeArquivo)}`,
                 tipoDocumento: tipoFinal
+            };
+        }
+
+        function normalizarNomeArquivoResolucao(nomeArquivo) {
+            return removerPrefixoHashNomeArquivo(nomeArquivo)
+                .replace(/\.pdf$/i, '')
+                .replace(/%20/gi, ' ')
+                .replace(/_20/g, ' ')
+                .replace(/_C3_A7/gi, 'c')
+                .replace(/_C3_87/gi, 'c')
+                .replace(/_C3_A3/gi, 'a')
+                .replace(/_C3_83/gi, 'a')
+                .replace(/_C2_BA/gi, ' ')
+                .replace(/[_.\-]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function normalizarAnoResolucao(valorAno) {
+            const digitos = String(valorAno || '').replace(/\D/g, '');
+            if (!digitos) return null;
+            if (digitos.length === 2) return `20${digitos}`;
+            const ano = digitos.slice(0, 4);
+            return /^(19|20)\d{2}$/.test(ano) ? ano : null;
+        }
+
+        function extrairNumeroAnoResolucao(texto, nomeArquivo) {
+            const nomeLimpo = normalizarNomeArquivoResolucao(nomeArquivo);
+            const fonte = `${nomeLimpo} ${texto || ''}`;
+            const fonteNormal = normalizarSemAcentos(fonte)
+                .replace(/\u00a0/g, ' ')
+                .replace(/\s+/g, ' ');
+
+            const padroes = [
+                /(?:PROJETO\s+DE\s+)?R\s*E\s*S\s*O\s*L\s*U\s*(?:C\s*)?A\s*O\s*(?:\s*(?:N\s*[oº°ª\.]*|NUMERO|[:\-])){0,4}\s*0*(\d{1,4})(?:\s*[.\/\-]\s*((?:\d[\s\.,]*){2,4}))?/i,
+                /\bRES(?:OLUCAO|OLUCOES|OLUAO)?\b[^\d]{0,30}0*(\d{1,4})(?:\s*[.\/\-]\s*((?:\d[\s\.,]*){2,4}))?/i,
+                /\bPROJ\b[^\d]{0,80}\bRES[^\d]{0,30}0*(\d{1,4})(?:\s*[.\/\-]\s*((?:\d[\s\.,]*){2,4}))?/i,
+                /\bN\s*[oº°ª\.]*\s*0*(\d{1,4})(?:\s*[.\/\-]\s*((?:\d[\s\.,]*){2,4}))?/i
+            ];
+
+            let numeroSemAno = null;
+            for (const regex of padroes) {
+                const match = fonteNormal.match(regex);
+                if (!match) continue;
+
+                const numero = match[1] ? String(parseInt(match[1], 10)) : null;
+                const ano = normalizarAnoResolucao(match[2]);
+                if (numero && ano) return { numero, ano };
+                if (numero && !numeroSemAno) numeroSemAno = numero;
+            }
+
+            const matchNomeCompacto = nomeLimpo.match(/\b0*(\d{1,4})[\s.\/\-]+((?:19|20)?\d{2})\b/)
+                || nomeLimpo.match(/\b0*(\d{1,2})((?:19|20)\d{2})\b/);
+            if (matchNomeCompacto) {
+                return {
+                    numero: String(parseInt(matchNomeCompacto[1], 10)),
+                    ano: normalizarAnoResolucao(matchNomeCompacto[2])
+                };
+            }
+
+            return { numero: numeroSemAno, ano: null };
+        }
+
+        function extrairDescricaoResolucao(texto, nomeArquivo) {
+            const fonte = normalizarTextoCompleto(texto);
+            const nomeLimpo = normalizarNomeArquivoResolucao(nomeArquivo);
+
+            const limpar = (valor) => String(valor || '')
+                .replace(/\s+/g, ' ')
+                .replace(/^[\s:;,\-."']+|[\s:;,\-."']+$/g, '')
+                .trim()
+                .toUpperCase();
+
+            const cortarMarcadores = (valor) => {
+                const normal = normalizarSemAcentos(valor).toUpperCase();
+                const marcadores = [' FACO SABER', ' CONSIDERANDO', ' DECRETA', ' RESOLVE', ' ART. 1'];
+                let fim = valor.length;
+                for (const marcador of marcadores) {
+                    const idx = normal.indexOf(marcador);
+                    if (idx > 20 && idx < fim) fim = idx;
+                }
+                return valor.slice(0, fim);
+            };
+
+            const aspas = fonte.match(/["\u201c\u201d]\s*([^"\u201c\u201d]{20,360})\s*["\u201c\u201d]/);
+            if (aspas && aspas[1]) {
+                const descricao = limpar(cortarMarcadores(aspas[1]));
+                if (descricao.length >= 8) return descricao;
+            }
+
+            const normal = normalizarSemAcentos(fonte).toUpperCase();
+            const marcadorIdx = normal.search(/\b(EMENTA|DISPOE\s+SOBRE)\b/);
+            if (marcadorIdx >= 0) {
+                const trecho = cortarMarcadores(fonte.slice(marcadorIdx, marcadorIdx + 420));
+                const descricao = limpar(trecho.replace(/^(EMENTA|DISP\S+\s+SOBRE)\s*[:\-]?\s*/i, ''));
+                if (descricao.length >= 8) return descricao;
+            }
+
+            return nomeLimpo ? limpar(nomeLimpo) : null;
+        }
+
+        function extrairInformacoesResolucao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
+            const numeroAno = extrairNumeroAnoResolucao(texto, nomeArquivo);
+            const data = extrairDataPadrao(texto, nomeArquivo)
+                || (numeroAno.ano ? `01/01/${numeroAno.ano}` : null);
+
+            return {
+                numero: numeroDocumento,
+                arquivo: nomeArquivo,
+                numeroDoDocumento: numeroAno.numero,
+                data: data,
+                letra: null,
+                descricao: extrairDescricaoResolucao(texto, nomeArquivo),
+                url: `${urlDocumentos}${encodeURIComponent(nomeArquivo)}`,
+                tipoDocumento: tipoDocumento || resolverTipoNome('Resolucoes') || 'Resolucoes'
             };
         }
 
@@ -1131,7 +1509,7 @@
                     erros.push('Número do documento ausente ou inválido');
                 }
                 
-                if (camposObrigatorios.data && (!doc.data || doc.data === 'Erro')) {
+                if (camposObrigatorios.data && (!doc.data || doc.data === 'Erro' || !converterDataParaISO(doc.data))) {
                     temErro = true;
                     erros.push('Data ausente ou inválida');
                 }
@@ -1158,7 +1536,7 @@
                         erros.push('Edição ausente ou inválida');
                     }
 
-                    if (!doc.data || doc.data === 'Erro') {
+                    if (!doc.data || doc.data === 'Erro' || !converterDataParaISO(doc.data)) {
                         temErro = true;
                         erros.push('Data ausente ou inválida');
                     }
@@ -1225,6 +1603,12 @@
             const numero = parseInt(matchNumero[0], 10);
             if (Number.isNaN(numero) || numero <= 0) return null;
 
+            // Evitar que um token "20YYYY" (ex.: 202025, vindo de %202025) vire número de documento.
+            if (matchNumero[0].length === 6 && matchNumero[0].startsWith('20')) {
+                const tail = matchNumero[0].slice(2);
+                if (/^(19|20)\d{2}$/.test(tail)) return null;
+            }
+
             // Evitar que um ano apareça como número.
             if (matchNumero[0].length === 4 && numero >= 1900 && numero <= 2100) return null;
 
@@ -1237,48 +1621,67 @@
             const texto = String(valor).trim();
             if (!texto) return null;
 
+            const dataPermitida = (ano, mes, dia) => {
+                const anoAtual = new Date().getFullYear();
+                if (ano < 1900 || ano > anoAtual + 1) return false;
+                const data = new Date(Date.UTC(ano, mes - 1, dia));
+                return data.getUTCFullYear() === ano && (data.getUTCMonth() + 1) === mes && data.getUTCDate() === dia;
+            };
+
             const matchBr = texto.match(/^(\d{1,2})[\/\.-](\d{1,2})[\/\.-]((?:\d[\s\.,]*){4})$/);
             if (matchBr) {
                 const dia = Number(matchBr[1]);
                 const mes = Number(matchBr[2]);
                 const ano = Number(String(matchBr[3]).replace(/\D/g, '').slice(0, 4));
-                const data = new Date(Date.UTC(ano, mes - 1, dia));
 
-                if (data.getUTCFullYear() === ano && (data.getUTCMonth() + 1) === mes && data.getUTCDate() === dia) {
+                if (dataPermitida(ano, mes, dia)) {
                     return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 }
+                return null;
             }
 
             const matchIsoDate = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (matchIsoDate) return texto;
+            if (matchIsoDate) {
+                const ano = Number(matchIsoDate[1]);
+                const mes = Number(matchIsoDate[2]);
+                const dia = Number(matchIsoDate[3]);
+                return dataPermitida(ano, mes, dia) ? texto : null;
+            }
 
             const matchYmd = texto.match(/^(\d{4})[\/\.](\d{1,2})[\/\.](\d{1,2})$/);
             if (matchYmd) {
                 const ano = Number(matchYmd[1]);
                 const mes = Number(matchYmd[2]);
                 const dia = Number(matchYmd[3]);
-                const data = new Date(Date.UTC(ano, mes - 1, dia));
 
-                if (data.getUTCFullYear() === ano && (data.getUTCMonth() + 1) === mes && data.getUTCDate() === dia) {
+                if (dataPermitida(ano, mes, dia)) {
                     return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 }
+                return null;
             }
 
             const matchAno = texto.match(/^\d{4}$/);
-            if (matchAno) return `${texto}-01-01`;
+            if (matchAno) {
+                const ano = Number(texto);
+                return dataPermitida(ano, 1, 1) ? `${texto}-01-01` : null;
+            }
 
             const matchAnoQuebrado = texto.match(/^((?:\d[\s\.,]*){4})$/);
             if (matchAnoQuebrado) {
                 const ano = String(matchAnoQuebrado[1]).replace(/\D/g, '').slice(0, 4);
-                if (ano.length === 4) return `${ano}-01-01`;
+                if (ano.length === 4 && dataPermitida(Number(ano), 1, 1)) return `${ano}-01-01`;
+                return null;
             }
 
             const dataNativa = new Date(texto);
             if (!Number.isNaN(dataNativa.getTime())) {
-                return dataNativa.toISOString().slice(0, 10);
+                const ano = dataNativa.getUTCFullYear();
+                const mes = dataNativa.getUTCMonth() + 1;
+                const dia = dataNativa.getUTCDate();
+                return dataPermitida(ano, mes, dia) ? dataNativa.toISOString().slice(0, 10) : null;
             }
 
-            return texto;
+            return null;
         }
 
         function mapearDocumentoParaPayload(doc, configuracaoSaida) {
@@ -1353,7 +1756,49 @@
             };
         }
         
-        function downloadArquivos(documentosValidos, documentosFalhos, configuracaoSaida) {
+        let ultimoPayloadDuplicados = [];
+
+        function mapearDocumentoDuplicadoParaPayload(doc, configuracaoSaida) {
+            let tipoDocumentoId = configuracaoSaida?.tipoDocumentoId ?? null;
+            const tipoDocumentoIdNumero = Number(tipoDocumentoId);
+
+            if (tipoDocumentoId === 'auto') {
+                tipoDocumentoId = null;
+            }
+
+            return {
+                arquivo_original: doc?.arquivo || null,
+                arquivo_duplicado_de: doc?.arquivo_duplicado_de || null,
+                nao_executar: true,
+                motivo: doc?.motivo || 'Documento duplicado por conteudo',
+                hash_sha256: doc?.hash_sha256 || null,
+                tamanho_bytes: doc?.tamanho_bytes || null,
+                ultima_modificacao: doc?.ultima_modificacao || null,
+                indice_original: doc?.indice_original || null,
+                indice_duplicado: doc?.indice_duplicado || null,
+                tipo_documento_id: Number.isNaN(tipoDocumentoIdNumero) ? (tipoDocumentoId || null) : tipoDocumentoIdNumero
+            };
+        }
+
+        function baixarJson(nomeArquivo, payload) {
+            const file = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(file);
+            a.download = nomeArquivo;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+
+        function baixarDuplicadosJson() {
+            if (!ultimoPayloadDuplicados.length) {
+                alert('Nenhum documento duplicado encontrado.');
+                return;
+            }
+
+            baixarJson('duplicados.json', ultimoPayloadDuplicados);
+        }
+
+        function downloadArquivos(documentosValidos, documentosFalhos, configuracaoSaida, documentosDuplicados = []) {
             let mensagem = '💾 Os arquivos JSON foram baixados automaticamente:\n\n';
             const payloadValidos = documentosValidos.map((doc) => mapearDocumentoParaPayload(doc, configuracaoSaida));
             const payloadFalhos = documentosFalhos.map((doc) => ({
@@ -1362,6 +1807,7 @@
                 arquivo_original: doc.arquivo || null,
                 erro: doc.erro || null
             }));
+            ultimoPayloadDuplicados = documentosDuplicados.map((doc) => mapearDocumentoDuplicadoParaPayload(doc, configuracaoSaida));
             
             // Download do arquivo com documentos válidos
             if (payloadValidos.length > 0) {
@@ -1396,10 +1842,17 @@
         function detectarTipoPeloNome(nomeArquivo) {
             const nome = String(nomeArquivo || '');
             const nomeNormalizado = normalizarBusca(nomeArquivo);
+            const nomeDecodificado = nome
+                .replace(/%20/gi, ' ')
+                .replace(/_20/g, ' ')
+                .replace(/[_.\-]+/g, ' ');
+            const nomeDecodificadoNormalizado = normalizarSemAcentos(nomeDecodificado).toLowerCase();
+            const nomeResolucaoNormalizado = normalizarBusca(normalizarNomeArquivoResolucao(nomeArquivo));
             const tipoProcedimento = detectarTipoProcedimentoPeloNome(nomeArquivo);
             if (tipoProcedimento) return tipoProcedimento;
             const tipoDespesa = detectarTipoDespesaPeloNome(nomeArquivo);
             if (tipoDespesa) return tipoDespesa;
+            if (/\bof[ií]cio\b/i.test(nome) || /^of[_\-\s\.]*\d{3,6}[\.\-_](?:19|20)\d{2}/i.test(nome)) return 'Ofício';
             if (/requerimento/i.test(nome) || /requerimento/.test(nomeNormalizado)) return 'Requerimento';
             if (/folha[\s_\-]*de[\s_\-]*pagamento|folhadepagamento|\bfopag\b/i.test(nome) || /folha\s*de\s*pagamento|folhadepagamento|\bfopag\b/.test(nomeNormalizado)) return 'Folha de Pagamento';
             if (/quadro[\s_\-]*atual[\s_\-]*de[\s_\-]*servidores|quadroatualdeservidores/i.test(nome) || /quadro\s*atual\s*de\s*servidores|quadroatualdeservidores/.test(nomeNormalizado)) return 'Quadro Atual de Servidores';
@@ -1410,50 +1863,94 @@
             if (/plano[\s_\-]?plurianual|\bppa\b/i.test(nome) || /plano\s*plurianual|planoplurianual|\bppa\b/.test(nomeNormalizado)) return 'Plano Plurianual (PPA)';
             if (/emenda/i.test(nome)) return 'Emenda Parlamentar';
             if (/regimento/i.test(nome)) return 'Regimentos';
+            if (/\bresoluc(?:ao|oes)\b|\bresoluao\b|\bres\b/.test(nomeResolucaoNormalizado) || /\bprojeto\s+de\s+resoluc(?:ao|oes)\b/.test(nomeDecodificadoNormalizado)) return 'Resolucoes';
+
+            // Detectar PROJETO DE LEI antes da regra genérica de LEI.
+            // (Muitos arquivos vêm como "PROJ_20LEI_20001.2023.pdf" e seriam classificados como "Lei" se cair na regra abaixo.)
+            if (
+                /projeto\s*de\s*lei/.test(nomeDecodificadoNormalizado)
+                || /\bproj(?:eto)?\b\s*(?:de\s*)?lei\b/.test(nomeDecodificadoNormalizado)
+                || /\bp\.?\s*l\.?\b\s*\d{1,4}/.test(nomeDecodificadoNormalizado)
+            ) return 'Projeto de Lei';
+
             if (/(^|[_\-\s])leis?(?:\d{2,4})?(?=$|[_\-\s])/i.test(nome) || /^lei[\s_\-]/i.test(nome) || /[\s_\-]lei[\s_\-]/i.test(nome) || /(^|[_\-\s])leis?\d{4}[_\-\s]\d+/i.test(nome) || /(^|[_\-\s])leis?[_\-\s]*\d{1,4}/i.test(nome) || /\blei\b|\bleis\b/.test(nomeNormalizado)) return 'Lei';
             if (/^portaria[\s_\-]/i.test(nome) || /portaria/i.test(nome) || /^[Nn]\d+/i.test(nome)) return 'Portaria';
             if (/^decreto[\s_\-]/i.test(nome) || /decreto/i.test(nome)) return 'Decreto';
             if (/^ata[\s_\-]/i.test(nome) || /\bata\b/i.test(nome) || /(^|[_\-\s]|\d)atas?(?=$|[_\-\s]|\d)/i.test(nome) || /\bata\b|\batas\b/.test(nomeNormalizado)) return 'Ata';
-            if (/projeto[\s_\-]?de[\s_\-]?lei/i.test(nome)) return 'Projeto de Lei';
             return null;
         }
 
         async function processarPDF(file, numeroDocumento, urlDocumentos, tipoDocumento) {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const inicio = performance.now();
+            const deadline = inicio + TEMPO_MAXIMO_POR_ARQUIVO_MS;
+            const restanteMs = () => Math.max(0, deadline - performance.now());
+            const garantirTempo = (etapa) => {
+                if (performance.now() > deadline) {
+                    throw new Error(`Timeout de ${Math.round(TEMPO_MAXIMO_POR_ARQUIVO_MS / 1000)}s ao processar ${file?.name || 'arquivo'} (${etapa})`);
+                }
+            };
+
+            const arrayBuffer = await withTimeout(
+                file.arrayBuffer(),
+                Math.min(TEMPO_MAXIMO_PDFJS_POR_ETAPA_MS, restanteMs()),
+                `Timeout lendo arquivo: ${file?.name || 'arquivo'}`
+            );
+
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdf = await withTimeout(
+                loadingTask.promise,
+                restanteMs(),
+                `Timeout abrindo PDF: ${file?.name || 'arquivo'}`,
+                () => {
+                    try { loadingTask.destroy(); } catch (_) {}
+                }
+            );
             
             let textoCompleto = '';
             // Em modo auto, tentar detectar o tipo pelo nome do arquivo para poder
             // aplicar otimizações (ex: PPP só precisa da 1ª página).
             const tipoEfetivo = tipoDocumento || detectarTipoPeloNome(file.name);
             const processarSomentePrimeiraPagina = isTipoProjetoPoliticoPedagogico(tipoEfetivo);
+            const isProjetoLei = isTipoProjetoDeLei(tipoEfetivo);
+            const isResolucao = isTipoResolucao(tipoEfetivo);
 
-            if (processarSomentePrimeiraPagina) {
-                const page = await pdf.getPage(1);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
+            // Projeto de Lei: quase sempre número/ementa estão no cabeçalho/1ª página.
+            // Limitar páginas reduz timeouts em PDFs grandes (ex.: 193 páginas).
+            const maxPaginas = processarSomentePrimeiraPagina
+                ? 1
+                : ((isProjetoLei || isResolucao) ? Math.min(3, pdf.numPages) : pdf.numPages);
 
-                if (pageText.trim().length < 50) {
-                    console.log(`PPP ${file.name} com pouco texto na pagina 1 - usando OCR somente na primeira pagina...`);
-                    textoCompleto = await extrairTextoComOCR(page);
-                } else {
-                    textoCompleto = pageText;
-                }
-
-                return extrairInformacoes(textoCompleto, file.name, numeroDocumento, urlDocumentos, tipoEfetivo);
-            }
-            
-            // Ler todas as páginas
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
+            // Ler páginas (limitadas para PPP e Projeto de Lei)
+            for (let i = 1; i <= maxPaginas; i++) {
+                garantirTempo(`getPage(${i}/${pdf.numPages})`);
+                const page = await withTimeout(
+                    pdf.getPage(i),
+                    Math.min(TEMPO_MAXIMO_PDFJS_POR_ETAPA_MS, restanteMs()),
+                    `Timeout carregando página ${i}: ${file.name}`
+                );
+                const textContent = await withTimeout(
+                    page.getTextContent(),
+                    Math.min(TEMPO_MAXIMO_PDFJS_POR_ETAPA_MS, restanteMs()),
+                    `Timeout extraindo texto da página ${i}: ${file.name}`
+                );
                 const pageText = textContent.items.map(item => item.str).join(' ');
                 
                 // Se a página tem pouco ou nenhum texto, usar OCR
                 if (pageText.trim().length < 50) {
-                    console.log(`Página ${i} de ${file.name} sem texto - usando OCR...`);
-                    const ocrText = await extrairTextoComOCR(page);
-                    textoCompleto += ocrText + ' ';
+                    const prefixo = processarSomentePrimeiraPagina ? 'PPP' : (isProjetoLei ? 'Projeto de Lei' : 'Página');
+                    console.log(`${prefixo} ${i} de ${file.name} sem texto - usando OCR...`);
+                    garantirTempo(`OCR página ${i}/${pdf.numPages}`);
+                    try {
+                        const ocrText = await withTimeout(
+                            extrairTextoComOCR(page),
+                            Math.min(TEMPO_MAXIMO_OCR_POR_PAGINA_MS, restanteMs()),
+                            `Timeout OCR (página ${i}): ${file.name}`
+                        );
+                        textoCompleto += ocrText + ' ';
+                    } catch (e) {
+                        console.warn(`[TIMEOUT] OCR página ${i} ignorado (${file.name}):`, e);
+                        // Segue adiante sem OCR dessa página.
+                    }
                 } else {
                     textoCompleto += pageText + ' ';
                 }
@@ -1534,6 +2031,48 @@
         function extrairInformacoesAta(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
             const textoCompleto = normalizarTextoCompleto(texto);
             const fonteSemAcentos = normalizarSemAcentos(`${nomeArquivo || ''} ${textoCompleto || ''}`).toUpperCase();
+            const inicioTextoAta = normalizarSemAcentos(textoCompleto.substring(0, 2600)).toUpperCase();
+
+            const extrairDataCabecalhoAta = () => {
+                const meses = {
+                    JANEIRO: '01',
+                    FEVEREIRO: '02',
+                    MARCO: '03',
+                    ABRIL: '04',
+                    MAIO: '05',
+                    JUNHO: '06',
+                    JULHO: '07',
+                    AGOSTO: '08',
+                    SETEMBRO: '09',
+                    OUTUBRO: '10',
+                    NOVEMBRO: '11',
+                    DEZEMBRO: '12'
+                };
+
+                const normalizarAnoAta = (valor) => String(valor || '').replace(/\D/g, '').slice(0, 4);
+                const montarData = (match) => {
+                    if (!match) return null;
+                    const dia = String(parseInt(match[1], 10)).padStart(2, '0');
+                    const mesNome = String(match[2] || '').replace(/[^A-Z]/g, '');
+                    const mes = meses[mesNome];
+                    const ano = normalizarAnoAta(match[3]);
+                    if (!mes || ano.length !== 4) return null;
+                    return `${dia}/${mes}/${ano}`;
+                };
+
+                const padroes = [
+                    /\bAOS?\s+(\d{1,2})(?:\s*\([^)]+\))?\s+DIAS?\s+DO\s+MES\s+DE\s+([A-Z]+)\s+DE\s+((?:\d[\s\.,]*){4})\b/i,
+                    /\b(\d{1,2})(?:\s*\([^)]+\))?\s+DIAS?\s+DO\s+MES\s+DE\s+([A-Z]+)\s+DE\s+((?:\d[\s\.,]*){4})\b/i,
+                    /\b(\d{1,2})\s+DE\s+([A-Z]+)\s+DE\s+((?:\d[\s\.,]*){4})\b/i
+                ];
+
+                for (const padrao of padroes) {
+                    const data = montarData(inicioTextoAta.match(padrao));
+                    if (data) return data;
+                }
+
+                return null;
+            };
 
             const extrairAnoProvavelDoTexto = () => {
                 const candidatos = fonteSemAcentos.matchAll(/\b((?:\d[\s\.,]*){4})\b/g);
@@ -1547,9 +2086,9 @@
             // Extrair número da ata/sessão.
             // Suporta padrões antigos: "ATA DA 1ª", "ATA DA IIº", etc.
             // E o padrão comum em cabeçalho: "ATA 004 DA SESSAO ...".
-            const regexNumeroOrdinalOuRomano = /\bATA\s+DA?\s+([IVX]+|\d+)[ºª°]\b/i;
-            const regexNumeroCabecalhoComSessao = /\bATA\s*(?:N[º°O]\s*)?0*(\d{1,6})\b(?=[^\n\r]{0,140}\bSESSAO\b)/i;
-            const regexNumeroCabecalhoSolto = /\bATA\s*(?:N[º°O]\s*)?0*(\d{1,6})\b/i;
+            const regexNumeroOrdinalOuRomano = /\bATA\s+D[AO]?\s+(?:N[\u00ba\u00aa\u00b0O.]?\s*)?0*([IVXLCDM]+|\d{1,6})\s*(?:[\u00ba\u00aa\u00b0]|[AO])?(?:\s*\([^)]+\))?(?=\s*(?:[,.;:]|\bSESS[AÃ]O\b|\bORDINARIA\b|\bEXTRAORDINARIA\b))/i;
+            const regexNumeroCabecalhoComSessao = /\bATA\s*(?:N[\u00ba\u00aa\u00b0O.]?\s*)?0*(\d{1,6})\b(?=[^\n\r]{0,140}\bSESSAO\b)/i;
+            const regexNumeroCabecalhoSolto = /\bATA\s*(?:N[\u00ba\u00aa\u00b0O.]?\s*)?0*(\d{1,6})\b/i;
 
             const matchNumero = textoCompleto.match(regexNumeroOrdinalOuRomano)
                 || fonteSemAcentos.match(regexNumeroCabecalhoComSessao)
@@ -1570,11 +2109,11 @@
             const regexDataAnoIncompletoContextual = /\bREALIZAD[AO]\s+(?:EM|NO\s+DIA|NA\s+DATA\s+DE)\s*(\d{1,2})\s*[\.\/\-]\s*(\d{1,2})\s*[\.\/\-]\s*(\d{1,3})\b/i;
             const regexDataAnoIncompletoSimples = /\b(\d{1,2})\s*[\.\/\-]\s*(\d{1,2})\s*[\.\/\-]\s*(\d{1,3})\b/i;
 
-            const matchData = fonteSemAcentos.match(regexDataContextual) || fonteSemAcentos.match(regexDataSimples);
+            const matchData = inicioTextoAta.match(regexDataContextual) || inicioTextoAta.match(regexDataSimples);
 
-            let data = null;
+            let data = extrairDataCabecalhoAta();
 
-            if (matchData) {
+            if (!data && matchData) {
                 const dia = parseInt(matchData[1], 10);
                 const mes = parseInt(matchData[2], 10);
                 const ano = parseInt(String(matchData[3]).replace(/\D/g, '').slice(0, 4), 10);
@@ -1723,181 +2262,232 @@
         }
 
         function extrairInformacoesProjetoLei(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
-            // Extrair número do projeto de lei - formato: "N" 002/2024" ou "Nº 002/2024"
-            const regexNumeroProjeto = /PROJETO\s+DE\s+LEI\s+N["ºª°\s]+(\d+(?:[\.\/\-]\d+)*)/i;
-            const matchNumero = texto.match(regexNumeroProjeto);
-            
-            let numeroDoDocumento = null;
-            if (matchNumero) {
-                numeroDoDocumento = matchNumero[1];
-            }
-            
-            // Mapa de meses em português
-            const meses = {
-                'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
-                'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
-                'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12'
+            const textoCompleto = normalizarTextoCompleto(texto);
+            const primeiraPagina = extrairPrimeiraPaginaAproximada(textoCompleto, 6000);
+            const rodape = textoCompleto.slice(-4000);
+            const nomeArquivoSemHash = removerPrefixoHashNomeArquivo(nomeArquivo);
+
+            const nomeFonte = String(nomeArquivoSemHash || '')
+                .replace(/\.pdf$/i, '')
+                .replace(/%20/gi, ' ')
+                .replace(/_20/g, ' ')
+                .replace(/[_.\-]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const normalizarNumeroArquivo = (valor) => {
+                const digits = String(valor || '').replace(/\D/g, '');
+                // Ex.: %202025 -> 202025 (token de ano, não é número do documento)
+                if (/^20(?:19|20)\d{2}$/.test(digits)) return null;
+                // Nomes baixados com %20 viram "20" colado nos dígitos (ex.: %20009 -> 20009)
+                if (/^20\d{2,5}$/.test(digits)) return digits.slice(2);
+                return digits;
             };
-            
-            // Extrair data no formato "19 DE FEVEREIRO DE 2024"
-            const regexDataExtenso = /(\d{1,2})\s+DE\s+([A-ZÇÃÕÁÉÍÓÚÂÊÔÀ]+)\s+DE\s+(\d{4})/i;
-            const matchDataExtenso = texto.match(regexDataExtenso);
-            
-            let data = null;
-            
-            if (matchDataExtenso) {
-                const dia = parseInt(matchDataExtenso[1]);
-                const mesNome = matchDataExtenso[2].toLowerCase();
-                const mes = meses[mesNome] || '01';
-                const ano = parseInt(matchDataExtenso[3]);
-                
-                // Converter para formato dd/mm/yyyy (formato brasileiro)
-                data = `${dia.toString().padStart(2, '0')}/${mes}/${ano}`;
-            }
-            
-            // Descrição - melhorada para capturar o conteúdo principal
-            let descricao = '';
-            
-            // Procurar palavras-chave comuns em decretos
-            const palavrasChave = [
-                'dispõe sobre',
-                'dispõe',
-                'altera',
-                'revoga',
-                'autorizada',
-                'estabelece',
-                'institui',
-                'regulamenta',
-                'aprova',
-                'autoriza',
-                'nomeia',
-                'exonera',
-                'designa',
-                'fixa',
-                'cria',
-                'extingue',
-                'torna',
-                'dispensa',
-                'declara',
-                'determina',
-                'ementa',
-                'concede'
+
+            const normalizarAnoArquivo = (valor) => {
+                const digits = String(valor || '').replace(/\D/g, '');
+                if (digits.length === 2) {
+                    const yy = Number(digits);
+                    if (!Number.isNaN(yy) && yy >= 0 && yy <= 50) {
+                        return `20${String(yy).padStart(2, '0')}`;
+                    }
+                }
+                const ano = digits.length >= 4 ? digits.slice(-4) : digits;
+                return /^(19|20)\d{2}$/.test(ano) ? ano : null;
+            };
+
+            let numeroProjeto = null;
+            let anoProjeto = null;
+            let letraProjeto = null;
+
+            // 1) Extrair número/ano/letra do texto (priorizar cabeçalho / primeira página)
+            const fonteNumero = String(primeiraPagina || '').substring(0, 3000);
+            const padroesNumero = [
+                // PROJETO DE LEI Nº 001/2025 | PROJETO DE L E I N° 1/2024
+                /PROJETO\s+DE\s+L\s*E\s*[I1l]\s*(?:COMPLEMENTAR\s*)?(?:N[º°ªoO\s\.]*)?0*(\d{1,6})(?:\s*[\/\.-]\s*((?:19|20)\d{2}))?(?:\s*[\-–—\/]\s*([A-Z]))?/i,
+                /PROJETO\s+DE\s+LEI\s*(?:COMPLEMENTAR\s*)?(?:N[º°ªoO\s\.]*)?0*(\d{1,6})(?:\s*[\/\.-]\s*((?:19|20)\d{2}))?(?:\s*[\-–—\/]\s*([A-Z]))?/i,
+                // PROJ. LEI N° 009/2023 | PROJ LEI 009/2023
+                /\bPROJ\.?\s*(?:ETO\s*)?(?:DE\s*)?LEI\b\s*(?:N[º°ªoO\s\.]*)?0*(\d{1,6})(?:\s*[\/\.-]\s*((?:19|20)\d{2}))?(?:\s*[\-–—\/]\s*([A-Z]))?/i,
+                // P.L. Nº 12/2024 | PL N 12/2024
+                /\bP\.?\s*L\.?\b\s*(?:N[º°ªoO\s\.]*)?0*(\d{1,6})(?:\s*[\/\.-]\s*((?:19|20)\d{2}))?(?:\s*[\-–—\/]\s*([A-Z]))?/i
             ];
-            
-            let inicioDescricao = -1;
-            let palavraEncontrada = '';
-            
-            for (const palavra of palavrasChave) {
-                const index = texto.toLowerCase().indexOf(palavra.toLowerCase());
-                if (index !== -1 && (inicioDescricao === -1 || index < inicioDescricao)) {
-                    inicioDescricao = index;
-                    palavraEncontrada = palavra;
+
+            for (const r of padroesNumero) {
+                const m = fonteNumero.match(r);
+                if (!m) continue;
+                numeroProjeto = m[1];
+                anoProjeto = m[2] || null;
+                letraProjeto = m[3] || null;
+                break;
+            }
+
+            // 2) Fallback pelo nome do arquivo
+            if (!numeroProjeto) {
+                const nomeNorm = normalizarSemAcentos(nomeFonte).toLowerCase();
+                const matchNoNome = nomeNorm.match(/\b(projeto\s+de\s+lei|proj\s*lei|proj\.?\s*(?:eto\s*)?(?:de\s*)?lei|proj|p\.?\s*l\.?)(?:\s+n[º°ªoO\s\.]*)?\s*0*(\d{1,8})(?:\s*(?:[\/\.-]|\s)\s*((?:19|20)\d{2}|\d{6}|\d{2})\b)?/i);
+                if (matchNoNome) {
+                    numeroProjeto = normalizarNumeroArquivo(matchNoNome[2]);
+                    anoProjeto = normalizarAnoArquivo(matchNoNome[3]);
                 }
             }
-            
-            if (inicioDescricao !== -1) {
-                // Extrair do início da descrição
-                let textoDescricao = texto.substring(inicioDescricao);
-                
-                // Limpar espaços extras e quebras de linha
-                textoDescricao = textoDescricao.replace(/\s+/g, ' ').trim();
-                
-                // Procurar o fim da descrição (antes de "e dá outras providências" ou artigo 1)
-                const marcadoresFim = [
-                    ', e dá outras providências',
-                    ' e dá outras providências',
-                    'e dá outras providências',
-                    ', e outras providências'
+
+            // Ajuste: em nomes com data por extenso (ex.: "... 23 de 12 de Maio de 2006"),
+            // o token "2012" pode aparecer (por causa de %2012) e ser interpretado como ano.
+            // Preferir o último ano real (19xx/20xx) presente no nome do arquivo.
+            if (nomeFonte) {
+                // Captura qualquer ocorrência de 19xx/20xx (mesmo "embutida" em sequências numéricas)
+                // e escolhe o último ano visto no filename.
+                const anosNoNome = Array.from(normalizarSemAcentos(nomeFonte).matchAll(/(?:19|20)\d{2}/g)).map(m => m[0]);
+                const anoUltimo = anosNoNome.length ? anosNoNome[anosNoNome.length - 1] : null;
+                const anoPareceDia = anoProjeto && new RegExp(`\\bde\\s+${anoProjeto}\\b`, 'i').test(nomeFonte);
+                if (anoUltimo && (!anoProjeto || (anoPareceDia && anoUltimo !== anoProjeto))) {
+                    anoProjeto = anoUltimo;
+                }
+            }
+
+            if (!anoProjeto) {
+                anoProjeto = extrairAnoDoNomeArquivo(nomeArquivoSemHash);
+            }
+
+            let numeroDoDocumento = null;
+            if (numeroProjeto) {
+                const numeroLimpo = normalizarNumeroInteiro(numeroProjeto);
+                numeroDoDocumento = `${numeroLimpo}${anoProjeto ? '/' + anoProjeto : ''}`;
+            }
+
+            // Data: priorizar rodapé (assinatura/local), depois primeira página, depois última data do documento
+            let data = extrairDataPadrao(rodape, nomeArquivoSemHash)
+                || extrairDataPadrao(primeiraPagina, nomeArquivoSemHash);
+
+            if (!data) {
+                const datasOrdenadas = extrairDatasPadraoOrdenadas(textoCompleto);
+                if (datasOrdenadas.length) data = datasOrdenadas[datasOrdenadas.length - 1].data;
+            }
+
+            if (!data && anoProjeto) {
+                data = `01/01/${anoProjeto}`;
+            }
+
+            // Descrição/Ementa: priorizar campo "EMENTA:" na 1ª página.
+            let descricao = null;
+            const fonteDescricao = String(primeiraPagina || '').substring(0, 5000);
+            const matchEmenta = fonteDescricao.match(/(?:^|\n)\s*EMENTA\s*[:\-]?\s*([^\n\r]{10,300})/i);
+            if (matchEmenta && matchEmenta[1]) {
+                descricao = matchEmenta[1].replace(/\s+/g, ' ').trim();
+            }
+
+            // Fallback: pegar "DISPÕE/DISPOE/ALTERA/INSTITUI..." na 1ª página.
+            if (!descricao || descricao.trim().length < 8) {
+                const palavrasChave = [
+                    'dispõe sobre',
+                    'dispoe sobre',
+                    'dispõe',
+                    'dispoe',
+                    'altera',
+                    'revoga',
+                    'estabelece',
+                    'institui',
+                    'regulamenta',
+                    'aprova',
+                    'autoriza',
+                    'cria',
+                    'extingue',
+                    'declara',
+                    'determina',
+                    'concede'
                 ];
-                
-                let fimDescricao = textoDescricao.length;
-                let marcadorUsado = '';
-                
-                for (const marcador of marcadoresFim) {
-                    const index = textoDescricao.toLowerCase().indexOf(marcador.toLowerCase());
-                    if (index !== -1 && index < fimDescricao) {
-                        fimDescricao = index;
-                        marcadorUsado = marcador;
+
+                const fonteLower = fonteDescricao.toLowerCase();
+                let inicioDescricao = -1;
+                for (const palavra of palavrasChave) {
+                    const idx = fonteLower.indexOf(palavra);
+                    if (idx !== -1 && (inicioDescricao === -1 || idx < inicioDescricao)) {
+                        inicioDescricao = idx;
                     }
                 }
-                
-                // Se não encontrou nenhum marcador, pegar até o primeiro ponto seguido de maiúscula
-                if (fimDescricao === textoDescricao.length) {
-                    const matchPonto = textoDescricao.match(/\.\s+[A-Z]/);
-                    if (matchPonto && matchPonto.index < 500) {
-                        fimDescricao = matchPonto.index + 1;
+
+                if (inicioDescricao !== -1) {
+                    let textoDescricao = fonteDescricao.substring(inicioDescricao).replace(/\s+/g, ' ').trim();
+
+                    const marcadoresFim = [
+                        ', e dá outras providências',
+                        ' e dá outras providências',
+                        'e dá outras providências',
+                        ', e outras providências',
+                        'art. 1',
+                        'artigo 1'
+                    ];
+
+                    let fimDescricao = textoDescricao.length;
+                    for (const marcador of marcadoresFim) {
+                        const idx = textoDescricao.toLowerCase().indexOf(marcador);
+                        if (idx !== -1 && idx < fimDescricao) fimDescricao = idx;
                     }
-                }
-                
-                descricao = textoDescricao.substring(0, fimDescricao).trim() + marcadorUsado;
-                
-                // Garantir que termina com pontuação
-                if (descricao && !/[.!?,;]$/.test(descricao)) {
-                    const ultimoPonto = Math.max(
-                        descricao.lastIndexOf('.'),
-                        descricao.lastIndexOf(','),
-                        descricao.lastIndexOf(';')
-                    );
-                    if (ultimoPonto > 50) {
-                        descricao = descricao.substring(0, ultimoPonto + 1);
-                    } else {
-                        descricao += '.';
+
+                    if (fimDescricao === textoDescricao.length) {
+                        const matchPonto = textoDescricao.substring(0, 400).match(/\.\s+[A-Z]/);
+                        if (matchPonto) fimDescricao = matchPonto.index + 1;
                     }
+
+                    descricao = textoDescricao.substring(0, fimDescricao).trim();
                 }
             }
-            
+
+            // Fallback final: derivar do nome do arquivo (sem hash)
+            if (!descricao || String(descricao).trim().length < 8) {
+                const descNome = limparDescricaoArquivo(nomeArquivoSemHash);
+                if (descNome) descricao = descNome;
+            }
+
+            if ((!descricao || String(descricao).trim().length < 8) && numeroDoDocumento) {
+                descricao = `Projeto de Lei n ${numeroDoDocumento}`;
+            }
+
+            if (descricao) {
+                descricao = String(descricao)
+                    .replace(/[:\\|_*]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
             return {
                 numero: numeroDocumento,
                 arquivo: nomeArquivo,
-                numeroDoDocumento: numeroDoDocumento?.includes('/') ? numeroDoDocumento.split('/')[0] : numeroDoDocumento ? numeroDoDocumento : null ,
+                numeroDoDocumento: numeroDoDocumento,
                 data: data,
-                letra: null,
-                descricao: descricao.toUpperCase() || null,
+                letra: letraProjeto || null,
+                descricao: descricao ? descricao.toUpperCase().substring(0, 300) : null,
                 url: `${urlDocumentos}${encodeURIComponent(nomeArquivo)}`,
                 tipoDocumento: tipoDocumento
             };
         }
 
         function extrairInformacoesLei(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
+            const dadosNomeLei = extrairDadosLeiDoNomeArquivo(nomeArquivo);
+            const textoInicialLei = normalizarTextoCompleto(texto).substring(0, 2500);
+
             // Tentar múltiplos padrões de extração do número da lei
             let numeroDoDocumento = null;
             
-            // PRIORIDADE 1: Extrair do nome do arquivo (mais confiável)
-            const regexNomeArquivo = /Lei\s+n[°ºª\s]*(\d+)/i;
-            const matchNomeArquivo = nomeArquivo.match(regexNomeArquivo);
-            if (matchNomeArquivo) {
-                numeroDoDocumento = matchNomeArquivo[1];
+            // PRIORIDADE 1: Extrair do nome do arquivo (mais confiável para Araguaçu)
+            if (dadosNomeLei.numero) {
+                numeroDoDocumento = dadosNomeLei.numero;
                 console.log(`[LEI] Número extraído do nome do arquivo: ${numeroDoDocumento}`);
-            }
-            
-            if (!numeroDoDocumento) {
-                const padroesNomeArquivoLei = [
-                    /leis?\d{4}[_\-\s]+(\d{1,5})/i,
-                    /leis?[_\-\s]+(?:n[°ºª\s]*)?(\d{1,5})(?:[_\-\s]|\.pdf$)/i,
-                    /(?:^|[_\-\s])lei[_\-\s]+(\d{1,5})(?:[_\-\s]|\.pdf$)/i
-                ];
-
-                for (const regexNomeArquivoLei of padroesNomeArquivoLei) {
-                    const matchNomeArquivoLei = nomeArquivo.match(regexNomeArquivoLei);
-                    if (!matchNomeArquivoLei) continue;
-                    numeroDoDocumento = String(parseInt(matchNomeArquivoLei[1], 10));
-                    console.log(`[LEI] Número extraído do nome do arquivo: ${numeroDoDocumento}`);
-                    break;
-                }
             }
 
             // PRIORIDADE 2: Se não achou no nome, procurar no texto
             if (!numeroDoDocumento) {
                 const padroes = [
-                    /LEI\s+(?:MUNICIPAL\s+)?N[°ºª\s.]+(\d+)/i,
-                    /L\s*E\s*I\s+N[°ºª\s.]+(\d+)/i,
-                    /LEI\s+(?:Nº|N°|NO)\s*(\d+)/i
+                    /LEI\s+(?:MUNICIPAL\s+)?N[°ºªoO\s.]+0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?/i,
+                    /L\s*E\s*I\s+N[°ºªoO\s.]+0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?/i,
+                    /LEI\s+(?:Nº|N°|NO|N\.?)\s*0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?/i,
+                    /\bLEI\s+0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?\b/i
                 ];
                 
                 for (const regex of padroes) {
-                    const match = texto.substring(0, 300).match(regex);
+                    const match = textoInicialLei.match(regex);
                     if (match) {
-                        numeroDoDocumento = match[1];
+                        numeroDoDocumento = normalizarNumeroInteiro(match[1]);
                         console.log(`[LEI] Número extraído do texto: ${numeroDoDocumento}`);
                         break;
                     }
@@ -1914,7 +2504,14 @@
             // Extrair data - MÚLTIPLOS FORMATOS
             let data = null;
 
-            data = extrairDataLeiContextual(texto, nomeArquivo, numeroDoDocumento);
+            if (dadosNomeLei.data) {
+                data = dadosNomeLei.data;
+                console.log(`[LEI] Data extraída do nome codificado: ${data}`);
+            }
+
+            if (!data) {
+                data = extrairDataLeiContextual(texto, nomeArquivo, numeroDoDocumento);
+            }
             if (data) {
                 console.log(`[LEI] Data extraida pelo numero da lei: ${data}`);
             }
@@ -2088,7 +2685,7 @@
 
             // Fallback para anexos e arquivos sem ementa clara no OCR.
             if (!descricao || descricao.trim().length < 8) {
-                const descricaoNome = limparDescricaoArquivo(nomeArquivo)
+                const descricaoNome = limparDescricaoArquivo(dadosNomeLei.nomeDecodificado || nomeArquivo)
                     .replace(/^leis?\d*\s*/i, '')
                     .replace(/\s+/g, ' ')
                     .trim();
@@ -2121,6 +2718,7 @@
 
         function extrairInformacoesPortaria(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
             const textoCompleto = normalizarTextoCompleto(texto);
+            const nomeArquivoSemHash = removerPrefixoHashNomeArquivo(nomeArquivo);
 
             // Extrair número da portaria - MÚLTIPLOS PADRÕES para maior cobertura
             const regexPatterns = [
@@ -2160,8 +2758,8 @@
             
             // Fallback: Tentar extrair do nome do arquivo (N13.pdf, N110-A.pdf, etc)
             if (!numeroDoDocumento) {
-                const regexNomeArquivo = /\b[NnPp][\s._-]*(\d+)(?:[-]([A-Z]))?(?:[-\/](\d{4}))?/;
-                const matchArquivo = nomeArquivo.match(regexNomeArquivo);
+                const regexNomeArquivo = /\bN[\s._-]*0*(\d{1,6})(?:[-_\s]*([A-Z]))?(?:[.\-\/]((?:19|20)\d{2}))?/i;
+                const matchArquivo = nomeArquivoSemHash.match(regexNomeArquivo);
                 if (matchArquivo) {
                     numeroDoDocumento = matchArquivo[1];
                     letraPortaria = matchArquivo[2]; // Captura a letra do arquivo
@@ -2172,11 +2770,20 @@
 
             // Fallback adicional: "portaria19.pdf" -> 19
             if (!numeroDoDocumento) {
-                const matchPortariaNoNome = String(nomeArquivo || '').match(/portaria\s*(\d{1,6})(?:[^\d]+((?:20|19)\d{2}))?/i);
+                const nomeBase = String(nomeArquivoSemHash || '').replace(/\.pdf$/i, '');
+
+                const matchPortariaNoNome = nomeBase.match(/(?:^|[^A-Za-z])PORTARIA[\s._\-]*0*(\d{1,6})(?:[.\-\/]((?:19|20)\d{2}))?(?:[-_\s]*([A-Z]))?\b/i);
                 if (matchPortariaNoNome) {
                     numeroDoDocumento = matchPortariaNoNome[1];
                     anoPortaria = matchPortariaNoNome[2] || null;
+                    letraPortaria = matchPortariaNoNome[3] || null;
                     padraoUsado = 7;
+                } else {
+                    const matchPortariaSimples = nomeBase.match(/(?:^|[^A-Za-z])PORTARIA[\s._\-]*0*(\d{1,6})\b/i);
+                    if (matchPortariaSimples) {
+                        numeroDoDocumento = matchPortariaSimples[1];
+                        padraoUsado = 8;
+                    }
                 }
             }
             
@@ -2221,6 +2828,16 @@
             // Fallback final: regras genéricas de data
             if (!data) {
                 data = extrairDataPadrao(textoCompleto, nomeArquivo);
+            }
+
+            // Se não encontrou dia/mês mas existe ano no nome/extração, usar 01/01/ANO como último fallback.
+            if (!data) {
+                const anoFallback = (anoPortaria && /^(19|20)\d{2}$/.test(String(anoPortaria)))
+                    ? String(anoPortaria)
+                    : extrairAnoDoNomeArquivo(nomeArquivoSemHash);
+                if (anoFallback) {
+                    data = `01/01/${anoFallback}`;
+                }
             }
             
             // Descrição - melhorada para capturar o conteúdo principal
@@ -2303,7 +2920,7 @@
                 if (fimDescricao === textoDescricao.length) {
                     const matchPonto = textoDescricao.match(/[0-9]{4}\./);
                     if (matchPonto && matchPonto.index < 500) {
-                        fimDescricao = matchPonto.index + '.';
+                        fimDescricao = matchPonto.index + String(matchPonto[0] || '').length;
                     }
                 }
                 
@@ -2333,6 +2950,17 @@
                 if (matchLinha && matchLinha[0]) {
                     descricao = matchLinha[0].replace(/\s+/g, ' ').trim();
                 }
+            }
+
+            // Fallback: se OCR não trouxe texto, derive do nome do arquivo (sem hash).
+            if (!descricao || String(descricao).trim().length < 8) {
+                const descNome = limparDescricaoArquivo(nomeArquivoSemHash);
+                if (descNome) descricao = descNome;
+            }
+
+            if ((!descricao || String(descricao).trim().length < 8) && numeroOriginal) {
+                descricao = `PORTARIA Nº ${String(parseInt(numeroOriginal, 10))}`;
+                if (anoPortaria) descricao += `/${anoPortaria}`;
             }
             
             return {
@@ -2597,6 +3225,48 @@
             };
         }
 
+        function extrairInformacoesOficio(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
+            const textoCompleto = normalizarTextoCompleto(texto);
+            const fonte = normalizarTextoCompleto(`${nomeArquivo || ''} ${textoCompleto}`);
+
+            let numeroDoDocumento = null;
+            const matchNumero = fonte.match(/\bOF[ií]CIO\b[\s\S]{0,140}?\bN\s*[º°Oª\.]?\s*(\d{1,6})(?:\s*[\/-]\s*((?:19|20)\d{2}))?/i)
+                || fonte.match(/\bOF[ií]CIO\b[\s\S]{0,140}?(\d{1,6})(?:\s*[\/-]\s*((?:19|20)\d{2}))?/i);
+
+            if (matchNumero) {
+                const n = matchNumero[1];
+                const ano = matchNumero[2] || extrairAnoDoNomeArquivo(nomeArquivo);
+                numeroDoDocumento = ano ? `${n}/${ano}` : n;
+            }
+
+            const data = extrairDataPadrao(textoCompleto, nomeArquivo);
+
+            let descricao = null;
+            const mAssunto = textoCompleto.match(/\bASSUNTO\b\s*[:\-–—]\s*([\s\S]{8,260}?)(?=(?:\bILMO\b|\bILUSTRI\b|\bSENHOR\b|\bSR\b|\bPREZAD|\bATENCIOSAMENTE\b|\bMESA\b|\bCAMARA\b|$))/i);
+            if (mAssunto && mAssunto[1]) {
+                descricao = mAssunto[1].replace(/\s+/g, ' ').trim();
+            }
+
+            if (!descricao && numeroDoDocumento) {
+                descricao = `OFÍCIO Nº ${numeroDoDocumento}`;
+            }
+
+            if (!descricao) {
+                descricao = limparDescricaoArquivo(nomeArquivo);
+            }
+
+            return {
+                numero: numeroDocumento,
+                arquivo: nomeArquivo,
+                numeroDoDocumento: numeroDoDocumento,
+                data: data || null,
+                letra: null,
+                descricao: descricao ? descricao.toUpperCase() : null,
+                url: `${urlDocumentos}${encodeURIComponent(nomeArquivo)}`,
+                tipoDocumento: tipoDocumento || 'Ofício'
+            };
+        }
+
         // Resolve o tipo efetivo: se tipoDocumento já foi definido, mantém; senão tenta resolver
         // pelo cache de tipos, para garantir que o resultado sempre carrega o nome cadastrado.
         function resolverTipoNome(tipoDetectado) {
@@ -2621,6 +3291,12 @@
 
             // Quando o tipo foi selecionado manualmente, prioriza esse roteamento.
             if (tipoSelecionadoNormalizado) {
+                if (isTipoOficio(tipoDocumento)) {
+                    console.log(`[DEBUG] ${nomeArquivo} -> Detectado como OFICIO pelo tipo selecionado`);
+                    const res = extrairInformacoesOficio(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento);
+                    return pósProcessarNumero(res, texto, nomeArquivo);
+                }
+
                 if (/\brequerimento\b/.test(tipoSelecionadoNormalizado)) {
                     console.log(`[DEBUG] ${nomeArquivo} -> Detectado como REQUERIMENTO pelo tipo selecionado`);
                     const res = extrairInformacoesRequerimento(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento);
@@ -2645,6 +3321,11 @@
                 if (isTipoProjetoPoliticoPedagogico(tipoDocumento)) {
                     console.log(`[DEBUG] ${nomeArquivo} -> Detectado como PPP pelo tipo selecionado`);
                     return extrairInformacoesPPP(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento);
+                }
+
+                if (isTipoResolucao(tipoDocumento)) {
+                    console.log(`[DEBUG] ${nomeArquivo} -> Detectado como RESOLUCAO pelo tipo selecionado`);
+                    return extrairInformacoesResolucao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento);
                 }
 
                 if (/\bata\b|\batas\b/.test(tipoSelecionadoNormalizado)) {
@@ -2682,6 +3363,14 @@
                     const res = extrairInformacoesRegimentoEmenda(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento);
                     return pósProcessarNumero(res, texto, nomeArquivo);
                 }
+            }
+
+            const indicioOficioPorNome = /^of[_\-\s\.]*\d{3,6}[\.\-_](?:19|20)\d{2}/i.test(String(nomeArquivo || ''));
+            const indicioOficioPorTexto = /\bOF[ií]CIO\b/i.test(String(texto || '').substring(0, 1200));
+            if (indicioOficioPorNome || indicioOficioPorTexto) {
+                console.log(`[DEBUG] ${nomeArquivo} -> Detectado como OFICIO pelo conteúdo/nome`);
+                const res = extrairInformacoesOficio(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Ofício'));
+                return pósProcessarNumero(res, texto, nomeArquivo);
             }
 
             if (/di[aá]rio\s+oficial/i.test(`${nomeArquivo} ${texto.substring(0, 700)}`)) {
@@ -2757,6 +3446,11 @@
                 return pósProcessarNumero(res, texto, nomeArquivo);
             }
 
+            if (tipoDetectadoPeloNome === 'Resolucoes') {
+                console.log(`[DEBUG] ${nomeArquivo} -> Detectado como RESOLUCAO pelo detector de nome`);
+                return extrairInformacoesResolucao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Resolucoes'));
+            }
+
             if (tipoDetectadoPeloNome === 'Requerimento') {
                 console.log(`[DEBUG] ${nomeArquivo} -> Detectado como REQUERIMENTO pelo detector de nome`);
                 const res = extrairInformacoesRequerimento(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Requerimento'));
@@ -2811,7 +3505,7 @@
             }
             
             // Verificar se é um PROJETO DE LEI
-            const isProjetoLei = /PROJETO\s+DE\s+LEI/i.test(texto.substring(0, 500));
+            const isProjetoLei = /PROJETO\s+DE\s+LEI|\bPROJ\.?\s*(?:ETO\s*)?(?:DE\s*)?LEI\b|\bP\.?\s*L\.?\b/i.test(texto.substring(0, 900));
             if (isProjetoLei) {
                 console.log(`[DEBUG] ${nomeArquivo} -> Detectado como PROJETO DE LEI pelo conteúdo`);
                 const res = extrairInformacoesProjetoLei(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Projeto de Lei'));
@@ -2819,6 +3513,13 @@
             }
 
             // Verificar se é PORTARIA pelo conteúdo
+            const inicioResolucao = normalizarSemAcentos(texto.substring(0, 1200)).toUpperCase();
+            const isResolucao = /R\s*E\s*S\s*O\s*L\s*U\s*C?\s*A\s*O\s*(?:N|:|\d)/.test(inicioResolucao);
+            if (isResolucao) {
+                console.log(`[DEBUG] ${nomeArquivo} -> Detectado como RESOLUCAO pelo conteudo`);
+                return extrairInformacoesResolucao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Resolucoes'));
+            }
+
             const temPalavraPortaria = /PORTARIA/i.test(texto.substring(0, 500));
             if (temPalavraPortaria) {
                 console.log(`[DEBUG] ${nomeArquivo} -> Detectado como PORTARIA pelo conteúdo`);
@@ -2950,21 +3651,46 @@
             if (!raw) {
                 // tentar extrair do texto com padrões comuns
                 const patterns = [
-                    /(?:N[º°ª\s]*|Número|No\.|Nº|N\s*)\s*(\d{1,4}(?:[\/\-]\d{2,4})?)(?:[\s\-–—]*([A-Za-z]))?/i,
-                    /\b(\d{1,4}\/\d{2,4})(?:[\s\-]*([A-Za-z]))?\b/,
-                    /\b(\d{1,4})(?:[\s\-]\d{2,4})?(?:[\s\-]*([A-Za-z]))?\b/
+                    /(?:N[º°ª\s]*|Número|No\.|Nº|N\s*)\s*(\d{1,4}(?:[\/\-]\d{2,4})?)(?:[\s\-–—]+([A-Za-z])\b(?![A-Za-z]))?/i,
+                    /\b(\d{1,4}\/\d{2,4})(?:[\s\-]+([A-Za-z])\b(?![A-Za-z]))?\b/
                 ];
 
                 for (const p of patterns) {
-                    const m = texto.match(p);
+                    const m = String(texto || '').substring(0, 2500).match(p);
                     if (m) { raw = m[1]; if (m[2]) letra = m[2].toUpperCase(); break; }
                 }
             }
 
             // fallback para nome do arquivo
             if (!raw && nomeArquivo) {
-                const m = nomeArquivo.match(/(\d{1,4})(?:[\-_](\d{4}))?(?:[-_]?([A-Za-z]))?/);
-                if (m) { raw = m[1] + (m[2] ? '/' + m[2] : ''); if (m[3]) letra = m[3].toUpperCase(); }
+                const nomeSemHash = removerPrefixoHashNomeArquivo(nomeArquivo);
+                const tipoNorm = normalizarSemAcentos(resultado?.tipoDocumento || '').toUpperCase();
+
+                const tentarPorTipo = (tipoToken) => {
+                    const r = new RegExp(`(?:^|[^A-Za-z])${tipoToken}[^0-9]{0,12}0*(\\d{1,6})(?:[.\\-\\/]((?:19|20)\\d{2}))?(?:[-_\\s]*([A-Za-z]))?\\b`, 'i');
+                    const m = nomeSemHash.match(r);
+                    if (!m) return null;
+                    return { raw: m[1] + (m[2] ? '/' + m[2] : ''), letra: m[3] ? m[3].toUpperCase() : null };
+                };
+
+                let found = null;
+                if (tipoNorm.includes('PORTARIA')) found = tentarPorTipo('PORTARIA');
+                else if (tipoNorm.includes('DECRETO')) found = tentarPorTipo('DECRETO');
+                else if (tipoNorm.includes('LEI')) found = tentarPorTipo('LEI');
+                else if (tipoNorm.includes('ATA')) found = tentarPorTipo('ATA');
+                else if (tipoNorm.includes('OFICIO') || tipoNorm.includes('OFÍCIO')) found = tentarPorTipo('OFICIO');
+
+                if (found) {
+                    raw = found.raw;
+                    if (found.letra) letra = found.letra;
+                } else {
+                    // Último fallback: procurar números após separadores, evitando capturar prefixos (ex.: hash no início).
+                    const m = nomeSemHash.match(/[\-_\s]0*(\d{1,6})(?:[.\-\/]((?:19|20)\d{2}))?(?:[-_\s]*([A-Za-z]))?\b/);
+                    if (m) {
+                        raw = m[1] + (m[2] ? '/' + m[2] : '');
+                        if (m[3]) letra = m[3].toUpperCase();
+                    }
+                }
             }
 
             const n = normalize(raw);
@@ -2973,7 +3699,7 @@
             return resultado;
         }
 
-        function exibirResultados(documentosValidos, documentosFalhos) {
+        function exibirResultados(documentosValidos, documentosFalhos, documentosDuplicados = []) {
             const resultsDiv = document.getElementById('results');
             
             let html = `<div class="card bg-base-100 shadow-xl fade-in"><div class="card-body">`;
@@ -3007,6 +3733,18 @@
                 </div>
             `;
             
+            if (documentosDuplicados.length > 0) {
+                html += `
+                    <div class="alert alert-warning mb-6">
+                        <div>
+                            <h3 class="font-bold">${documentosDuplicados.length} documento${documentosDuplicados.length > 1 ? 's' : ''} duplicado${documentosDuplicados.length > 1 ? 's' : ''}</h3>
+                            <div class="text-xs">Eles nao entraram nos JSONs principais.</div>
+                        </div>
+                        <button id="downloadDuplicadosBtn" type="button" class="btn btn-warning btn-sm">Baixar duplicados.json</button>
+                    </div>
+                `;
+            }
+
             // Container com duas colunas
             html += '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
             
@@ -3152,7 +3890,7 @@
             // Fechar container de colunas
             html += '</div></div></div>';
             
-            if (documentosValidos.length === 0 && documentosFalhos.length === 0) {
+            if (documentosValidos.length === 0 && documentosFalhos.length === 0 && documentosDuplicados.length === 0) {
                 html = `
                     <div class="card bg-base-100 shadow-xl fade-in">
                         <div class="card-body text-center">
@@ -3166,6 +3904,10 @@
             }
             
             resultsDiv.innerHTML = html;
+            const botaoDuplicados = document.getElementById('downloadDuplicadosBtn');
+            if (botaoDuplicados) {
+                botaoDuplicados.addEventListener('click', baixarDuplicadosJson);
+            }
         }
 
         let tiposDocumentosCache = [];

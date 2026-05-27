@@ -757,120 +757,6 @@
             return String(valor || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
-        function decodificarNomeArquivoLegado(nomeArquivo) {
-            const semHash = removerPrefixoHashNomeArquivo(nomeArquivo)
-                .replace(/\.pdf(?:\.pdf)?$/i, '')
-                .trim();
-            const comoUrl = semHash.replace(/_(20|C2|B0|C3|[89A-Fa-f][0-9A-Fa-f])/g, '%$1');
-            let decodificado = comoUrl;
-
-            try {
-                decodificado = decodeURIComponent(comoUrl);
-            } catch (_) {}
-
-            return decodificado
-                .replace(/_/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        function montarDataBrValida(dia, mes, ano) {
-            const d = Number(dia);
-            const m = Number(mes);
-            const a = Number(ano);
-            const anoAtual = new Date().getFullYear();
-
-            if (!Number.isInteger(d) || !Number.isInteger(m) || !Number.isInteger(a)) return null;
-            if (a < 1900 || a > anoAtual + 1) return null;
-            if (m < 1 || m > 12 || d < 1 || d > 31) return null;
-
-            const data = new Date(Date.UTC(a, m - 1, d));
-            if (data.getUTCFullYear() !== a || data.getUTCMonth() + 1 !== m || data.getUTCDate() !== d) {
-                return null;
-            }
-
-            return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${String(a).padStart(4, '0')}`;
-        }
-
-        function extrairDataDoNomeLeiDecodificado(nomeDecodificado) {
-            const meses = {
-                janeiro: '01', fevereiro: '02', marco: '03', marcoo: '03', abril: '04',
-                maio: '05', junho: '06', julho: '07', agosto: '08',
-                setembro: '09', outubro: '10', novembro: '11', dezembro: '12'
-            };
-
-            const nomeNormalizado = normalizarSemAcentos(nomeDecodificado).toLowerCase();
-            const dataExtenso = nomeNormalizado.match(/\b(\d{1,2})\s+de\s+([a-z]+)\s+de\s+((?:19|20)\d{2})\b/i);
-            if (dataExtenso) {
-                const mes = meses[dataExtenso[2]];
-                const data = mes ? montarDataBrValida(dataExtenso[1], mes, dataExtenso[3]) : null;
-                if (data) return data;
-            }
-
-            const dataNumerica = nomeNormalizado.match(/\b(\d{1,2})[\/\.-](\d{1,2})[\/\.-]((?:19|20)\d{2})\b/);
-            if (dataNumerica) {
-                const data = montarDataBrValida(dataNumerica[1], dataNumerica[2], dataNumerica[3]);
-                if (data) return data;
-            }
-
-            return null;
-        }
-
-        function extrairDadosLeiDoNomeArquivo(nomeArquivo) {
-            const nomeDecodificado = decodificarNomeArquivoLegado(nomeArquivo);
-            const nomeSemAcentos = normalizarSemAcentos(nomeDecodificado);
-            const rawSemHash = removerPrefixoHashNomeArquivo(nomeArquivo);
-            let numero = null;
-            let letra = null;
-            let data = extrairDataDoNomeLeiDecodificado(nomeDecodificado);
-
-            const numeroDataCompacta = nomeSemAcentos.match(/\blei\s+(?:n\s*[º°ªo.]?\s*)?0*(\d{3})(20\d{6})(?=\D|$)/i);
-            if (numeroDataCompacta) {
-                numero = String(parseInt(numeroDataCompacta[1], 10));
-                data = data || montarDataBrValida(
-                    numeroDataCompacta[2].slice(6, 8),
-                    numeroDataCompacta[2].slice(4, 6),
-                    numeroDataCompacta[2].slice(0, 4)
-                );
-            }
-
-            if (!numero) {
-                const padroesNome = [
-                    /\blei\s+(?:complementar\s+)?(?:municipal\s+)?(?:organica\s+)?(?:n\s*[º°ªo.]?\s*)?0*(\d{1,4})(?:\s*[-\/\.]\s*((?:19|20)\d{2}))?(?:\s*(?:-|\b)\s*([A-Z])\b(?![A-Z]))?(?=\s*(?:de\b|$|[-\/\.]|\D))/i,
-                    /\blei\s*[-\s]\s*(?:n\s*[º°ªo.]?\s*)?0*(\d{1,4})(?:\s*[-\/\.]\s*((?:19|20)\d{2}))?(?:\s*(?:-|\b)\s*([A-Z])\b(?![A-Z]))?/i
-                ];
-
-                for (const regex of padroesNome) {
-                    const match = nomeSemAcentos.match(regex);
-                    if (!match) continue;
-
-                    numero = String(parseInt(match[1], 10));
-                    if (match[3]) letra = match[3].toUpperCase();
-                    if (!data && match[2]) data = `01/01/${match[2]}`;
-                    break;
-                }
-            }
-
-            if (!numero) {
-                const sufixoHashLegado = rawSemHash.match(/(?:^|[_\-\s])26(\d{1,4})(?:[-_]\d{2,5})?(?=\.pdf(?:\.pdf)?$|$)/i);
-                if (sufixoHashLegado) {
-                    numero = String(parseInt(sufixoHashLegado[1], 10));
-                }
-            }
-
-            if (!data) {
-                const anos = Array.from(nomeSemAcentos.matchAll(/\b((?:19|20)\d{2})\b/g)).map(match => match[1]);
-                if (anos.length) data = `01/01/${anos[anos.length - 1]}`;
-            }
-
-            return {
-                numero: normalizarNumeroInteiro(numero),
-                data,
-                letra,
-                nomeDecodificado
-            };
-        }
-
         function extrairDataLeiContextual(texto, nomeArquivo, numeroLei) {
             const numero = String(numeroLei || '').replace(/\D/g, '');
             if (!numero) return null;
@@ -1509,7 +1395,7 @@
                     erros.push('Número do documento ausente ou inválido');
                 }
                 
-                if (camposObrigatorios.data && (!doc.data || doc.data === 'Erro' || !converterDataParaISO(doc.data))) {
+                if (camposObrigatorios.data && (!doc.data || doc.data === 'Erro')) {
                     temErro = true;
                     erros.push('Data ausente ou inválida');
                 }
@@ -1536,7 +1422,7 @@
                         erros.push('Edição ausente ou inválida');
                     }
 
-                    if (!doc.data || doc.data === 'Erro' || !converterDataParaISO(doc.data)) {
+                    if (!doc.data || doc.data === 'Erro') {
                         temErro = true;
                         erros.push('Data ausente ou inválida');
                     }
@@ -1621,67 +1507,48 @@
             const texto = String(valor).trim();
             if (!texto) return null;
 
-            const dataPermitida = (ano, mes, dia) => {
-                const anoAtual = new Date().getFullYear();
-                if (ano < 1900 || ano > anoAtual + 1) return false;
-                const data = new Date(Date.UTC(ano, mes - 1, dia));
-                return data.getUTCFullYear() === ano && (data.getUTCMonth() + 1) === mes && data.getUTCDate() === dia;
-            };
-
             const matchBr = texto.match(/^(\d{1,2})[\/\.-](\d{1,2})[\/\.-]((?:\d[\s\.,]*){4})$/);
             if (matchBr) {
                 const dia = Number(matchBr[1]);
                 const mes = Number(matchBr[2]);
                 const ano = Number(String(matchBr[3]).replace(/\D/g, '').slice(0, 4));
+                const data = new Date(Date.UTC(ano, mes - 1, dia));
 
-                if (dataPermitida(ano, mes, dia)) {
+                if (data.getUTCFullYear() === ano && (data.getUTCMonth() + 1) === mes && data.getUTCDate() === dia) {
                     return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 }
-                return null;
             }
 
             const matchIsoDate = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (matchIsoDate) {
-                const ano = Number(matchIsoDate[1]);
-                const mes = Number(matchIsoDate[2]);
-                const dia = Number(matchIsoDate[3]);
-                return dataPermitida(ano, mes, dia) ? texto : null;
-            }
+            if (matchIsoDate) return texto;
 
             const matchYmd = texto.match(/^(\d{4})[\/\.](\d{1,2})[\/\.](\d{1,2})$/);
             if (matchYmd) {
                 const ano = Number(matchYmd[1]);
                 const mes = Number(matchYmd[2]);
                 const dia = Number(matchYmd[3]);
+                const data = new Date(Date.UTC(ano, mes - 1, dia));
 
-                if (dataPermitida(ano, mes, dia)) {
+                if (data.getUTCFullYear() === ano && (data.getUTCMonth() + 1) === mes && data.getUTCDate() === dia) {
                     return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 }
-                return null;
             }
 
             const matchAno = texto.match(/^\d{4}$/);
-            if (matchAno) {
-                const ano = Number(texto);
-                return dataPermitida(ano, 1, 1) ? `${texto}-01-01` : null;
-            }
+            if (matchAno) return `${texto}-01-01`;
 
             const matchAnoQuebrado = texto.match(/^((?:\d[\s\.,]*){4})$/);
             if (matchAnoQuebrado) {
                 const ano = String(matchAnoQuebrado[1]).replace(/\D/g, '').slice(0, 4);
-                if (ano.length === 4 && dataPermitida(Number(ano), 1, 1)) return `${ano}-01-01`;
-                return null;
+                if (ano.length === 4) return `${ano}-01-01`;
             }
 
             const dataNativa = new Date(texto);
             if (!Number.isNaN(dataNativa.getTime())) {
-                const ano = dataNativa.getUTCFullYear();
-                const mes = dataNativa.getUTCMonth() + 1;
-                const dia = dataNativa.getUTCDate();
-                return dataPermitida(ano, mes, dia) ? dataNativa.toISOString().slice(0, 10) : null;
+                return dataNativa.toISOString().slice(0, 10);
             }
 
-            return null;
+            return texto;
         }
 
         function mapearDocumentoParaPayload(doc, configuracaoSaida) {
@@ -2463,31 +2330,45 @@
         }
 
         function extrairInformacoesLei(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
-            const dadosNomeLei = extrairDadosLeiDoNomeArquivo(nomeArquivo);
-            const textoInicialLei = normalizarTextoCompleto(texto).substring(0, 2500);
-
             // Tentar múltiplos padrões de extração do número da lei
             let numeroDoDocumento = null;
             
-            // PRIORIDADE 1: Extrair do nome do arquivo (mais confiável para Araguaçu)
-            if (dadosNomeLei.numero) {
-                numeroDoDocumento = dadosNomeLei.numero;
+            // PRIORIDADE 1: Extrair do nome do arquivo (mais confiável)
+            const regexNomeArquivo = /Lei\s+n[°ºª\s]*(\d+)/i;
+            const matchNomeArquivo = nomeArquivo.match(regexNomeArquivo);
+            if (matchNomeArquivo) {
+                numeroDoDocumento = matchNomeArquivo[1];
                 console.log(`[LEI] Número extraído do nome do arquivo: ${numeroDoDocumento}`);
+            }
+            
+            if (!numeroDoDocumento) {
+                const padroesNomeArquivoLei = [
+                    /leis?\d{4}[_\-\s]+(\d{1,5})/i,
+                    /leis?[_\-\s]+(?:n[°ºª\s]*)?(\d{1,5})(?:[_\-\s]|\.pdf$)/i,
+                    /(?:^|[_\-\s])lei[_\-\s]+(\d{1,5})(?:[_\-\s]|\.pdf$)/i
+                ];
+
+                for (const regexNomeArquivoLei of padroesNomeArquivoLei) {
+                    const matchNomeArquivoLei = nomeArquivo.match(regexNomeArquivoLei);
+                    if (!matchNomeArquivoLei) continue;
+                    numeroDoDocumento = String(parseInt(matchNomeArquivoLei[1], 10));
+                    console.log(`[LEI] Número extraído do nome do arquivo: ${numeroDoDocumento}`);
+                    break;
+                }
             }
 
             // PRIORIDADE 2: Se não achou no nome, procurar no texto
             if (!numeroDoDocumento) {
                 const padroes = [
-                    /LEI\s+(?:MUNICIPAL\s+)?N[°ºªoO\s.]+0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?/i,
-                    /L\s*E\s*I\s+N[°ºªoO\s.]+0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?/i,
-                    /LEI\s+(?:Nº|N°|NO|N\.?)\s*0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?/i,
-                    /\bLEI\s+0*(\d{1,4})(?:\s*[-\/]\s*((?:19|20)\d{2}))?\b/i
+                    /LEI\s+(?:MUNICIPAL\s+)?N[°ºª\s.]+(\d+)/i,
+                    /L\s*E\s*I\s+N[°ºª\s.]+(\d+)/i,
+                    /LEI\s+(?:Nº|N°|NO)\s*(\d+)/i
                 ];
                 
                 for (const regex of padroes) {
-                    const match = textoInicialLei.match(regex);
+                    const match = texto.substring(0, 300).match(regex);
                     if (match) {
-                        numeroDoDocumento = normalizarNumeroInteiro(match[1]);
+                        numeroDoDocumento = match[1];
                         console.log(`[LEI] Número extraído do texto: ${numeroDoDocumento}`);
                         break;
                     }
@@ -2504,14 +2385,7 @@
             // Extrair data - MÚLTIPLOS FORMATOS
             let data = null;
 
-            if (dadosNomeLei.data) {
-                data = dadosNomeLei.data;
-                console.log(`[LEI] Data extraída do nome codificado: ${data}`);
-            }
-
-            if (!data) {
-                data = extrairDataLeiContextual(texto, nomeArquivo, numeroDoDocumento);
-            }
+            data = extrairDataLeiContextual(texto, nomeArquivo, numeroDoDocumento);
             if (data) {
                 console.log(`[LEI] Data extraida pelo numero da lei: ${data}`);
             }
@@ -2685,7 +2559,7 @@
 
             // Fallback para anexos e arquivos sem ementa clara no OCR.
             if (!descricao || descricao.trim().length < 8) {
-                const descricaoNome = limparDescricaoArquivo(dadosNomeLei.nomeDecodificado || nomeArquivo)
+                const descricaoNome = limparDescricaoArquivo(nomeArquivo)
                     .replace(/^leis?\d*\s*/i, '')
                     .replace(/\s+/g, ' ')
                     .trim();

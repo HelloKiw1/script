@@ -16,6 +16,10 @@ script/
 │   ├── extractron.html    
 │   └── README.md          # Documentação detalhada
 │
+├── imagetron/             # Melhorador de imagens
+│   ├── imagetron.html     
+│   └── README.md          # Documentação detalhada
+│
 ├── formtron/              # Automação de Formulários
 │   ├── formtron.js        
 │   └── README.md          # Documentação detalhada
@@ -35,6 +39,7 @@ script/
 |------------|-----------|----------|
 | **BAIXATRON** | Download automático em massa | Console / Userscript |
 | **EXTRACTRON** | Extrai dados de PDFs via OCR | HTML (drag-drop) |
+| **IMAGETRON** | Melhora e otimiza imagens com upscale | HTML (drag-drop) |
 | **FORMTRON** | Preenche formulários automaticamente | Console / Userscript |
 | **SIZETRON** | Comprime PDFs para tamanho específico | HTML (drag-drop) |
 
@@ -59,6 +64,15 @@ script/
 - Exporta JSON estruturado
 
 👉 [Documentação](extractron/README.md)
+
+### 🖼️ **IMAGETRON** - Melhorador de Imagens
+- Upscale em até 4x diretamente no navegador
+- Ajustes de nitidez, brilho, contraste e saturação
+- Exportação em PNG, JPEG e WebP
+- Interface drag-and-drop com pré-visualização lado a lado
+- Processamento local sem envio para servidor
+
+👉 [Documentação](imagetron/README.md)
 
 ### 🤖 **FORMTRON** - Automação de Formulários
 - Painel flutuante com controles intuitivos

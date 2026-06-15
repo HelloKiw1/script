@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagetron - Melhorador de Imagens</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🖼️</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        body {
+            min-height: 100vh;
+            color: #e5e7eb;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(56,189,248,0.12), transparent 25%),
+                radial-gradient(circle at 88% 14%, rgba(16,185,129,0.12), transparent 24%),
+                radial-gradient(circle at 50% 100%, rgba(251,191,36,0.08), transparent 28%),
+                #09111f;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.55s ease both;
+        }
+
+        .hero-badge {
+            background: rgba(14,165,233,0.12);
+            border: 1px solid rgba(56,189,248,0.35);
+            color: #bae6fd;
+        }
+
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,16,28,0.92));
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+            backdrop-filter: blur(14px);
+        }
+
+        .soft-panel {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .hero-title {
+            background: linear-gradient(135deg, #f8fafc, #7dd3fc 30%, #34d399 70%, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feature-chip {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+        }
+
+        .drop-zone {
+            border: 1.5px dashed rgba(125,211,252,0.42);
+            background: linear-gradient(180deg, rgba(14,165,233,0.06), rgba(16,185,129,0.04));
+            transition: all 0.25s ease;
+        }
+
+        .drop-zone.drag-over {
+            transform: scale(1.01);
+            border-color: rgba(125,211,252,0.85);
+            box-shadow: 0 0 0 4px rgba(56,189,248,0.1);
+        }
+
+        .preview-frame {
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .range {
+            accent-color: #38bdf8;
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 1rem;
+            background:
+                linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.04) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.04) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .floating-orb {
+            animation: float 5s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-7xl">
+        <section class="glass-panel rounded-3xl p-6 md:p-8 mb-6 fade-in">
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="max-w-3xl">
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="badge hero-badge px-3 py-3 rounded-full">Imagetron</span>
+                        <span class="badge badge-outline px-3 py-3 rounded-full text-slate-200">Upscale</span>
+                        <span class="badge badge-outline px-3 py-3 rounded-full text-slate-200">Otimização</span>
+                        <span class="badge badge-outline px-3 py-3 rounded-full text-slate-200">Exportação rápida</span>
+                    </div>
+                    <h1 class="hero-title text-4xl md:text-6xl font-black leading-tight mb-4">
+                        Melhore, otimize e aumente a resolução das suas imagens.
+                    </h1>
+                    <p class="text-slate-300 text-base md:text-lg leading-relaxed max-w-2xl">
+                        Carregue uma foto, ajuste nitidez, contraste, cor e escala, e gere uma versão mais limpa e pronta para uso.
+                        Ideal para ampliar imagens com mais controle visual e exportar em PNG, JPEG ou WebP.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 w-full lg:max-w-sm">
+                    <div class="stat-card rounded-2xl p-4 floating-orb">
+                        <div class="text-xs uppercase tracking-[0.25em] text-slate-400 mb-2">Qualidade</div>
+                        <div class="text-3xl font-black text-cyan-300">4K+</div>
+                        <p class="text-xs text-slate-400 mt-2">Escala configurável para ampliar imagens rapidamente.</p>
+                    </div>
+                    <div class="stat-card rounded-2xl p-4">
+                        <div class="text-xs uppercase tracking-[0.25em] text-slate-400 mb-2">Formato</div>
+                        <div class="text-3xl font-black text-emerald-300">WEB</div>
+                        <p class="text-xs text-slate-400 mt-2">Exportação direta no navegador, sem instalação.</p>
+                    </div>
+                    <div class="stat-card rounded-2xl p-4">
+                        <div class="text-xs uppercase tracking-[0.25em] text-slate-400 mb-2">Controle</div>
+                        <div class="text-3xl font-black text-amber-300">9</div>
+                        <p class="text-xs text-slate-400 mt-2">Ajustes para imagem, nitidez e compressão.</p>
+                    </div>
+                    <div class="stat-card rounded-2xl p-4">
+                        <div class="text-xs uppercase tracking-[0.25em] text-slate-400 mb-2">Rápido</div>
+                        <div class="text-3xl font-black text-rose-300">1x</div>
+                        <p class="text-xs text-slate-400 mt-2">Processamento local, com resposta imediata.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-6">
+            <aside class="glass-panel rounded-3xl p-5 md:p-6 fade-in">
+                <div id="dropZone" class="drop-zone rounded-2xl p-6 text-center cursor-pointer mb-5">
+                    <input id="imageInput" type="file" accept="image/*" class="hidden">
+                    <div class="mx-auto w-16 h-16 rounded-2xl bg-sky-500/15 flex items-center justify-center mb-4">
+                        <span class="text-3xl">🖼️</span>
+                    </div>
+                    <h2 class="text-xl font-bold mb-2">Arraste a imagem aqui</h2>
+                    <p class="text-sm text-slate-400 mb-4">ou clique para escolher um arquivo</p>
+                    <button id="uploadImageBtn" type="button" class="btn btn-primary btn-sm mb-4">Subir imagem</button>
+                    <div class="flex flex-wrap justify-center gap-2 text-xs text-slate-300">
+                        <span class="feature-chip px-3 py-2 rounded-full">JPG</span>
+                        <span class="feature-chip px-3 py-2 rounded-full">PNG</span>
+                        <span class="feature-chip px-3 py-2 rounded-full">WEBP</span>
+                        <span class="feature-chip px-3 py-2 rounded-full">BMP</span>
+                    </div>
+                </div>
+
+                <div class="soft-panel rounded-2xl p-4 mb-5">
+                    <label for="imageUrlInput" class="block text-sm font-semibold mb-2">Puxar imagem por link</label>
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        <input id="imageUrlInput" type="url" placeholder="Cole aqui a URL da imagem"
+                               class="input input-bordered w-full bg-slate-950/70 border-white/10" />
+                        <button id="fetchImageBtn" class="btn btn-secondary sm:w-40">Puxar imagem</button>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">Use um link direto para a imagem. Se o servidor bloquear CORS, o navegador pode impedir o carregamento.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <label for="scaleRange" class="font-semibold">Aumento de resolução</label>
+                            <span id="scaleValue" class="text-cyan-300 font-bold">2.0x</span>
+                        </div>
+                        <input id="scaleRange" type="range" min="1" max="4" step="0.1" value="2" class="range w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <label for="sharpnessRange" class="font-semibold">Nitidez</label>
+                            <span id="sharpnessValue" class="text-cyan-300 font-bold">1.2</span>
+                        </div>
+                        <input id="sharpnessRange" type="range" min="0" max="3" step="0.1" value="1.2" class="range w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <label for="contrastRange" class="font-semibold">Contraste</label>
+                            <span id="contrastValue" class="text-cyan-300 font-bold">1.0</span>
+                        </div>
+                        <input id="contrastRange" type="range" min="0.5" max="1.8" step="0.05" value="1" class="range w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <label for="brightnessRange" class="font-semibold">Brilho</label>
+                            <span id="brightnessValue" class="text-cyan-300 font-bold">1.0</span>
+                        </div>
+                        <input id="brightnessRange" type="range" min="0.7" max="1.5" step="0.05" value="1" class="range w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <label for="saturationRange" class="font-semibold">Saturação</label>
+                            <span id="saturationValue" class="text-cyan-300 font-bold">1.0</span>
+                        </div>
+                        <input id="saturationRange" type="range" min="0" max="1.8" step="0.05" value="1" class="range w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <label for="qualityRange" class="font-semibold">Qualidade de exportação</label>
+                            <span id="qualityValue" class="text-cyan-300 font-bold">92%</span>
+                        </div>
+                        <input id="qualityRange" type="range" min="50" max="100" step="1" value="92" class="range w-full">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <label class="form-control w-full">
+                            <div class="label pb-1"><span class="label-text text-slate-300 text-sm">Formato</span></div>
+                            <select id="formatSelect" class="select select-bordered select-sm bg-slate-950/70 border-white/10">
+                                <option value="image/png">PNG</option>
+                                <option value="image/jpeg">JPEG</option>
+                                <option value="image/webp">WEBP</option>
+                            </select>
+                        </label>
+                        <label class="form-control w-full">
+                            <div class="label pb-1"><span class="label-text text-slate-300 text-sm">Modo</span></div>
+                            <select id="modeSelect" class="select select-bordered select-sm bg-slate-950/70 border-white/10">
+                                <option value="balanced">Balanceado</option>
+                                <option value="sharp">Mais nítido</option>
+                                <option value="soft">Mais suave</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="grid gap-3 pt-2">
+                        <button id="processBtn" class="btn btn-primary btn-block text-base">Aplicar melhorias</button>
+                        <button id="downloadBtn" class="btn btn-outline btn-block" disabled>Baixar imagem otimizada</button>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="space-y-6">
+                <div class="glass-panel rounded-3xl p-5 md:p-6 fade-in">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-black mb-1">Visualização</h2>
+                            <p id="statusText" class="text-sm text-slate-400">Nenhuma imagem carregada ainda.</p>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto">
+                            <div class="stat-card rounded-2xl px-4 py-3 min-w-[120px]">
+                                <div class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Original</div>
+                                <div id="originalSize" class="text-lg font-bold text-slate-100">0 KB</div>
+                            </div>
+                            <div class="stat-card rounded-2xl px-4 py-3 min-w-[120px]">
+                                <div class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Saída</div>
+                                <div id="outputSize" class="text-lg font-bold text-slate-100">0 KB</div>
+                            </div>
+                            <div class="stat-card rounded-2xl px-4 py-3 min-w-[120px]">
+                                <div class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Resolução</div>
+                                <div id="resolutionSize" class="text-lg font-bold text-slate-100">0 x 0</div>
+                            </div>
+                            <div class="stat-card rounded-2xl px-4 py-3 min-w-[120px]">
+                                <div class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Economia</div>
+                                <div id="compressionValue" class="text-lg font-bold text-slate-100">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="preview-frame rounded-2xl p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-slate-100">Original</h3>
+                                <span class="text-xs text-slate-400">Antes</span>
+                            </div>
+                            <div class="aspect-[4/3] rounded-2xl overflow-hidden">
+                                <img id="originalPreview" alt="Pré-visualização da imagem original" class="image-preview" src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Crect width='800' height='600' fill='%23091b2e'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2394a3b8' font-size='28' font-family='Arial, sans-serif'%3ECarregue uma imagem%3C/text%3E%3C/svg%3E">
+                            </div>
+                        </div>
+
+                        <div class="preview-frame rounded-2xl p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-slate-100">Resultado</h3>
+                                <span id="outputMeta" class="text-xs text-slate-400">Pronto para processar</span>
+                            </div>
+                            <div class="aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950/60 flex items-center justify-center">
+                                <canvas id="outputCanvas" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-3xl p-5 md:p-6 fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="soft-panel rounded-2xl p-4">
+                            <h3 class="font-bold text-lg mb-2">Melhora visual</h3>
+                            <p class="text-sm text-slate-400 leading-relaxed">Ajuste contraste, brilho, saturação e nitidez para deixar a imagem mais limpa e pronta para apresentação.</p>
+                        </div>
+                        <div class="soft-panel rounded-2xl p-4">
+                            <h3 class="font-bold text-lg mb-2">Upscale rápido</h3>
+                            <p class="text-sm text-slate-400 leading-relaxed">Aumente a resolução em até 4x com interpolação de alta qualidade e processamento local no navegador.</p>
+                        </div>
+                        <div class="soft-panel rounded-2xl p-4">
+                            <h3 class="font-bold text-lg mb-2">Exportação otimizada</h3>
+                            <p class="text-sm text-slate-400 leading-relaxed">Baixe em PNG, JPEG ou WebP com qualidade controlada para equilibrar tamanho e fidelidade.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script>
+        const elements = {
+            dropZone: document.getElementById('dropZone'),
+            imageInput: document.getElementById('imageInput'),
+            uploadImageBtn: document.getElementById('uploadImageBtn'),
+            imageUrlInput: document.getElementById('imageUrlInput'),
+            fetchImageBtn: document.getElementById('fetchImageBtn'),
+            scaleRange: document.getElementById('scaleRange'),
+            sharpnessRange: document.getElementById('sharpnessRange'),
+            contrastRange: document.getElementById('contrastRange'),
+            brightnessRange: document.getElementById('brightnessRange'),
+            saturationRange: document.getElementById('saturationRange'),
+            qualityRange: document.getElementById('qualityRange'),
+            formatSelect: document.getElementById('formatSelect'),
+            modeSelect: document.getElementById('modeSelect'),
+            processBtn: document.getElementById('processBtn'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            statusText: document.getElementById('statusText'),
+            outputMeta: document.getElementById('outputMeta'),
+            originalSize: document.getElementById('originalSize'),
+            outputSize: document.getElementById('outputSize'),
+            resolutionSize: document.getElementById('resolutionSize'),
+            compressionValue: document.getElementById('compressionValue'),
+            originalPreview: document.getElementById('originalPreview'),
+            outputCanvas: document.getElementById('outputCanvas'),
+            scaleValue: document.getElementById('scaleValue'),
+            sharpnessValue: document.getElementById('sharpnessValue'),
+            contrastValue: document.getElementById('contrastValue'),
+            brightnessValue: document.getElementById('brightnessValue'),
+            saturationValue: document.getElementById('saturationValue'),
+            qualityValue: document.getElementById('qualityValue')
+        };
+
+        const state = {
+            image: null,
+            fileName: 'imagem-otimizada',
+            originalBytes: 0,
+            outputBlob: null,
+            objectUrl: null,
+            sourceWidth: 0,
+            sourceHeight: 0
+        };
+
+        const sharpenKernel = [
+            0, -1, 0,
+            -1, 5, -1,
+            0, -1, 0
+        ];
+
+        function updateRangeLabels() {
+            elements.scaleValue.textContent = `${Number(elements.scaleRange.value).toFixed(1)}x`;
+            elements.sharpnessValue.textContent = Number(elements.sharpnessRange.value).toFixed(1);
+            elements.contrastValue.textContent = Number(elements.contrastRange.value).toFixed(2);
+            elements.brightnessValue.textContent = Number(elements.brightnessRange.value).toFixed(2);
+            elements.saturationValue.textContent = Number(elements.saturationRange.value).toFixed(2);
+            elements.qualityValue.textContent = `${elements.qualityRange.value}%`;
+        }
+
+        function bytesToLabel(bytes) {
+            if (!bytes) {
+                return '0 KB';
+            }
+
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unitIndex = 0;
+
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex += 1;
+            }
+
+            return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+        }
+
+        function setStatus(message) {
+            elements.statusText.textContent = message;
+        }
+
+        function applySharpen(imageData, amount) {
+            if (amount <= 0) {
+                return imageData;
+            }
+
+            const { width, height, data } = imageData;
+            const output = new ImageData(width, height);
+            const out = output.data;
+            const factor = Math.min(amount, 3);
+
+            for (let y = 1; y < height - 1; y += 1) {
+                for (let x = 1; x < width - 1; x += 1) {
+                    const index = (y * width + x) * 4;
+
+                    for (let channel = 0; channel < 3; channel += 1) {
+                        let sum = 0;
+
+                        for (let kernelY = -1; kernelY <= 1; kernelY += 1) {
+                            for (let kernelX = -1; kernelX <= 1; kernelX += 1) {
+                                const kernelValue = sharpenKernel[(kernelY + 1) * 3 + (kernelX + 1)];
+                                const pixelIndex = ((y + kernelY) * width + (x + kernelX)) * 4 + channel;
+                                sum += data[pixelIndex] * kernelValue;
+                            }
+                        }
+
+                        const original = data[index + channel];
+                        const mixed = original + (sum - original) * (factor / 2);
+                        out[index + channel] = Math.max(0, Math.min(255, mixed));
+                    }
+
+                    out[index + 3] = data[index + 3];
+                }
+            }
+
+            for (let x = 0; x < width; x += 1) {
+                const topIndex = x * 4;
+                const bottomIndex = ((height - 1) * width + x) * 4;
+                out[topIndex] = data[topIndex];
+                out[topIndex + 1] = data[topIndex + 1];
+                out[topIndex + 2] = data[topIndex + 2];
+                out[topIndex + 3] = data[topIndex + 3];
+                out[bottomIndex] = data[bottomIndex];
+                out[bottomIndex + 1] = data[bottomIndex + 1];
+                out[bottomIndex + 2] = data[bottomIndex + 2];
+                out[bottomIndex + 3] = data[bottomIndex + 3];
+            }
+
+            for (let y = 0; y < height; y += 1) {
+                const leftIndex = (y * width) * 4;
+                const rightIndex = (y * width + (width - 1)) * 4;
+                out[leftIndex] = data[leftIndex];
+                out[leftIndex + 1] = data[leftIndex + 1];
+                out[leftIndex + 2] = data[leftIndex + 2];
+                out[leftIndex + 3] = data[leftIndex + 3];
+                out[rightIndex] = data[rightIndex];
+                out[rightIndex + 1] = data[rightIndex + 1];
+                out[rightIndex + 2] = data[rightIndex + 2];
+                out[rightIndex + 3] = data[rightIndex + 3];
+            }
+
+            return output;
+        }
+
+        async function loadImage(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                setStatus('Selecione um arquivo de imagem válido.');
+                return;
+            }
+
+            if (state.objectUrl) {
+                URL.revokeObjectURL(state.objectUrl);
+            }
+
+            state.fileName = file.name.replace(/\.[^.]+$/, '') || 'imagem-otimizada';
+            state.originalBytes = file.size;
+            state.objectUrl = URL.createObjectURL(file);
+
+            elements.originalPreview.src = state.objectUrl;
+            elements.originalSize.textContent = bytesToLabel(file.size);
+            setStatus(`Imagem carregada: ${file.name}`);
+
+            const image = new Image();
+            image.onload = () => {
+                state.image = image;
+                state.sourceWidth = image.width;
+                state.sourceHeight = image.height;
+                elements.resolutionSize.textContent = `${image.width} x ${image.height}`;
+                elements.outputMeta.textContent = 'Pronto para processar';
+                elements.downloadBtn.disabled = true;
+                processImage();
+            };
+            image.onerror = () => {
+                setStatus('Não foi possível ler essa imagem.');
+            };
+            image.src = state.objectUrl;
+        }
+
+        async function loadImageFromUrl(url) {
+            const trimmedUrl = url.trim();
+            if (!trimmedUrl) {
+                setStatus('Cole uma URL de imagem antes de puxar.');
+                return;
+            }
+
+            setStatus('Baixando imagem do link...');
+
+            try {
+                const response = await fetch(trimmedUrl, { mode: 'cors' });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                if (!blob.type.startsWith('image/')) {
+                    throw new Error('O link não retornou uma imagem válida.');
+                }
+
+                const fileNameFromUrl = (() => {
+                    try {
+                        const parsedUrl = new URL(trimmedUrl);
+                        const lastPart = parsedUrl.pathname.split('/').filter(Boolean).pop() || 'imagem';
+                        return lastPart.replace(/\.[^.]+$/, '') || 'imagem';
+                    } catch {
+                        return 'imagem';
+                    }
+                })();
+
+                const file = new File([blob], `${fileNameFromUrl}.png`, { type: blob.type || 'image/png' });
+                await loadImage(file);
+            } catch (error) {
+                setStatus('Não foi possível puxar a imagem desse link. Verifique a URL e o CORS do servidor.');
+                console.error('Erro ao puxar imagem:', error);
+            }
+        }
+
+        async function processImage() {
+            if (!state.image) {
+                setStatus('Carregue uma imagem para começar.');
+                return;
+            }
+
+            const scale = Number(elements.scaleRange.value);
+            const brightness = Number(elements.brightnessRange.value);
+            const contrast = Number(elements.contrastRange.value);
+            const saturation = Number(elements.saturationRange.value);
+            const sharpness = Number(elements.sharpnessRange.value);
+            const quality = Number(elements.qualityRange.value) / 100;
+            const format = elements.formatSelect.value;
+            const mode = elements.modeSelect.value;
+
+            const canvas = elements.outputCanvas;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const targetWidth = Math.max(1, Math.round(state.sourceWidth * scale));
+            const targetHeight = Math.max(1, Math.round(state.sourceHeight * scale));
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            ctx.clearRect(0, 0, targetWidth, targetHeight);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
+            ctx.drawImage(state.image, 0, 0, targetWidth, targetHeight);
+            ctx.filter = 'none';
+
+            const shouldSharpen = mode !== 'soft' && sharpness > 0;
+            const sharpenAmount = mode === 'sharp' ? sharpness * 1.2 : mode === 'soft' ? sharpness * 0.55 : sharpness;
+
+            if (shouldSharpen) {
+                const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+                const sharpened = applySharpen(imageData, sharpenAmount);
+                ctx.putImageData(sharpened, 0, 0);
+            }
+
+            const blob = await new Promise((resolve) => {
+                canvas.toBlob(resolve, format, format === 'image/png' ? undefined : quality);
+            });
+
+            state.outputBlob = blob;
+            if (blob) {
+                elements.outputSize.textContent = bytesToLabel(blob.size);
+                elements.downloadBtn.disabled = false;
+                elements.outputMeta.textContent = `${format.replace('image/', '').toUpperCase()} pronto`;
+
+                const gain = state.originalBytes > 0 ? Math.max(0, Math.round((1 - blob.size / state.originalBytes) * 100)) : 0;
+                elements.compressionValue.textContent = `${gain}%`;
+                elements.resolutionSize.textContent = `${targetWidth} x ${targetHeight}`;
+                setStatus(`Imagem otimizada em ${targetWidth} x ${targetHeight}.`);
+            } else {
+                elements.outputSize.textContent = '0 KB';
+                elements.downloadBtn.disabled = true;
+                elements.outputMeta.textContent = 'Falha ao exportar';
+                setStatus('O navegador não conseguiu gerar o arquivo de saída.');
+            }
+        }
+
+        function downloadResult() {
+            if (!state.outputBlob) {
+                return;
+            }
+
+            const extension = elements.formatSelect.value === 'image/png'
+                ? 'png'
+                : elements.formatSelect.value === 'image/webp'
+                    ? 'webp'
+                    : 'jpg';
+            const downloadUrl = URL.createObjectURL(state.outputBlob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `${state.fileName}-otimizada.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+        }
+
+        function handleFiles(files) {
+            const [file] = files;
+            if (file) {
+                loadImage(file);
+            }
+        }
+
+        elements.dropZone.addEventListener('click', () => elements.imageInput.click());
+        elements.uploadImageBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            elements.imageInput.click();
+        });
+        elements.dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            elements.dropZone.classList.add('drag-over');
+        });
+        elements.dropZone.addEventListener('dragleave', () => {
+            elements.dropZone.classList.remove('drag-over');
+        });
+        elements.dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            elements.dropZone.classList.remove('drag-over');
+            handleFiles(event.dataTransfer.files);
+        });
+        elements.imageInput.addEventListener('change', (event) => handleFiles(event.target.files));
+        elements.fetchImageBtn.addEventListener('click', () => loadImageFromUrl(elements.imageUrlInput.value));
+
+        elements.imageUrlInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                loadImageFromUrl(elements.imageUrlInput.value);
+            }
+        });
+
+        [
+            elements.scaleRange,
+            elements.sharpnessRange,
+            elements.contrastRange,
+            elements.brightnessRange,
+            elements.saturationRange,
+            elements.qualityRange,
+            elements.formatSelect,
+            elements.modeSelect
+        ].forEach((control) => {
+            control.addEventListener('input', () => {
+                updateRangeLabels();
+                if (state.image) {
+                    processImage();
+                }
+            });
+        });
+
+        elements.processBtn.addEventListener('click', processImage);
+        elements.downloadBtn.addEventListener('click', downloadResult);
+
+        updateRangeLabels();
+        const initialCanvas = elements.outputCanvas.getContext('2d');
+        initialCanvas.clearRect(0, 0, elements.outputCanvas.width, elements.outputCanvas.height);
+    </script>
+</body>
+</html>

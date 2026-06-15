@@ -1,0 +1,55 @@
+Sem Selo
+Proporção do Banner: 2000 x 542px
+
+__________________
+
+Quando tiver apenas 1 Selo:
+Proporção do Banner: 2000 x 542px
+Distancia centro do Selo 1 perante as bordas da imagem:
+Largura do Selo: 471px
+Da borda Esquerda: 577px
+Da borda Superior: 278px
+Da borda Baixo: 264px
+Da borda Direita: 1431px
+
+__________________
+
+Quando tiver 2 Selos:
+Proporção do Banner: 2000 x 542px
+Do centro do Selo 1 perante as bordas da imagem:
+Largura do Selo 1: 490px
+Da borda Esquerda: 365px
+Da borda Superior: 261px
+Da borda Baixo: 281px
+Da borda Direita: 1635px
+
+Do centro do Selo 2 perante as bordas da imagem:
+Largura do Selo 2: 379px
+Da borda Esquerda: 701px
+Da borda Superior: 366px
+Da borda Baixo: 206px
+Da borda Direita: 1299px
+__________________
+
+Quando tiver 3 Selos:
+Proporção do Banner: 2000 x 542px
+Do centro do Selo 1 perante as bordas da imagem:
+Largura do Selo 1: 490px
+Da borda Esquerda: 365px
+Da borda Superior: 261px
+Da borda Baixo: 281px
+Da borda Direita: 1635px
+
+Do centro do Selo 2 perante as bordas da imagem:
+Largura do Selo 2: 379px
+Da borda Esquerda: 701px
+Da borda Superior: 366px
+Da borda Baixo: 206px
+Da borda Direita: 1299px
+
+Do centro do Selo 3 perante as bordas da imagem:
+Largura do Selo 3: 281
+Da borda Esquerda: 609 px
+Da borda Superior: 144 px
+Da borda Baixo: 398px
+Da borda Direita: 1391px

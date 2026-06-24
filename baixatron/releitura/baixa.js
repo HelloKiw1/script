@@ -1125,9 +1125,170 @@
   // ============================================
   // COLETA DE LINKS
   // ============================================
+
+  /**
+   * Detecta e coleta pautas/documentos do site da Câmara Municipal
+   * Estrutura esperada:
+   * - Blocos com "Data:", "Número:", "Ementário:"
+   * - Links de "Documento eletrônico" com URLs de validação
+   */
+  const collectCamaraDocuments = (root) => {
+    if (!root || !root.querySelectorAll) return [];
+
+    const results = [];
+    const pageHint = getCurrentPageNumber();
+    const tabHint = getCurrentTabMarker();
+
+    try {
+      // Procura por elementos que contenham "Documento eletrônico"
+      const docLabels = Array.from(
+        root.querySelectorAll("*")
+      ).filter((el) => {
+        const text = (el.textContent || "").toLowerCase();
+        return text.includes("documento eletrônico");
+      });
+
+      for (const label of docLabels) {
+        // Encontra o bloco pai que contém Data, Número, Ementário
+        let docBlock = label;
+        let depth = 0;
+        while (docBlock && depth < 10) {
+          const blockText = (docBlock.textContent || "").toLowerCase();
+          if (
+            /data\s*:\s*\d{1,2}\/\d{1,2}\/\d{4}/i.test(blockText) &&
+            /n[úu]mero\s*:/i.test(blockText) &&
+            /ement[aá]rio\s*:/i.test(blockText)
+          ) {
+            break;
+          }
+          docBlock = docBlock.parentElement;
+          depth++;
+        }
+
+        if (!docBlock || depth >= 10) continue;
+
+        const text = docBlock.textContent || "";
+
+        // Data (formato: DD/MM/YYYY)
+        const dataMatch = text.match(
+          /data\s*:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i
+        );
+        const data = dataMatch ? dataMatch[1] : "";
+
+        // Número (Pauta/Boletim/Roteiro com º/ª)
+        const numeroMatch = text.match(
+          /n[úu]mero\s*:\s*([^\n]+?)(?:\s+data\s*:|$)/i
+        );
+        const numero = numeroMatch ? numeroMatch[1].trim() : "";
+
+        // Ementário (tudo entre "Ementário:" e o próximo "Documento eletrônico" ou fim)
+        const ementarioMatch = text.match(
+          /ement[aá]rio\s*:\s*([^\n]+?)(?:\s+documento eletr[ôo]nico|$)/i
+        );
+        const ementario = ementarioMatch ? ementarioMatch[1].trim() : "";
+
+        if (!data || !numero || !ementario) continue;
+
+        // Procura por links dentro do bloco do "Documento eletrônico"
+        const linkContainer = label.closest("div, section, article") || label;
+        const linkElements = Array.from(
+          linkContainer.querySelectorAll("a[href]")
+        )
+          .filter((a) => {
+            const href = a.getAttribute("href") || "";
+            return (
+              href.includes("validar") ||
+              href.includes("documento") ||
+              href.includes("pdf") ||
+              href.includes("kitpublico")
+            );
+          })
+          .slice(0, 2); // Pega até 2 links (documento + PDF)
+
+        if (linkElements.length === 0) continue;
+
+        // Prioriza PDF se houver múltiplos links
+        let selectedLink = linkElements[0];
+        if (linkElements.length > 1) {
+          const pdfLink = linkElements.find((a) => {
+            const href = (a.getAttribute("href") || "").toLowerCase();
+            return href.includes("pdf");
+          });
+          selectedLink = pdfLink || linkElements[0];
+        }
+
+        const url = selectedLink.getAttribute("href") || "";
+        const absUrl = toAbs(url);
+        if (!absUrl) continue;
+
+        // Cria nome descritivo
+        const displayText = [numero, ementario, data]
+          .filter(Boolean)
+          .join(" | ");
+        const titleName = `${numero} - ${ementario}`;
+
+        const key = keyOf(
+          selectedLink,
+          results.length,
+          titleName,
+          absUrl
+        );
+
+        results.push({
+          el: selectedLink,
+          url: absUrl,
+          text: displayText,
+          displayText,
+          titleName,
+          fileType: "pdf",
+          key,
+          idx: results.length,
+          sourcePage: pageHint,
+          sourceTabMarker: tabHint,
+          metadata: {
+            data,
+            numero,
+            ementario,
+            tipoDocumento: absUrl.includes("pdf") ? "PDF" : "Documento",
+          },
+        });
+      }
+
+      if (opts.verbose && results.length > 0) {
+        console.log(
+          "[BAIXATRON] 📋 Detectados",
+          results.length,
+          "documentos da Câmara Municipal"
+        );
+      }
+    } catch (err) {
+      if (opts.verbose) {
+        console.warn(
+          "[BAIXATRON] ⚠️ Erro ao processar documentos da Câmara:",
+          err.message
+        );
+      }
+    }
+
+    return results;
+  };
+
   const collectFromRoot = (root) => {
     if (!root || !root.querySelectorAll) return [];
 
+    // Primeiro tenta coletar documentos específicos da Câmara Municipal
+    const camaraResults = collectCamaraDocuments(root);
+    if (camaraResults.length > 0) {
+      if (opts.verbose) {
+        console.log(
+          "[BAIXATRON] 📋 Documentos da Câmara encontrados:",
+          camaraResults.length
+        );
+      }
+      return camaraResults;
+    }
+
+    // Fallback: coleta genérica padrão
     const pageHint = getCurrentPageNumber();
     const tabHint = getCurrentTabMarker();
 

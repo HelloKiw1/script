@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Resultados Atricon</title>
+  <link rel="icon" type="image/png" href="assets/logo-da-empresa.png">
   <style>
     :root {
       color-scheme: dark;
@@ -484,6 +485,21 @@
       border-color: var(--error-line);
     }
 
+    .status-stack {
+      display: grid;
+      gap: 5px;
+      align-items: start;
+    }
+
+    .deadline-note {
+      display: block;
+      max-width: 260px;
+      color: var(--warn);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
     .muted { color: var(--muted); }
     .error-text { color: var(--error); }
 
@@ -581,6 +597,7 @@
       <div class="file-control">
         <input id="fileInput" type="file" accept=".json,application/json">
         <button id="generateReport" type="button" disabled>Gerar relatório</button>
+        <button id="generateChecklist" type="button" disabled>Gerar checklist</button>
         <button id="exportCsv" type="button" disabled>Exportar CSV</button>
         <button id="themeToggle" class="secondary-button" type="button" aria-pressed="true">Modo claro</button>
       </div>
@@ -640,8 +657,6 @@
             <th data-key="orgao">Orgão</th>
             <th data-key="cidade">Cidade</th>
             <th data-key="status">Status</th>
-            <th data-key="setor_atual">Setor Atual</th>
-            <th data-key="data">Data</th>
             <th data-key="porcentagem">Porcentagem</th>
             <th data-key="erro">Erro</th>
             <th data-key="debug_html">Debug</th>
@@ -706,6 +721,7 @@
     const fileInput = document.getElementById('fileInput');
     const compareInput = document.getElementById('compareInput');
     const generateReport = document.getElementById('generateReport');
+    const generateChecklist = document.getElementById('generateChecklist');
     const exportCsv = document.getElementById('exportCsv');
     const themeToggle = document.getElementById('themeToggle');
     const searchInput = document.getElementById('searchInput');
@@ -730,6 +746,7 @@
     fileInput.addEventListener('change', handleFile);
     compareInput.addEventListener('change', handleCompareFile);
     generateReport.addEventListener('click', generateReportDocument);
+    generateChecklist.addEventListener('click', generateChecklistDocument);
     exportCsv.addEventListener('click', exportFilteredCsv);
     themeToggle.addEventListener('click', () => {
       setTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
@@ -777,6 +794,7 @@
         applyFilters();
         exportCsv.disabled = state.rows.length === 0;
         generateReport.disabled = state.rows.length === 0;
+        generateChecklist.disabled = state.rows.length === 0;
         resetComparison('Selecione o segundo JSON para comparar.');
         compareInput.disabled = state.rows.length === 0;
       } catch (error) {
@@ -791,6 +809,7 @@
         emptyState.textContent = `JSON inválido: ${error.message}`;
         exportCsv.disabled = true;
         generateReport.disabled = true;
+        generateChecklist.disabled = true;
       }
     }
 
@@ -1072,6 +1091,24 @@
         .trim();
     }
 
+    function deliveryInfo(row) {
+      const setorAtual = String(row.setor_atual || '').replace(/\s+/g, ' ').trim();
+      const match = setorAtual.match(/^(.*?)\s+Envio para Manifesta\S*\s+at\S*\s+(.+)$/i);
+      const isValidated = normalize(row.status) === 'validado';
+
+      if (!match || !isValidated) {
+        return { setor: setorAtual, prazo: '', aviso: '' };
+      }
+
+      const setor = match[1].trim();
+      const prazo = match[2].trim();
+      return {
+        setor,
+        prazo,
+        aviso: `Manifestação até ${prazo}`
+      };
+    }
+
     function renderTable() {
       updateMetrics();
 
@@ -1099,6 +1136,7 @@
     function renderRow(row) {
       const statusClass = row.erro ? 'error' : normalize(row.status) === 'validado' ? 'ok' : 'warn';
       const statusText = row.status || (row.erro ? 'Erro' : 'Sem status');
+      const entrega = deliveryInfo(row);
       const debugLinks = [
         row.debug_html ? `<a href="${escapeAttr(fileHref(row.debug_html))}" target="_blank">HTML</a>` : '',
         row.debug_screenshot ? `<a href="${escapeAttr(fileHref(row.debug_screenshot))}" target="_blank">Imagem</a>` : ''
@@ -1108,9 +1146,7 @@
         <tr>
           <td>${escapeHtml(row.orgao)}</td>
           <td>${escapeHtml(row.cidade)}</td>
-          <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
-          <td>${escapeHtml(row.setor_atual) || '<span class="muted">-</span>'}</td>
-          <td>${escapeHtml(row.data) || '<span class="muted">-</span>'}</td>
+          <td><span class="status-stack"><span class="badge ${statusClass}">${escapeHtml(statusText)}</span>${entrega.aviso ? `<span class="deadline-note">${escapeHtml(entrega.aviso)}</span>` : ''}</span></td>
           <td>${escapeHtml(row.porcentagem) || '<span class="muted">-</span>'}</td>
           <td class="error-cell ${row.erro ? 'error-text' : 'muted'}">${escapeHtml(row.erro) || 'Sem erro'}</td>
           <td><span class="debug-links">${debugLinks || '<span class="muted">-</span>'}</span></td>
@@ -1157,12 +1193,34 @@
       reportWindow.document.close();
     }
 
-    function buildReportHtml(rows) {
-      const generatedAt = new Date().toLocaleString('pt-BR');
-      const totalEvidencias = rows.reduce((sum, row) => sum + getEvidences(row).length, 0);
+    function generateChecklistDocument() {
+      const rows = state.filtered;
+      if (!rows.length) {
+        alert('Nenhum registro disponivel nos filtros atuais para gerar checklist.');
+        return;
+      }
+
+      const items = rows.flatMap((row) => getEvidences(row).map((evidence) => ({
+        titulo: evidence.titulo_evidencia || evidence.titulo || 'Evidencia sem titulo'
+      })));
+
+      if (!items.length) {
+        alert('Nenhuma evidencia encontrada nos filtros atuais para gerar checklist.');
+        return;
+      }
+
       const title = rows.length === 1
-        ? `Relatório de Evidências - ${rows[0].orgao} de ${rows[0].cidade}`
-        : 'Relatório de Evidências - Resultados Atricon';
+        ? `Checklist de Evidencias - ${rows[0].orgao} de ${rows[0].cidade}`
+        : 'Checklist de Evidencias - Resultados Atricon';
+      const pdfBytes = buildInteractiveChecklistPdf(title, items);
+      downloadPdf(pdfBytes, `${safeDownloadName(title)}.pdf`);
+    }
+
+    function buildChecklistHtml(rows, items) {
+      const title = rows.length === 1
+        ? `Checklist de Evidencias - ${rows[0].orgao} de ${rows[0].cidade}`
+        : 'Checklist de Evidencias - Resultados Atricon';
+      const headerLogo = new URL('assets/logo-da-empresa.png', window.location.href).href;
 
       return `<!doctype html>
 <html lang="pt-BR">
@@ -1170,14 +1228,353 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
+  <link rel="icon" type="image/png" href="${escapeAttr(headerLogo)}">
   <style>
-    @page { size: A4; margin: 0; }
+    @page { size: A4; margin: 14mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      color: #1f2937;
+      color: #172033;
       font-family: Arial, Helvetica, sans-serif;
-      background: #eef2f6;
+      background: #eef4fb;
+      line-height: 1.4;
+    }
+    .print-toolbar {
+      position: sticky;
+      top: 0;
+      display: flex;
+      justify-content: flex-end;
+      padding: 12px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid #bed5f2;
+    }
+    .print-toolbar button {
+      height: 38px;
+      padding: 0 14px;
+      border: 1px solid #082f63;
+      border-radius: 6px;
+      background: #0b62c4;
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .document {
+      width: min(920px, calc(100% - 28px));
+      margin: 18px auto 36px;
+      padding: 24px 32px 34px;
+      background: #ffffff;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, .12);
+    }
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      border-bottom: 2px solid #0b62c4;
+    }
+    .head img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+    }
+    h1 {
+      margin: 0;
+      color: #082f63;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th,
+    td {
+      border: 1px solid #bed5f2;
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: middle;
+      font-size: 13px;
+    }
+    th {
+      background: #eaf3ff;
+      color: #082f63;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    th:first-child,
+    td:first-child {
+      width: 76px;
+      text-align: center;
+    }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: #0b62c4;
+    }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    @media print {
+      body { background: #ffffff; }
+      .print-toolbar { display: none; }
+      .document {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-toolbar">
+    <button onclick="window.print()">Salvar como PDF</button>
+  </div>
+  <article class="document">
+    <header class="head">
+      <h1>${escapeHtml(title)}</h1>
+      <img src="${escapeAttr(headerLogo)}" alt="Logo da empresa">
+    </header>
+    <table>
+      <thead>
+        <tr>
+          <th>Concluido</th>
+          <th>Titulo da evidencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((item) => `<tr><td><input type="checkbox"></td><td>${escapeHtml(truncateWords(item.titulo, 10))}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </article>
+</body>
+</html>`;
+    }
+
+    function buildInteractiveChecklistPdf(title, items) {
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const margin = 42;
+      const tableTop = 748;
+      const headerHeight = 24;
+      const rowHeight = 26;
+      const bottom = 48;
+      const rowsPerPage = Math.max(1, Math.floor((tableTop - headerHeight - bottom) / rowHeight));
+      const objects = [];
+
+      const reserveObject = () => {
+        objects.push('');
+        return objects.length;
+      };
+      const setObject = (ref, value) => {
+        objects[ref - 1] = value;
+      };
+      const addObject = (value) => {
+        objects.push(value);
+        return objects.length;
+      };
+      const addStream = (dict, stream) => {
+        const body = String(stream || '');
+        return addObject(`${dict.replace('__LENGTH__', String(body.length))}\nstream\n${body}\nendstream`);
+      };
+
+      const catalogRef = reserveObject();
+      const pagesRef = reserveObject();
+      const acroFormRef = reserveObject();
+      const fontRef = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+      const offAppearanceRef = addStream(
+        '<< /Type /XObject /Subtype /Form /BBox [0 0 14 14] /Resources << >> /Length __LENGTH__ >>',
+        'q 1 1 1 rg 0 0 14 14 re f 0 0 0 RG 1 w 0.5 0.5 13 13 re S Q'
+      );
+      const yesAppearanceRef = addStream(
+        '<< /Type /XObject /Subtype /Form /BBox [0 0 14 14] /Resources << >> /Length __LENGTH__ >>',
+        'q 1 1 1 rg 0 0 14 14 re f 0 0 0 RG 1 w 0.5 0.5 13 13 re S 0 0 0 RG 2 w 3 7 m 6 3 l 11 11 l S Q'
+      );
+
+      const pageRefs = [];
+      const fieldRefs = [];
+      const chunks = [];
+      for (let index = 0; index < items.length; index += rowsPerPage) {
+        chunks.push(items.slice(index, index + rowsPerPage));
+      }
+
+      chunks.forEach((chunk, pageIndex) => {
+        const pageRef = reserveObject();
+        const content = [];
+        const annots = [];
+        const pageTitle = pageIndex === 0 ? title : `${title} - continuação`;
+
+        drawText(content, margin, 800, 17, pageTitle);
+        drawTableHeader(content, margin, tableTop, pageWidth - (margin * 2), headerHeight);
+
+        chunk.forEach((item, rowIndex) => {
+          const globalIndex = pageIndex * rowsPerPage + rowIndex + 1;
+          const yTop = tableTop - headerHeight - (rowIndex * rowHeight);
+          const yBottom = yTop - rowHeight;
+          const checkX = margin + 28;
+          const checkY = yBottom + 6;
+          const titleX = margin + 90;
+          const textY = yBottom + 9;
+          const titleText = clampPdfText(truncateWords(item.titulo, 10), 92);
+          const fieldRef = addObject(
+            `<< /Type /Annot /FT /Btn /Subtype /Widget /T ${pdfLiteral(`check_${globalIndex}`)} /V /Off /AS /Off /Rect [${num(checkX)} ${num(checkY)} ${num(checkX + 14)} ${num(checkY + 14)}] /F 4 /P ${pageRef} 0 R /AP << /N << /Off ${offAppearanceRef} 0 R /Yes ${yesAppearanceRef} 0 R >> >> >>`
+          );
+
+          fieldRefs.push(fieldRef);
+          annots.push(fieldRef);
+          drawLine(content, margin, yTop, pageWidth - margin, yTop);
+          drawText(content, titleX, textY, 10, titleText);
+        });
+
+        const tableBottom = tableTop - headerHeight - (chunk.length * rowHeight);
+        drawLine(content, margin, tableBottom, pageWidth - margin, tableBottom);
+        drawLine(content, margin, tableTop, margin, tableBottom);
+        drawLine(content, margin + 76, tableTop, margin + 76, tableBottom);
+        drawLine(content, pageWidth - margin, tableTop, pageWidth - margin, tableBottom);
+        drawText(content, pageWidth - margin - 24, 28, 9, String(pageIndex + 1));
+
+        const contentRef = addStream(
+          '<< /Length __LENGTH__ >>',
+          content.join('\n')
+        );
+        setObject(
+          pageRef,
+          `<< /Type /Page /Parent ${pagesRef} 0 R /MediaBox [0 0 ${num(pageWidth)} ${num(pageHeight)}] /Resources << /Font << /F1 ${fontRef} 0 R >> >> /Contents ${contentRef} 0 R /Annots [${annots.map((ref) => `${ref} 0 R`).join(' ')}] >>`
+        );
+        pageRefs.push(pageRef);
+      });
+
+      setObject(catalogRef, `<< /Type /Catalog /Pages ${pagesRef} 0 R /AcroForm ${acroFormRef} 0 R >>`);
+      setObject(pagesRef, `<< /Type /Pages /Kids [${pageRefs.map((ref) => `${ref} 0 R`).join(' ')}] /Count ${pageRefs.length} >>`);
+      setObject(
+        acroFormRef,
+        `<< /Fields [${fieldRefs.map((ref) => `${ref} 0 R`).join(' ')}] /DR << /Font << /Helv ${fontRef} 0 R >> >> /DA ${pdfLiteral('/Helv 0 Tf 0 g')} /NeedAppearances false >>`
+      );
+
+      return writePdf(objects, catalogRef);
+    }
+
+    function drawTableHeader(content, x, y, width, height) {
+      content.push('0.917 0.953 1 rg');
+      content.push(`${num(x)} ${num(y - height)} ${num(width)} ${num(height)} re f`);
+      content.push('0.745 0.835 0.949 RG 1 w');
+      content.push(`${num(x)} ${num(y - height)} ${num(width)} ${num(height)} re S`);
+      drawText(content, x + 14, y - 16, 8, 'CONCLUIDO');
+      drawText(content, x + 90, y - 16, 8, 'EVIDENCIA');
+      drawLine(content, x + 76, y, x + 76, y - height);
+    }
+
+    function drawText(content, x, y, size, text) {
+      content.push('0 0 0 rg');
+      content.push(`BT /F1 ${num(size)} Tf ${num(x)} ${num(y)} Td ${pdfLiteral(text)} Tj ET`);
+    }
+
+    function drawLine(content, x1, y1, x2, y2) {
+      content.push('0.745 0.835 0.949 RG 0.8 w');
+      content.push(`${num(x1)} ${num(y1)} m ${num(x2)} ${num(y2)} l S`);
+    }
+
+    function writePdf(objects, rootRef) {
+      const parts = ['%PDF-1.7\n%\xE2\xE3\xCF\xD3\n'];
+      const offsets = [0];
+      let length = parts[0].length;
+
+      objects.forEach((object, index) => {
+        offsets.push(length);
+        const chunk = `${index + 1} 0 obj\n${object}\nendobj\n`;
+        parts.push(chunk);
+        length += chunk.length;
+      });
+
+      const xrefOffset = length;
+      const xref = [
+        `xref\n0 ${objects.length + 1}\n`,
+        '0000000000 65535 f \n',
+        ...offsets.slice(1).map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`),
+        `trailer\n<< /Size ${objects.length + 1} /Root ${rootRef} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`
+      ].join('');
+      parts.push(xref);
+
+      const pdf = parts.join('');
+      const bytes = new Uint8Array(pdf.length);
+      for (let index = 0; index < pdf.length; index += 1) {
+        bytes[index] = pdf.charCodeAt(index) & 0xff;
+      }
+      return bytes;
+    }
+
+    function downloadPdf(bytes, filename) {
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function safeDownloadName(value) {
+      return normalize(value).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'checklist';
+    }
+
+    function pdfLiteral(value) {
+      const text = pdfSafeText(value).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+      return `(${text})`;
+    }
+
+    function pdfSafeText(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\x20-\x7E]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function clampPdfText(value, limit) {
+      const text = pdfSafeText(value);
+      return text.length <= limit ? text : `${text.slice(0, Math.max(0, limit - 4)).trim()} ...`;
+    }
+
+    function num(value) {
+      return Number(value).toFixed(2).replace(/\.?0+$/, '');
+    }
+
+    function buildReportHtml(rows) {
+      const title = rows.length === 1
+        ? `Relatório de Evidências - ${rows[0].orgao} de ${rows[0].cidade}`
+        : 'Relatório de Evidências - Resultados Atricon';
+
+      const coverDelivery = rows.map(deliveryInfo).find((item) => item.aviso);
+      const coverLogo = new URL('assets/logo-da-empresa-capa.png', window.location.href).href;
+      const headerLogo = new URL('assets/logo-da-empresa.png', window.location.href).href;
+
+      return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)}</title>
+  <link rel="icon" type="image/png" href="${escapeAttr(headerLogo)}">
+  <style>
+    @page { size: A4; margin: 0; }
+    :root {
+      --brand: #0b62c4;
+      --brand-dark: #082f63;
+      --brand-soft: #eaf3ff;
+      --brand-line: #bed5f2;
+      --text: #172033;
+      --muted: #5c6f85;
+      --danger: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      background: #eef4fb;
       line-height: 1.45;
       letter-spacing: 0;
     }
@@ -1196,29 +1593,99 @@
     .print-toolbar button {
       height: 38px;
       padding: 0 14px;
-      border: 1px solid #075e6b;
+      border: 1px solid var(--brand-dark);
       border-radius: 6px;
-      background: #0c7c8c;
+      background: var(--brand);
       color: #ffffff;
       font-weight: 700;
       cursor: pointer;
     }
+    .report-page-header,
+    .page-stamps {
+      display: none;
+    }
+    .report-page-header {
+      position: fixed;
+      top: 6mm;
+      left: 14mm;
+      right: 14mm;
+      height: 14mm;
+      align-items: center;
+      justify-content: flex-start;
+      border-bottom: 1px solid var(--brand-line);
+      z-index: 2;
+    }
+    .report-page-header img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+    }
+    .page-stamp {
+      position: absolute;
+      right: 14mm;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      color: var(--brand-dark);
+      font-size: 11px;
+      font-weight: 800;
+      z-index: 4;
+    }
     .document {
+      position: relative;
       width: min(920px, calc(100% - 28px));
       margin: 18px auto 36px;
       background: #ffffff;
       box-shadow: 0 14px 32px rgba(15, 23, 42, .12);
     }
     .cover {
-      min-height: 260px;
-      padding: 34px 48px 24px;
-      border-bottom: 1px solid #d8e0ea;
+      min-height: 296mm;
+      padding: 34mm 26mm 24mm;
+      border-bottom: 0;
       display: grid;
+      align-content: space-between;
+      gap: 24px;
+      position: relative;
+      z-index: 3;
+      background: #ffffff;
+      page-break-after: always;
+      break-after: page;
+      overflow: hidden;
+    }
+    .cover-main {
+      display: grid;
+      gap: 16px;
       align-content: center;
+      min-height: 150mm;
+    }
+    .cover-bottom {
+      display: grid;
       gap: 18px;
+      justify-items: start;
+    }
+    .generated-by {
+      display: grid;
+      gap: 10px;
+      justify-items: start;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .generated-by img {
+      width: 260px;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+    .cover-date {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
     }
     .kicker {
-      color: #075e6b;
+      color: var(--brand);
       font-size: 12px;
       font-weight: 800;
       letter-spacing: .08em;
@@ -1228,25 +1695,25 @@
       margin: 0;
       font-size: 34px;
       line-height: 1.15;
-      color: #102033;
+      color: var(--brand-dark);
     }
-    .cover-summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 14px;
+    .cover-deadline {
+      width: min(420px, 100%);
+      padding: 14px 16px;
+      border: 1px solid var(--brand-line);
+      border-radius: 8px;
+      background: var(--brand-soft);
     }
     .cover-card,
-    .account-card,
     .evidence-card {
-      border: 1px solid #d8e0ea;
+      border: 1px solid var(--brand-line);
       border-radius: 8px;
       background: #ffffff;
     }
     .cover-card { padding: 12px 14px; }
     .label {
       display: block;
-      color: #64748b;
+      color: var(--muted);
       font-size: 11px;
       font-weight: 800;
       text-transform: uppercase;
@@ -1256,7 +1723,7 @@
     .value {
       font-size: 18px;
       font-weight: 800;
-      color: #102033;
+      color: var(--brand-dark);
     }
     .section {
       padding: 22px 36px 28px;
@@ -1264,24 +1731,17 @@
     }
     h2 {
       margin: 0 0 14px;
-      color: #102033;
+      color: var(--brand-dark);
       font-size: 19px;
       line-height: 1.25;
     }
     h3 {
       margin: 24px 0 10px;
-      color: #075e6b;
+      color: var(--brand-dark);
       font-size: 18px;
       line-height: 1.3;
-      border-bottom: 2px solid #0c7c8c;
+      border-bottom: 2px solid var(--brand);
       padding-bottom: 6px;
-    }
-    .account-card {
-      padding: 14px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      background: #f8fafc;
     }
     .status {
       display: inline-flex;
@@ -1308,14 +1768,14 @@
     }
     .evidence-head {
       padding: 12px 14px;
-      background: #edf6f8;
-      border-bottom: 1px solid #d8e0ea;
+      background: var(--brand-soft);
+      border-bottom: 1px solid var(--brand-line);
       display: grid;
       gap: 6px;
     }
     .evidence-title {
       font-weight: 800;
-      color: #b42318;
+      color: var(--danger);
     }
     .evidence-meta {
       display: flex;
@@ -1330,7 +1790,7 @@
       padding: 2px 7px;
       border-radius: 999px;
       background: #ffffff;
-      border: 1px solid #bdd7de;
+      border: 1px solid var(--brand-line);
     }
     .evidence-body {
       padding: 14px;
@@ -1347,7 +1807,7 @@
       image-rendering: auto;
       print-color-adjust: exact;
       -webkit-print-color-adjust: exact;
-      border: 1px solid #d8e0ea;
+      border: 1px solid var(--brand-line);
       border-radius: 4px;
     }
     .evidence-images {
@@ -1357,6 +1817,8 @@
     }
     .evidence-images figure {
       margin: 0;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .evidence-images figcaption {
       margin-top: 4px;
@@ -1375,15 +1837,17 @@
       display: none !important;
     }
     .evidence-body a {
-      color: #075e6b;
+      color: var(--brand);
       font-weight: 700;
     }
     .evidence-message {
       margin: 0 0 14px;
       padding: 12px;
-      border: 1px solid #d8e0ea;
+      border: 1px solid var(--brand-line);
       border-radius: 8px;
       background: #ffffff;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .evidence-message:last-child {
       margin-bottom: 0;
@@ -1410,23 +1874,37 @@
     @media print {
       body { background: #ffffff; }
       .print-toolbar { display: none; }
+      .report-page-header { display: flex; }
+      .page-stamps { display: block; }
+      .page-stamp { display: flex; }
       .document {
         width: 100%;
         margin: 0;
-        padding: 14mm;
+        padding: 0;
         box-shadow: none;
       }
       .cover {
-        min-height: auto;
-        padding: 0 0 10mm;
-        page-break-after: avoid;
+        page: auto;
+        width: 100%;
+        min-height: 296mm;
+        padding: 34mm 26mm 24mm;
+        page-break-after: always;
+        break-after: page;
       }
-      .section { padding: 0 0 14mm; }
-      .account-card { page-break-after: always; }
-      .evidence-sections { page-break-before: always; }
+      .section {
+        padding: 24mm 14mm 18mm;
+        page-break-after: auto;
+        break-after: auto;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+      .evidence-card { break-inside: auto; page-break-inside: auto; }
+      .evidence-message,
+      .evidence-images figure { break-inside: avoid; page-break-inside: avoid; }
+      .evidence-sections { page-break-before: auto; }
       .chapter { break-inside: auto; page-break-inside: auto; }
       .chapter h3 { page-break-after: avoid; break-after: avoid; }
-      .footer { padding: 8mm 0 0; }
+      .footer { padding: 8mm 14mm 0; }
     }
   </style>
 </head>
@@ -1434,13 +1912,75 @@
   <div class="print-toolbar">
     <button onclick="window.print()">Salvar como PDF</button>
   </div>
+  <div class="report-page-header">
+    <img src="${escapeAttr(headerLogo)}" alt="Logo da empresa">
+  </div>
   <article class="document">
+    <div class="page-stamps"></div>
     <section class="cover">
       <div class="kicker">PNTP 2026 · Evidências de Validação</div>
       <h1>${escapeHtml(title)}</h1>
+      <div class="cover-bottom">
+        ${coverDelivery ? `<div class="cover-deadline"><span class="label">Prazo de manifesta&ccedil;&atilde;o</span><span class="value">${escapeHtml(coverDelivery.aviso)}</span></div>` : ''}
+        <div class="generated-by">
+          <span class="generated-by-label">Relat&oacute;rio gerado por:</span>
+          <img src="${escapeAttr(coverLogo)}" alt="Barco Digital Sistemas">
+        </div>
+      </div>
     </section>
     ${rows.map(renderReportAccount).join('')}
   </article>
+  <script>
+    (() => {
+      function waitForImages() {
+        const images = [...document.images];
+        return Promise.all(images.map((image) => {
+          if (image.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            image.addEventListener('load', resolve, { once: true });
+            image.addEventListener('error', resolve, { once: true });
+          });
+        }));
+      }
+
+      function measureA4Height() {
+        const ruler = document.createElement('div');
+        ruler.style.position = 'absolute';
+        ruler.style.visibility = 'hidden';
+        ruler.style.height = '297mm';
+        document.body.appendChild(ruler);
+        const height = ruler.offsetHeight;
+        ruler.remove();
+        return height;
+      }
+
+      function renderPageNumbers() {
+        const documentNode = document.querySelector('.document');
+        const stamps = document.querySelector('.page-stamps');
+        if (!documentNode || !stamps) return;
+
+        const pageHeight = measureA4Height();
+        const pageCount = Math.max(1, Math.ceil(documentNode.scrollHeight / pageHeight));
+        const bottomOffset = 22;
+
+        stamps.innerHTML = '';
+        for (let physicalPage = 2; physicalPage <= pageCount; physicalPage += 1) {
+          const visibleNumber = physicalPage - 1;
+          const stamp = document.createElement('div');
+          stamp.className = 'page-stamp';
+          stamp.style.top = ((physicalPage * pageHeight) - bottomOffset) + 'px';
+          stamp.textContent = String(visibleNumber);
+          stamps.appendChild(stamp);
+        }
+      }
+
+      window.addEventListener('beforeprint', renderPageNumbers);
+      window.addEventListener('resize', renderPageNumbers);
+      window.addEventListener('load', () => {
+        waitForImages().then(() => setTimeout(renderPageNumbers, 150));
+      });
+    })();
+  <\/script>
 </body>
 </html>`;
     }
@@ -1448,14 +1988,9 @@
     function renderReportAccount(row, index) {
       const evidences = getEvidences(row);
       const grouped = groupByChapter(evidences);
-      const statusClass = row.erro ? 'status error' : 'status';
 
       return `<section class="section">
         <h2>${escapeHtml(row.orgao)} de ${escapeHtml(row.cidade)}${row.porcentagem ? ` - ${escapeHtml(row.porcentagem)}` : ''}</h2>
-        <div class="account-card">
-          <div><span class="label">Status</span><span class="${statusClass}">${escapeHtml(row.status || (row.erro ? 'Erro' : 'Sem status'))}</span></div>
-          <div><span class="label">Setor atual</span><strong>${escapeHtml(row.setor_atual || '-')}</strong></div>
-        </div>
         ${row.erro ? `<p class="empty-note">${escapeHtml(row.erro)}</p>` : ''}
         ${evidences.length ? Object.entries(grouped).map(([chapter, items]) => renderReportChapter(chapter, items)).join('') : '<p class="empty-note">Nenhuma evidência de Validação foi encontrada para este registro.</p>'}
       </section>`;
@@ -1615,8 +2150,6 @@
         ['orgão', 'orgao'],
         ['cidade', 'cidade'],
         ['status', 'status'],
-        ['setor_atual', 'setor_atual'],
-        ['data', 'data'],
         ['porcentagem', 'porcentagem'],
         ['erro', 'erro'],
         ['debug_html', 'debug_html'],
@@ -1638,6 +2171,12 @@
 
     function csvCell(value) {
       return `"${String(value || '').replace(/"/g, '""')}"`;
+    }
+
+    function truncateWords(value, limit) {
+      const words = String(value || '').trim().split(/\s+/).filter(Boolean);
+      if (words.length <= limit) return words.join(' ');
+      return `${words.slice(0, limit).join(' ')} ...`;
     }
 
     function escapeHtml(value) {

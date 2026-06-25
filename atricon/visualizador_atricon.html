@@ -1,0 +1,1374 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resultados Atricon</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6f9;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --line: #d8e0ea;
+      --line-strong: #aeb9c7;
+      --text: #162231;
+      --muted: #64748b;
+      --accent: #0c7c8c;
+      --accent-dark: #075e6b;
+      --accent-soft: #e9f7f9;
+      --error: #b42318;
+      --warn: #9a6700;
+      --ok: #067647;
+      --shadow: 0 12px 28px rgba(15, 23, 42, .07);
+      --shadow-soft: 0 1px 2px rgba(15, 23, 42, .06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        linear-gradient(180deg, #eef5f8 0, var(--bg) 280px);
+      color: var(--text);
+      letter-spacing: 0;
+    }
+
+    header {
+      background: rgba(255, 255, 255, .92);
+      border-bottom: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar {
+      width: min(1320px, calc(100% - 32px));
+      margin: 0 auto;
+      min-height: 86px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+    }
+
+    .eyebrow {
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 27px;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .file-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    input[type="file"] {
+      width: min(360px, 100%);
+      min-height: 40px;
+      padding: 8px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--text);
+    }
+
+    main {
+      width: min(1320px, calc(100% - 32px));
+      margin: 18px auto 32px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .file-meta {
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-meta strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .compare-panel {
+      display: grid;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .compare-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .compare-title {
+      display: grid;
+      gap: 4px;
+    }
+
+    .compare-title h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .compare-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .compare-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .compare-meta strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .compare-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .compare-table {
+      max-height: 430px;
+      box-shadow: none;
+    }
+
+    .compare-table table {
+      min-width: 1120px;
+    }
+
+    .change-list {
+      display: grid;
+      gap: 4px;
+      min-width: 260px;
+    }
+
+    .change-item {
+      display: grid;
+      gap: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .change-item strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, 210px)) auto;
+      gap: 12px;
+      align-items: end;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    input[type="search"],
+    select {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: #ffffff;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    input[type="search"]:focus,
+    select:focus,
+    input[type="file"]:focus {
+      outline: 2px solid rgba(12, 124, 140, .22);
+      border-color: var(--accent);
+    }
+
+    button {
+      height: 40px;
+      border: 1px solid var(--accent-dark);
+      border-radius: 6px;
+      padding: 0 14px;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover { background: var(--accent-dark); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .secondary-button {
+      background: #ffffff;
+      color: var(--accent-dark);
+      border-color: var(--line-strong);
+    }
+
+    .secondary-button:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      position: relative;
+      overflow: hidden;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--accent);
+    }
+
+    .metric.error-metric::before { background: var(--error); }
+    .metric.ok-metric::before { background: var(--ok); }
+    .metric.filter-metric::before { background: #3b5b85; }
+
+    .metric span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .table-shell {
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      max-height: calc(100vh - 270px);
+    }
+
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #edf3f7;
+      color: #334155;
+      font-size: 12px;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      letter-spacing: .03em;
+    }
+
+    tbody tr:nth-child(even) { background: #fbfdff; }
+    tbody tr:hover { background: #eef8fb; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge.ok {
+      color: var(--ok);
+      background: #ecfdf3;
+      border-color: #abefc6;
+    }
+
+    .badge.warn {
+      color: var(--warn);
+      background: #fffaeb;
+      border-color: #fedf89;
+    }
+
+    .badge.error {
+      color: var(--error);
+      background: #fef3f2;
+      border-color: #fecdca;
+    }
+
+    .muted { color: var(--muted); }
+    .error-text { color: var(--error); }
+
+    .empty {
+      min-height: 180px;
+      display: grid;
+      place-items: center;
+      background: var(--panel);
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .error-cell {
+      max-width: 430px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .debug-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    a {
+      color: var(--accent-dark);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    @media (max-width: 980px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+
+      .file-control {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .compare-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .compare-controls {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .toolbar label:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .summary {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .compare-summary {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .toolbar,
+      .summary,
+      .compare-summary {
+        grid-template-columns: 1fr;
+      }
+
+      h1 { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <span class="eyebrow">Painel de conferência</span>
+        <h1>Resultados Atricon</h1>
+        <p class="subtitle">Visualize, filtre e exporte os retornos coletados pelo script.</p>
+      </div>
+      <div class="file-control">
+        <input id="fileInput" type="file" accept=".json,application/json">
+        <button id="generateReport" type="button" disabled>Gerar relatório</button>
+        <button id="exportCsv" type="button" disabled>Exportar CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="fileMeta" class="file-meta">Nenhum arquivo carregado.</div>
+
+    <section class="toolbar" aria-label="Filtros">
+      <label>
+        Buscar
+        <input id="searchInput" type="search" placeholder="Orgão, cidade, status, erro...">
+      </label>
+      <label>
+        Status
+        <select id="statusFilter">
+          <option value="">Todos</option>
+        </select>
+      </label>
+      <label>
+        Cidade
+        <select id="cityFilter">
+          <option value="">Todas</option>
+        </select>
+      </label>
+      <label>
+        Resultado
+        <select id="errorFilter">
+          <option value="">Todos</option>
+          <option value="sem_erro">Sem erro</option>
+          <option value="com_erro">Com erro</option>
+        </select>
+      </label>
+      <button id="clearFilters" class="secondary-button" type="button">Limpar</button>
+    </section>
+
+    <section class="summary" aria-label="Resumo">
+      <div class="metric"><span>Total</span><strong id="totalCount">0</strong></div>
+      <div class="metric filter-metric"><span>Filtrados</span><strong id="filteredCount">0</strong></div>
+      <div class="metric ok-metric"><span>Validados</span><strong id="validatedCount">0</strong></div>
+      <div class="metric error-metric"><span>Com erro</span><strong id="errorCount">0</strong></div>
+    </section>
+
+    <section id="comparePanel" class="compare-panel" hidden>
+      <div class="compare-head">
+        <div class="compare-title">
+          <span class="eyebrow">Comparador de JSON</span>
+          <h2>Comparar dois relatorios</h2>
+          <p class="subtitle">O arquivo principal carregado acima sera comparado com o segundo JSON selecionado aqui.</p>
+        </div>
+        <div class="compare-controls">
+          <input id="compareInput" type="file" accept=".json,application/json" disabled>
+          <button id="clearCompare" class="secondary-button" type="button" disabled>Limpar comparacao</button>
+        </div>
+      </div>
+      <div id="compareMeta" class="compare-meta">Selecione o segundo JSON para comparar.</div>
+      <div class="compare-summary" aria-label="Resumo da comparacao">
+        <div class="metric ok-metric"><span>Iguais</span><strong id="sameCount">0</strong></div>
+        <div class="metric filter-metric"><span>Alterados</span><strong id="changedCount">0</strong></div>
+        <div class="metric error-metric"><span>So no principal</span><strong id="onlyBaseCount">0</strong></div>
+        <div class="metric"><span>So no comparado</span><strong id="onlyCompareCount">0</strong></div>
+      </div>
+      <section id="compareEmpty" class="empty">Selecione o segundo JSON para comparar.</section>
+      <section id="compareTableShell" class="table-shell compare-table" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th>Resultado</th>
+              <th>Orgao</th>
+              <th>Cidade</th>
+              <th>Status principal</th>
+              <th>Status comparado</th>
+              <th>Porcentagem</th>
+              <th>Erro</th>
+              <th>Campos alterados</th>
+            </tr>
+          </thead>
+          <tbody id="compareTableBody"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <section id="emptyState" class="empty">Selecione um arquivo JSON para visualizar os resultados.</section>
+
+    <section id="tableShell" class="table-shell" hidden>
+      <table>
+        <thead>
+          <tr>
+            <th data-key="orgao">Orgão</th>
+            <th data-key="cidade">Cidade</th>
+            <th data-key="status">Status</th>
+            <th data-key="setor_atual">Setor Atual</th>
+            <th data-key="data">Data</th>
+            <th data-key="porcentagem">Porcentagem</th>
+            <th data-key="erro">Erro</th>
+            <th data-key="debug_html">Debug</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      rows: [],
+      filtered: [],
+      compareRows: [],
+      comparisons: [],
+      sortKey: 'cidade',
+      sortDir: 'asc'
+    };
+
+    const fileInput = document.getElementById('fileInput');
+    const compareInput = document.getElementById('compareInput');
+    const generateReport = document.getElementById('generateReport');
+    const exportCsv = document.getElementById('exportCsv');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const cityFilter = document.getElementById('cityFilter');
+    const errorFilter = document.getElementById('errorFilter');
+    const clearFilters = document.getElementById('clearFilters');
+    const emptyState = document.getElementById('emptyState');
+    const tableShell = document.getElementById('tableShell');
+    const tableBody = document.getElementById('tableBody');
+    const fileMeta = document.getElementById('fileMeta');
+    const comparePanel = document.getElementById('comparePanel');
+    const clearCompare = document.getElementById('clearCompare');
+    const compareMeta = document.getElementById('compareMeta');
+    const compareEmpty = document.getElementById('compareEmpty');
+    const compareTableShell = document.getElementById('compareTableShell');
+    const compareTableBody = document.getElementById('compareTableBody');
+
+    fileInput.addEventListener('change', handleFile);
+    compareInput.addEventListener('change', handleCompareFile);
+    generateReport.addEventListener('click', generateReportDocument);
+    exportCsv.addEventListener('click', exportFilteredCsv);
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    cityFilter.addEventListener('change', applyFilters);
+    errorFilter.addEventListener('change', applyFilters);
+    clearFilters.addEventListener('click', () => {
+      searchInput.value = '';
+      statusFilter.value = '';
+      cityFilter.value = '';
+      errorFilter.value = '';
+      applyFilters();
+    });
+    clearCompare.addEventListener('click', clearComparison);
+
+    document.querySelectorAll('th[data-key]').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (state.sortKey === key) {
+          state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sortKey = key;
+          state.sortDir = 'asc';
+        }
+        renderTable();
+      });
+    });
+
+    async function handleFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const rows = Array.isArray(parsed) ? parsed : [parsed];
+        state.rows = rows.map(normalizeRow);
+        fileMeta.innerHTML = `<strong>${escapeHtml(file.name)}</strong><span>${state.rows.length} registro(s)</span>`;
+        fillFilterOptions();
+        applyFilters();
+        exportCsv.disabled = state.rows.length === 0;
+        generateReport.disabled = state.rows.length === 0;
+        resetComparison('Selecione o segundo JSON para comparar.');
+        comparePanel.hidden = state.rows.length === 0;
+        compareInput.disabled = state.rows.length === 0;
+      } catch (error) {
+        state.rows = [];
+        state.filtered = [];
+        resetComparison('Carregue um JSON principal valido antes de comparar.');
+        comparePanel.hidden = true;
+        compareInput.disabled = true;
+        fileMeta.textContent = 'Nenhum arquivo carregado.';
+        renderTable();
+        emptyState.hidden = false;
+        tableShell.hidden = true;
+        emptyState.textContent = `JSON inválido: ${error.message}`;
+        exportCsv.disabled = true;
+        generateReport.disabled = true;
+      }
+    }
+
+    async function handleCompareFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!state.rows.length) {
+        alert('Carregue primeiro o JSON principal.');
+        compareInput.value = '';
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const rows = Array.isArray(parsed) ? parsed : [parsed];
+        state.compareRows = rows.map(normalizeRow);
+        state.comparisons = buildComparisons();
+        compareMeta.innerHTML = `<strong>${escapeHtml(file.name)}</strong><span> ${state.compareRows.length} registro(s) comparado(s)</span>`;
+        clearCompare.disabled = false;
+        renderComparison();
+      } catch (error) {
+        state.compareRows = [];
+        state.comparisons = [];
+        compareMeta.textContent = `JSON de comparacao invalido: ${error.message}`;
+        clearCompare.disabled = false;
+        renderComparison();
+      }
+    }
+
+    function resetComparison(message) {
+      state.compareRows = [];
+      state.comparisons = [];
+      compareInput.value = '';
+      clearCompare.disabled = true;
+      compareMeta.textContent = message;
+      compareEmpty.textContent = message;
+      compareEmpty.hidden = false;
+      compareTableShell.hidden = true;
+      compareTableBody.innerHTML = '';
+      updateComparisonMetrics();
+    }
+
+    function clearComparison() {
+      resetComparison('Selecione o segundo JSON para comparar.');
+    }
+
+    function buildComparisons() {
+      const baseMap = indexRowsByCompareKey(state.rows);
+      const compareMap = indexRowsByCompareKey(state.compareRows);
+      const keys = uniqueValues([...baseMap.keys(), ...compareMap.keys()]);
+
+      return keys.map((key) => {
+        const base = baseMap.get(key) || null;
+        const compare = compareMap.get(key) || null;
+        const changes = base && compare ? getRowChanges(base, compare) : [];
+        const type = !base ? 'So no comparado' : !compare ? 'So no principal' : changes.length ? 'Alterado' : 'Igual';
+
+        return {
+          key,
+          type,
+          base,
+          compare,
+          changes,
+          orgao: (base || compare).orgao,
+          cidade: (base || compare).cidade
+        };
+      }).sort((a, b) => {
+        const city = a.cidade.localeCompare(b.cidade, 'pt-BR', { numeric: true });
+        return city || a.orgao.localeCompare(b.orgao, 'pt-BR', { numeric: true });
+      });
+    }
+
+    function indexRowsByCompareKey(rows) {
+      return rows.reduce((map, row) => {
+        map.set(compareKey(row), row);
+        return map;
+      }, new Map());
+    }
+
+    function compareKey(row) {
+      const id = value(row.raw.questionario_id ?? row.raw.id_questionario ?? row.raw.id);
+      if (id) return `id:${normalize(id)}`;
+      return `nome:${normalize(row.orgao)}|${normalize(row.cidade)}`;
+    }
+
+    function getRowChanges(base, compare) {
+      const fields = [
+        ['Status', (row) => row.status],
+        ['Setor atual', (row) => row.setor_atual],
+        ['Data', (row) => row.data],
+        ['Porcentagem', (row) => row.porcentagem],
+        ['Erro', (row) => row.erro],
+        ['Evidencias', (row) => String(getEvidences(row).length)]
+      ];
+
+      return fields.reduce((changes, [label, read]) => {
+        const before = read(base);
+        const after = read(compare);
+        if (normalizeComparable(before) !== normalizeComparable(after)) {
+          changes.push({
+            label,
+            before: before || '-',
+            after: after || '-'
+          });
+        }
+        return changes;
+      }, []);
+    }
+
+    function normalizeComparable(value) {
+      return normalize(String(value || '').replace(/\s+/g, ' '));
+    }
+
+    function renderComparison() {
+      updateComparisonMetrics();
+
+      if (!state.compareRows.length) {
+        compareEmpty.hidden = false;
+        compareTableShell.hidden = true;
+        if (!compareMeta.textContent.startsWith('JSON de comparacao invalido')) {
+          compareEmpty.textContent = 'Selecione o segundo JSON para comparar.';
+        } else {
+          compareEmpty.textContent = compareMeta.textContent;
+        }
+        return;
+      }
+
+      compareEmpty.hidden = state.comparisons.length !== 0;
+      compareTableShell.hidden = state.comparisons.length === 0;
+      compareTableBody.innerHTML = state.comparisons.map(renderComparisonRow).join('');
+    }
+
+    function renderComparisonRow(item) {
+      const statusClass = item.type === 'Igual' ? 'ok' : item.type === 'Alterado' ? 'warn' : 'error';
+      const base = item.base || {};
+      const compare = item.compare || {};
+      const changeList = item.changes.length
+        ? `<span class="change-list">${item.changes.map(renderChangeItem).join('')}</span>`
+        : '<span class="muted">-</span>';
+
+      return `
+        <tr>
+          <td><span class="badge ${statusClass}">${escapeHtml(item.type)}</span></td>
+          <td>${escapeHtml(item.orgao)}</td>
+          <td>${escapeHtml(item.cidade)}</td>
+          <td>${escapeHtml(base.status || '-')}</td>
+          <td>${escapeHtml(compare.status || '-')}</td>
+          <td>${escapeHtml(formatPair(base.porcentagem, compare.porcentagem))}</td>
+          <td class="error-cell">${escapeHtml(formatPair(base.erro, compare.erro))}</td>
+          <td>${changeList}</td>
+        </tr>
+      `;
+    }
+
+    function renderChangeItem(change) {
+      return `<span class="change-item"><strong>${escapeHtml(change.label)}</strong><span>${escapeHtml(change.before)} -> ${escapeHtml(change.after)}</span></span>`;
+    }
+
+    function formatPair(before, after) {
+      const left = before || '-';
+      const right = after || '-';
+      return left === right ? left : `${left} -> ${right}`;
+    }
+
+    function normalizeRow(row) {
+      return {
+        orgao: value(row['orgão'] ?? row['órgão'] ?? row.orgao),
+        cidade: value(row.cidade),
+        status: value(row.status),
+        setor_atual: value(row.setor_atual ?? row['setor atual']),
+        data: value(row.data),
+        porcentagem: value(row.porcentagem ?? row.porcetagem),
+        erro: value(row.erro),
+        debug_html: value(row.debug_html),
+        debug_screenshot: value(row.debug_screenshot),
+        raw: row
+      };
+    }
+
+    function value(input) {
+      if (input === null || input === undefined) return '';
+      if (typeof input === 'object') return JSON.stringify(input);
+      return String(input);
+    }
+
+    function fillFilterOptions() {
+      setOptions(statusFilter, uniqueValues(state.rows.map((row) => row.status).filter(Boolean)), 'Todos');
+      setOptions(cityFilter, uniqueValues(state.rows.map((row) => row.cidade).filter(Boolean)), 'Todas');
+    }
+
+    function setOptions(select, options, firstLabel) {
+      const current = select.value;
+      select.innerHTML = `<option value="">${firstLabel}</option>`;
+      options.forEach((option) => {
+        const item = document.createElement('option');
+        item.value = option;
+        item.textContent = option;
+        select.appendChild(item);
+      });
+      select.value = options.includes(current) ? current : '';
+    }
+
+    function uniqueValues(values) {
+      return [...new Set(values)].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    }
+
+    function applyFilters() {
+      const query = normalize(searchInput.value);
+      const status = statusFilter.value;
+      const cidade = cityFilter.value;
+      const errorMode = errorFilter.value;
+
+      state.filtered = state.rows.filter((row) => {
+        const searchable = normalize(Object.values({
+          orgao: row.orgao,
+          cidade: row.cidade,
+          status: row.status,
+          setor_atual: row.setor_atual,
+          data: row.data,
+          porcentagem: row.porcentagem,
+          erro: row.erro
+        }).join(' '));
+
+        if (query && !searchable.includes(query)) return false;
+        if (status && row.status !== status) return false;
+        if (cidade && row.cidade !== cidade) return false;
+        if (errorMode === 'com_erro' && !row.erro) return false;
+        if (errorMode === 'sem_erro' && row.erro) return false;
+        return true;
+      });
+
+      renderTable();
+    }
+
+    function normalize(text) {
+      return String(text || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function renderTable() {
+      updateMetrics();
+
+      if (!state.rows.length) {
+        emptyState.hidden = false;
+        tableShell.hidden = true;
+        if (!emptyState.textContent.startsWith('JSON inválido')) {
+          emptyState.textContent = 'Selecione um arquivo JSON para visualizar os resultados.';
+        }
+        return;
+      }
+
+      emptyState.hidden = state.filtered.length !== 0;
+      emptyState.textContent = 'Nenhum registro encontrado para os filtros atuais.';
+      tableShell.hidden = state.filtered.length === 0;
+
+      const sorted = [...state.filtered].sort((a, b) => {
+        const result = a[state.sortKey].localeCompare(b[state.sortKey], 'pt-BR', { numeric: true });
+        return state.sortDir === 'asc' ? result : -result;
+      });
+
+      tableBody.innerHTML = sorted.map(renderRow).join('');
+    }
+
+    function renderRow(row) {
+      const statusClass = row.erro ? 'error' : normalize(row.status) === 'validado' ? 'ok' : 'warn';
+      const statusText = row.status || (row.erro ? 'Erro' : 'Sem status');
+      const debugLinks = [
+        row.debug_html ? `<a href="${escapeAttr(fileHref(row.debug_html))}" target="_blank">HTML</a>` : '',
+        row.debug_screenshot ? `<a href="${escapeAttr(fileHref(row.debug_screenshot))}" target="_blank">Imagem</a>` : ''
+      ].filter(Boolean).join(' · ');
+
+      return `
+        <tr>
+          <td>${escapeHtml(row.orgao)}</td>
+          <td>${escapeHtml(row.cidade)}</td>
+          <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
+          <td>${escapeHtml(row.setor_atual) || '<span class="muted">-</span>'}</td>
+          <td>${escapeHtml(row.data) || '<span class="muted">-</span>'}</td>
+          <td>${escapeHtml(row.porcentagem) || '<span class="muted">-</span>'}</td>
+          <td class="error-cell ${row.erro ? 'error-text' : 'muted'}">${escapeHtml(row.erro) || 'Sem erro'}</td>
+          <td><span class="debug-links">${debugLinks || '<span class="muted">-</span>'}</span></td>
+        </tr>
+      `;
+    }
+
+    function updateMetrics() {
+      document.getElementById('totalCount').textContent = state.rows.length;
+      document.getElementById('filteredCount').textContent = state.filtered.length;
+      document.getElementById('validatedCount').textContent =
+        state.rows.filter((row) => normalize(row.status) === 'validado' && !row.erro).length;
+      document.getElementById('errorCount').textContent =
+        state.rows.filter((row) => row.erro).length;
+    }
+
+    function updateComparisonMetrics() {
+      document.getElementById('sameCount').textContent =
+        state.comparisons.filter((item) => item.type === 'Igual').length;
+      document.getElementById('changedCount').textContent =
+        state.comparisons.filter((item) => item.type === 'Alterado').length;
+      document.getElementById('onlyBaseCount').textContent =
+        state.comparisons.filter((item) => item.type === 'So no principal').length;
+      document.getElementById('onlyCompareCount').textContent =
+        state.comparisons.filter((item) => item.type === 'So no comparado').length;
+    }
+
+    function generateReportDocument() {
+      const rows = state.filtered;
+      if (!rows.length) {
+        alert('Nenhum registro disponível nos filtros atuais para gerar relatório.');
+        return;
+      }
+      const reportHtml = buildReportHtml(rows);
+      const blob = new Blob([reportHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const reportWindow = window.open(url, '_blank');
+
+      if (!reportWindow) {
+        alert('O navegador bloqueou a abertura do relatório. Permita pop-ups para esta página.');
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+
+    function buildReportHtml(rows) {
+      const generatedAt = new Date().toLocaleString('pt-BR');
+      const totalEvidencias = rows.reduce((sum, row) => sum + getEvidences(row).length, 0);
+      const title = rows.length === 1
+        ? `Relatório de Evidências - ${rows[0].orgao} de ${rows[0].cidade}`
+        : 'Relatório de Evidências - Resultados Atricon';
+
+      return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #1f2937;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #eef2f6;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+    .print-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid #d8e0ea;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, .08);
+    }
+    .print-toolbar button {
+      height: 38px;
+      padding: 0 14px;
+      border: 1px solid #075e6b;
+      border-radius: 6px;
+      background: #0c7c8c;
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .document {
+      width: min(920px, calc(100% - 28px));
+      margin: 18px auto 36px;
+      background: #ffffff;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, .12);
+    }
+    .cover {
+      min-height: 520px;
+      padding: 46px 48px;
+      border-bottom: 1px solid #d8e0ea;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+    .kicker {
+      color: #075e6b;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.15;
+      color: #102033;
+    }
+    .cover-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .cover-card,
+    .account-card,
+    .evidence-card {
+      border: 1px solid #d8e0ea;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    .cover-card { padding: 12px 14px; }
+    .label {
+      display: block;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 3px;
+    }
+    .value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #102033;
+    }
+    .section {
+      padding: 28px 36px;
+      border-bottom: 1px solid #e6ebf1;
+    }
+    h2 {
+      margin: 0 0 14px;
+      color: #102033;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+    h3 {
+      margin: 24px 0 10px;
+      color: #075e6b;
+      font-size: 18px;
+      line-height: 1.3;
+      border-bottom: 2px solid #0c7c8c;
+      padding-bottom: 6px;
+    }
+    .account-card {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: #f8fafc;
+    }
+    .status {
+      display: inline-flex;
+      width: fit-content;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #067647;
+      background: #ecfdf3;
+      border: 1px solid #abefc6;
+    }
+    .status.error {
+      color: #b42318;
+      background: #fef3f2;
+      border-color: #fecdca;
+    }
+    .chapter {
+      break-inside: avoid;
+      margin-top: 18px;
+    }
+    .evidence-card {
+      break-inside: avoid;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+    .evidence-head {
+      padding: 12px 14px;
+      background: #edf6f8;
+      border-bottom: 1px solid #d8e0ea;
+      display: grid;
+      gap: 6px;
+    }
+    .evidence-title {
+      font-weight: 800;
+      color: #102033;
+    }
+    .evidence-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pill {
+      display: inline-flex;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid #bdd7de;
+    }
+    .evidence-body {
+      padding: 14px;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+    .evidence-body img {
+      display: block;
+      max-width: 100%;
+      height: auto !important;
+      max-height: 520px;
+      margin: 10px 0;
+      object-fit: contain;
+      border: 1px solid #d8e0ea;
+      border-radius: 4px;
+    }
+    .evidence-body a {
+      color: #075e6b;
+      font-weight: 700;
+    }
+    .empty-note {
+      padding: 16px;
+      border: 1px dashed #aeb9c7;
+      border-radius: 8px;
+      color: #64748b;
+      background: #f8fafc;
+    }
+    .footer {
+      padding: 18px 36px 28px;
+      color: #64748b;
+      font-size: 12px;
+    }
+    @media print {
+      body { background: #ffffff; }
+      .print-toolbar { display: none; }
+      .document {
+        width: 100%;
+        margin: 0;
+        box-shadow: none;
+      }
+      .cover {
+        min-height: 240mm;
+        page-break-after: always;
+      }
+      .section { padding: 0 0 14mm; }
+      .footer { padding: 8mm 0 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-toolbar">
+    <button onclick="window.print()">Salvar como PDF</button>
+  </div>
+  <article class="document">
+    <section class="cover">
+      <div class="kicker">PNTP 2026 · Evidências de Validação</div>
+      <h1>${escapeHtml(title)}</h1>
+      <div class="cover-summary">
+        <div class="cover-card"><span class="label">Evidências</span><span class="value">${totalEvidencias}</span></div>
+      </div>
+    </section>
+    ${rows.map(renderReportAccount).join('')}
+  </article>
+</body>
+</html>`;
+    }
+
+    function renderReportAccount(row, index) {
+      const evidences = getEvidences(row);
+      const grouped = groupByChapter(evidences);
+      const statusClass = row.erro ? 'status error' : 'status';
+
+      return `<section class="section">
+        <h2>${index + 1}. ${escapeHtml(row.orgao)} de ${escapeHtml(row.cidade)}</h2>
+        <div class="account-card">
+          <div><span class="label">Status</span><span class="${statusClass}">${escapeHtml(row.status || (row.erro ? 'Erro' : 'Sem status'))}</span></div>
+          <div><span class="label">Setor atual</span><strong>${escapeHtml(row.setor_atual || '-')}</strong></div>
+          <div><span class="label">Evidências</span><strong>${evidences.length}</strong></div>
+        </div>
+        ${row.erro ? `<p class="empty-note">${escapeHtml(row.erro)}</p>` : ''}
+        ${evidences.length ? Object.entries(grouped).map(([chapter, items]) => renderReportChapter(chapter, items)).join('') : '<p class="empty-note">Nenhuma evidência de Validação foi encontrada para este registro.</p>'}
+      </section>`;
+    }
+
+    function renderReportChapter(chapter, evidences) {
+      return `<div class="chapter">
+        <h3>${escapeHtml(chapter || 'Sem capítulo')}</h3>
+        ${evidences.map(renderReportEvidence).join('')}
+      </div>`;
+    }
+
+    function renderReportEvidence(evidence) {
+      return `<div class="evidence-card">
+        <div class="evidence-head">
+          <div class="evidence-title">${escapeHtml(evidence.titulo_evidencia || 'Evidência sem título')}</div>
+          <div class="evidence-meta">
+            <span class="pill">${escapeHtml(evidence.tipo || 'Sem tipo')}</span>
+          </div>
+        </div>
+        <div class="evidence-body">${renderEvidenceText(evidence.conteudo_texto || '')}</div>
+      </div>`;
+    }
+
+    function getEvidences(row) {
+      const evidences = row.raw.evidencias_validacao;
+      return Array.isArray(evidences) ? evidences : [];
+    }
+
+    function groupByChapter(evidences) {
+      return evidences.reduce((groups, evidence) => {
+        const key = evidence.titulo || 'Sem capítulo';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(evidence);
+        return groups;
+      }, {});
+    }
+
+    function renderEvidenceText(text) {
+      const normalized = String(text || '').replace(/\r\n/g, '\n').trim();
+      if (!normalized) return '<span class="muted">Sem conteÃºdo.</span>';
+
+      return normalized
+        .split(/\n{2,}/)
+        .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    function sanitizeEvidenceHtml(html) {
+      if (!html) return '<span class="muted">Sem conteúdo.</span>';
+      const template = document.createElement('template');
+      template.innerHTML = String(html);
+      template.content.querySelectorAll('script, style, form, input, button, textarea, select, .btn-delete, .note-toolbar, .note-statusbar, .note-modal, .note-popover').forEach((node) => node.remove());
+      template.content.querySelectorAll('*').forEach((node) => {
+        [...node.attributes].forEach((attr) => {
+          const name = attr.name.toLowerCase();
+          if (name.startsWith('on') || name === 'contenteditable') node.removeAttribute(attr.name);
+        });
+      });
+      return template.innerHTML.trim() || escapeHtml(String(html));
+    }
+
+    function exportFilteredCsv() {
+      const columns = [
+        ['orgão', 'orgao'],
+        ['cidade', 'cidade'],
+        ['status', 'status'],
+        ['setor_atual', 'setor_atual'],
+        ['data', 'data'],
+        ['porcentagem', 'porcentagem'],
+        ['erro', 'erro'],
+        ['debug_html', 'debug_html'],
+        ['debug_screenshot', 'debug_screenshot']
+      ];
+
+      const lines = [
+        columns.map(([label]) => csvCell(label)).join(','),
+        ...state.filtered.map((row) => columns.map(([, key]) => csvCell(row[key])).join(','))
+      ];
+
+      const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'resultado_atricon_filtrado.csv';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function csvCell(value) {
+      return `"${String(value || '').replace(/"/g, '""')}"`;
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/\\/g, '/');
+    }
+
+    function fileHref(value) {
+      const text = String(value || '');
+      if (/^[A-Za-z]:[\\/]/.test(text)) {
+        return `file:///${text.replace(/\\/g, '/')}`;
+      }
+      return text;
+    }
+  </script>
+</body>
+</html>

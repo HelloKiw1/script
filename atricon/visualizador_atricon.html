@@ -6,8 +6,43 @@
   <title>Resultados Atricon</title>
   <style>
     :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --bg-top: #172033;
+      --panel: #151f32;
+      --panel-soft: #1b263a;
+      --line: #2b384e;
+      --line-strong: #43536a;
+      --text: #e5edf7;
+      --muted: #93a4b8;
+      --accent: #19a7b8;
+      --accent-dark: #79d9e6;
+      --accent-soft: #153b45;
+      --input-bg: #0f172a;
+      --header-bg: rgba(15, 23, 42, .94);
+      --tab-bg: #111c2d;
+      --tab-text: #bfd0e4;
+      --tab-hover: #1b2a40;
+      --th-bg: #1b263a;
+      --row-alt: #111a2b;
+      --row-hover: #172f3b;
+      --ok-bg: #0f3527;
+      --ok-line: #1f7653;
+      --warn-bg: #3b2d10;
+      --warn-line: #9a6700;
+      --error-bg: #3a1717;
+      --error-line: #8f2a24;
+      --error: #ff8a80;
+      --warn: #f4c766;
+      --ok: #6ee7a5;
+      --shadow: 0 16px 38px rgba(0, 0, 0, .28);
+      --shadow-soft: 0 1px 2px rgba(0, 0, 0, .26);
+    }
+
+    body[data-theme="light"] {
       color-scheme: light;
       --bg: #f3f6f9;
+      --bg-top: #eef5f8;
       --panel: #ffffff;
       --panel-soft: #f8fafc;
       --line: #d8e0ea;
@@ -17,6 +52,20 @@
       --accent: #0c7c8c;
       --accent-dark: #075e6b;
       --accent-soft: #e9f7f9;
+      --input-bg: #ffffff;
+      --header-bg: rgba(255, 255, 255, .92);
+      --tab-bg: #e7eef5;
+      --tab-text: #334155;
+      --tab-hover: #ffffff;
+      --th-bg: #edf3f7;
+      --row-alt: #fbfdff;
+      --row-hover: #eef8fb;
+      --ok-bg: #ecfdf3;
+      --ok-line: #abefc6;
+      --warn-bg: #fffaeb;
+      --warn-line: #fedf89;
+      --error-bg: #fef3f2;
+      --error-line: #fecdca;
       --error: #b42318;
       --warn: #9a6700;
       --ok: #067647;
@@ -26,18 +75,23 @@
 
     * { box-sizing: border-box; }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
       font-family: Arial, Helvetica, sans-serif;
       background:
-        linear-gradient(180deg, #eef5f8 0, var(--bg) 280px);
+        radial-gradient(circle at top left, rgba(25, 167, 184, .22), transparent 360px),
+        linear-gradient(180deg, var(--bg-top) 0, var(--bg) 320px);
       color: var(--text);
       letter-spacing: 0;
     }
 
     header {
-      background: rgba(255, 255, 255, .92);
+      background: var(--header-bg);
       border-bottom: 1px solid var(--line);
       box-shadow: var(--shadow-soft);
       backdrop-filter: blur(8px);
@@ -46,16 +100,18 @@
     .topbar {
       width: min(1320px, calc(100% - 32px));
       margin: 0 auto;
-      min-height: 86px;
+      min-height: 104px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 20px;
+      padding: 16px 0;
     }
 
     .brand {
       display: grid;
-      gap: 4px;
+      gap: 6px;
+      max-width: 580px;
     }
 
     .eyebrow {
@@ -85,6 +141,12 @@
       gap: 10px;
       flex-wrap: wrap;
       justify-content: flex-end;
+      max-width: 720px;
+      padding: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow-soft);
     }
 
     input[type="file"] {
@@ -93,7 +155,7 @@
       padding: 8px;
       border: 1px solid var(--line-strong);
       border-radius: 6px;
-      background: #ffffff;
+      background: var(--input-bg);
       color: var(--text);
     }
 
@@ -116,6 +178,47 @@
     .file-meta strong {
       color: var(--text);
       font-weight: 700;
+    }
+
+    .tab-list {
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+      background: var(--tab-bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow-soft);
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      flex: 0 0 auto;
+      min-width: 132px;
+      background: transparent;
+      color: var(--tab-text);
+      border-color: transparent;
+    }
+
+    .tab-button:hover {
+      background: var(--tab-hover);
+      color: var(--accent-dark);
+      border-color: var(--line);
+    }
+
+    .tab-button.active {
+      background: var(--panel);
+      color: var(--accent-dark);
+      border-color: var(--line-strong);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .tab-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .tab-panel[hidden] {
+      display: none !important;
     }
 
     .compare-panel {
@@ -227,7 +330,7 @@
       border: 1px solid var(--line-strong);
       border-radius: 6px;
       padding: 0 10px;
-      background: #ffffff;
+      background: var(--input-bg);
       color: var(--text);
       font-size: 14px;
     }
@@ -235,7 +338,7 @@
     input[type="search"]:focus,
     select:focus,
     input[type="file"]:focus {
-      outline: 2px solid rgba(12, 124, 140, .22);
+      outline: 2px solid rgba(25, 167, 184, .28);
       border-color: var(--accent);
     }
 
@@ -255,7 +358,7 @@
     button:disabled { opacity: .5; cursor: not-allowed; }
 
     .secondary-button {
-      background: #ffffff;
+      background: var(--input-bg);
       color: var(--accent-dark);
       border-color: var(--line-strong);
     }
@@ -339,8 +442,8 @@
       position: sticky;
       top: 0;
       z-index: 1;
-      background: #edf3f7;
-      color: #334155;
+      background: var(--th-bg);
+      color: var(--tab-text);
       font-size: 12px;
       text-transform: uppercase;
       cursor: pointer;
@@ -348,8 +451,8 @@
       letter-spacing: .03em;
     }
 
-    tbody tr:nth-child(even) { background: #fbfdff; }
-    tbody tr:hover { background: #eef8fb; }
+    tbody tr:nth-child(even) { background: var(--row-alt); }
+    tbody tr:hover { background: var(--row-hover); }
 
     .badge {
       display: inline-flex;
@@ -365,20 +468,20 @@
 
     .badge.ok {
       color: var(--ok);
-      background: #ecfdf3;
-      border-color: #abefc6;
+      background: var(--ok-bg);
+      border-color: var(--ok-line);
     }
 
     .badge.warn {
       color: var(--warn);
-      background: #fffaeb;
-      border-color: #fedf89;
+      background: var(--warn-bg);
+      border-color: var(--warn-line);
     }
 
     .badge.error {
       color: var(--error);
-      background: #fef3f2;
-      border-color: #fecdca;
+      background: var(--error-bg);
+      border-color: var(--error-line);
     }
 
     .muted { color: var(--muted); }
@@ -479,6 +582,7 @@
         <input id="fileInput" type="file" accept=".json,application/json">
         <button id="generateReport" type="button" disabled>Gerar relatório</button>
         <button id="exportCsv" type="button" disabled>Exportar CSV</button>
+        <button id="themeToggle" class="secondary-button" type="button" aria-pressed="true">Modo claro</button>
       </div>
     </div>
   </header>
@@ -486,7 +590,13 @@
   <main>
     <div id="fileMeta" class="file-meta">Nenhum arquivo carregado.</div>
 
-    <section class="toolbar" aria-label="Filtros">
+    <nav class="tab-list" aria-label="Areas do visualizador">
+      <button class="tab-button active" type="button" data-tab="resultsPanel" aria-controls="resultsPanel" aria-selected="true">Resultados</button>
+      <button class="tab-button" type="button" data-tab="comparePanel" aria-controls="comparePanel" aria-selected="false">Comparador</button>
+    </nav>
+
+    <section id="resultsPanel" class="tab-panel">
+      <section class="toolbar" aria-label="Filtros">
       <label>
         Buscar
         <input id="searchInput" type="search" placeholder="Orgão, cidade, status, erro...">
@@ -521,45 +631,6 @@
       <div class="metric error-metric"><span>Com erro</span><strong id="errorCount">0</strong></div>
     </section>
 
-    <section id="comparePanel" class="compare-panel" hidden>
-      <div class="compare-head">
-        <div class="compare-title">
-          <span class="eyebrow">Comparador de JSON</span>
-          <h2>Comparar dois relatorios</h2>
-          <p class="subtitle">O arquivo principal carregado acima sera comparado com o segundo JSON selecionado aqui.</p>
-        </div>
-        <div class="compare-controls">
-          <input id="compareInput" type="file" accept=".json,application/json" disabled>
-          <button id="clearCompare" class="secondary-button" type="button" disabled>Limpar comparacao</button>
-        </div>
-      </div>
-      <div id="compareMeta" class="compare-meta">Selecione o segundo JSON para comparar.</div>
-      <div class="compare-summary" aria-label="Resumo da comparacao">
-        <div class="metric ok-metric"><span>Iguais</span><strong id="sameCount">0</strong></div>
-        <div class="metric filter-metric"><span>Alterados</span><strong id="changedCount">0</strong></div>
-        <div class="metric error-metric"><span>So no principal</span><strong id="onlyBaseCount">0</strong></div>
-        <div class="metric"><span>So no comparado</span><strong id="onlyCompareCount">0</strong></div>
-      </div>
-      <section id="compareEmpty" class="empty">Selecione o segundo JSON para comparar.</section>
-      <section id="compareTableShell" class="table-shell compare-table" hidden>
-        <table>
-          <thead>
-            <tr>
-              <th>Resultado</th>
-              <th>Orgao</th>
-              <th>Cidade</th>
-              <th>Status principal</th>
-              <th>Status comparado</th>
-              <th>Porcentagem</th>
-              <th>Erro</th>
-              <th>Campos alterados</th>
-            </tr>
-          </thead>
-          <tbody id="compareTableBody"></tbody>
-        </table>
-      </section>
-    </section>
-
     <section id="emptyState" class="empty">Selecione um arquivo JSON para visualizar os resultados.</section>
 
     <section id="tableShell" class="table-shell" hidden>
@@ -579,6 +650,47 @@
         <tbody id="tableBody"></tbody>
       </table>
     </section>
+
+    </section>
+
+    <section id="comparePanel" class="tab-panel compare-panel" hidden>
+      <div class="compare-head">
+        <div class="compare-title">
+          <span class="eyebrow">Comparador de JSON</span>
+          <h2>Comparar dois relatorios</h2>
+          <p class="subtitle">O arquivo principal carregado acima sera comparado com o segundo JSON selecionado aqui.</p>
+        </div>
+        <div class="compare-controls">
+          <input id="compareInput" type="file" accept=".json,application/json" disabled>
+          <button id="clearCompare" class="secondary-button" type="button" disabled>Limpar comparacao</button>
+        </div>
+      </div>
+      <div id="compareMeta" class="compare-meta">Carregue um JSON principal antes de comparar.</div>
+      <div class="compare-summary" aria-label="Resumo da comparacao">
+        <div class="metric ok-metric"><span>Iguais</span><strong id="sameCount">0</strong></div>
+        <div class="metric filter-metric"><span>Alterados</span><strong id="changedCount">0</strong></div>
+        <div class="metric error-metric"><span>So no principal</span><strong id="onlyBaseCount">0</strong></div>
+        <div class="metric"><span>So no comparado</span><strong id="onlyCompareCount">0</strong></div>
+      </div>
+      <section id="compareEmpty" class="empty">Carregue um JSON principal antes de comparar.</section>
+      <section id="compareTableShell" class="table-shell compare-table" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th>Resultado</th>
+              <th>Orgao</th>
+              <th>Cidade</th>
+              <th>Status principal</th>
+              <th>Status comparado</th>
+              <th>Porcentagem</th>
+              <th>Erro</th>
+              <th>Campos alterados</th>
+            </tr>
+          </thead>
+          <tbody id="compareTableBody"></tbody>
+        </table>
+      </section>
+    </section>
   </main>
 
   <script>
@@ -595,6 +707,7 @@
     const compareInput = document.getElementById('compareInput');
     const generateReport = document.getElementById('generateReport');
     const exportCsv = document.getElementById('exportCsv');
+    const themeToggle = document.getElementById('themeToggle');
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
     const cityFilter = document.getElementById('cityFilter');
@@ -604,17 +717,23 @@
     const tableShell = document.getElementById('tableShell');
     const tableBody = document.getElementById('tableBody');
     const fileMeta = document.getElementById('fileMeta');
-    const comparePanel = document.getElementById('comparePanel');
     const clearCompare = document.getElementById('clearCompare');
     const compareMeta = document.getElementById('compareMeta');
     const compareEmpty = document.getElementById('compareEmpty');
     const compareTableShell = document.getElementById('compareTableShell');
     const compareTableBody = document.getElementById('compareTableBody');
+    const tabButtons = [...document.querySelectorAll('.tab-button')];
+    const tabPanels = [...document.querySelectorAll('.tab-panel')];
+
+    setTheme(readSavedTheme() || 'dark', false);
 
     fileInput.addEventListener('change', handleFile);
     compareInput.addEventListener('change', handleCompareFile);
     generateReport.addEventListener('click', generateReportDocument);
     exportCsv.addEventListener('click', exportFilteredCsv);
+    themeToggle.addEventListener('click', () => {
+      setTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
+    });
     searchInput.addEventListener('input', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
     cityFilter.addEventListener('change', applyFilters);
@@ -627,6 +746,9 @@
       applyFilters();
     });
     clearCompare.addEventListener('click', clearComparison);
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', () => switchTab(button.dataset.tab));
+    });
 
     document.querySelectorAll('th[data-key]').forEach((th) => {
       th.addEventListener('click', () => {
@@ -656,13 +778,11 @@
         exportCsv.disabled = state.rows.length === 0;
         generateReport.disabled = state.rows.length === 0;
         resetComparison('Selecione o segundo JSON para comparar.');
-        comparePanel.hidden = state.rows.length === 0;
         compareInput.disabled = state.rows.length === 0;
       } catch (error) {
         state.rows = [];
         state.filtered = [];
         resetComparison('Carregue um JSON principal valido antes de comparar.');
-        comparePanel.hidden = true;
         compareInput.disabled = true;
         fileMeta.textContent = 'Nenhum arquivo carregado.';
         renderTable();
@@ -717,6 +837,42 @@
 
     function clearComparison() {
       resetComparison('Selecione o segundo JSON para comparar.');
+    }
+
+    function switchTab(panelId) {
+      tabPanels.forEach((panel) => {
+        panel.hidden = panel.id !== panelId;
+      });
+
+      tabButtons.forEach((button) => {
+        const selected = button.dataset.tab === panelId;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-selected', String(selected));
+      });
+    }
+
+    function readSavedTheme() {
+      try {
+        const theme = localStorage.getItem('atricon-theme');
+        return theme === 'light' || theme === 'dark' ? theme : '';
+      } catch (error) {
+        return '';
+      }
+    }
+
+    function setTheme(theme, persist = true) {
+      document.body.dataset.theme = theme;
+      const darkMode = theme === 'dark';
+      themeToggle.textContent = darkMode ? 'Modo claro' : 'Modo escuro';
+      themeToggle.setAttribute('aria-pressed', String(darkMode));
+
+      if (persist) {
+        try {
+          localStorage.setItem('atricon-theme', theme);
+        } catch (error) {
+          // Local files can run with storage disabled in some browser policies.
+        }
+      }
     }
 
     function buildComparisons() {
@@ -989,17 +1145,16 @@
         return;
       }
       const reportHtml = buildReportHtml(rows);
-      const blob = new Blob([reportHtml], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const reportWindow = window.open(url, '_blank');
+      const reportWindow = window.open('', '_blank');
 
       if (!reportWindow) {
         alert('O navegador bloqueou a abertura do relatório. Permita pop-ups para esta página.');
-        URL.revokeObjectURL(url);
         return;
       }
 
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      reportWindow.document.open();
+      reportWindow.document.write(reportHtml);
+      reportWindow.document.close();
     }
 
     function buildReportHtml(rows) {
@@ -1016,7 +1171,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
   <style>
-    @page { size: A4; margin: 16mm 14mm; }
+    @page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -1055,8 +1210,8 @@
       box-shadow: 0 14px 32px rgba(15, 23, 42, .12);
     }
     .cover {
-      min-height: 520px;
-      padding: 46px 48px;
+      min-height: 260px;
+      padding: 34px 48px 24px;
       border-bottom: 1px solid #d8e0ea;
       display: grid;
       align-content: center;
@@ -1104,13 +1259,13 @@
       color: #102033;
     }
     .section {
-      padding: 28px 36px;
+      padding: 22px 36px 28px;
       border-bottom: 1px solid #e6ebf1;
     }
     h2 {
       margin: 0 0 14px;
       color: #102033;
-      font-size: 22px;
+      font-size: 19px;
       line-height: 1.25;
     }
     h3 {
@@ -1145,11 +1300,9 @@
       border-color: #fecdca;
     }
     .chapter {
-      break-inside: avoid;
       margin-top: 18px;
     }
     .evidence-card {
-      break-inside: avoid;
       margin: 12px 0;
       overflow: hidden;
     }
@@ -1162,7 +1315,7 @@
     }
     .evidence-title {
       font-weight: 800;
-      color: #102033;
+      color: #b42318;
     }
     .evidence-meta {
       display: flex;
@@ -1186,17 +1339,61 @@
     }
     .evidence-body img {
       display: block;
-      max-width: 100%;
+      max-width: min(100%, 720px);
       height: auto !important;
-      max-height: 520px;
+      max-height: 480px;
       margin: 10px 0;
       object-fit: contain;
+      image-rendering: auto;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
       border: 1px solid #d8e0ea;
       border-radius: 4px;
+    }
+    .evidence-images {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .evidence-images figure {
+      margin: 0;
+    }
+    .evidence-images figcaption {
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 11px;
+    }
+    .image-fallback {
+      display: inline-flex;
+      margin: 6px 0;
+      padding: 6px 8px;
+      border: 1px dashed #aeb9c7;
+      border-radius: 6px;
+      background: #f8fafc;
+    }
+    .image-fallback[hidden] {
+      display: none !important;
     }
     .evidence-body a {
       color: #075e6b;
       font-weight: 700;
+    }
+    .evidence-message {
+      margin: 0 0 14px;
+      padding: 12px;
+      border: 1px solid #d8e0ea;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    .evidence-message:last-child {
+      margin-bottom: 0;
+    }
+    .message-title {
+      margin: 0 0 8px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
     }
     .empty-note {
       padding: 16px;
@@ -1216,13 +1413,19 @@
       .document {
         width: 100%;
         margin: 0;
+        padding: 14mm;
         box-shadow: none;
       }
       .cover {
-        min-height: 240mm;
-        page-break-after: always;
+        min-height: auto;
+        padding: 0 0 10mm;
+        page-break-after: avoid;
       }
       .section { padding: 0 0 14mm; }
+      .account-card { page-break-after: always; }
+      .evidence-sections { page-break-before: always; }
+      .chapter { break-inside: auto; page-break-inside: auto; }
+      .chapter h3 { page-break-after: avoid; break-after: avoid; }
       .footer { padding: 8mm 0 0; }
     }
   </style>
@@ -1235,9 +1438,6 @@
     <section class="cover">
       <div class="kicker">PNTP 2026 · Evidências de Validação</div>
       <h1>${escapeHtml(title)}</h1>
-      <div class="cover-summary">
-        <div class="cover-card"><span class="label">Evidências</span><span class="value">${totalEvidencias}</span></div>
-      </div>
     </section>
     ${rows.map(renderReportAccount).join('')}
   </article>
@@ -1251,11 +1451,10 @@
       const statusClass = row.erro ? 'status error' : 'status';
 
       return `<section class="section">
-        <h2>${index + 1}. ${escapeHtml(row.orgao)} de ${escapeHtml(row.cidade)}</h2>
+        <h2>${escapeHtml(row.orgao)} de ${escapeHtml(row.cidade)}${row.porcentagem ? ` - ${escapeHtml(row.porcentagem)}` : ''}</h2>
         <div class="account-card">
           <div><span class="label">Status</span><span class="${statusClass}">${escapeHtml(row.status || (row.erro ? 'Erro' : 'Sem status'))}</span></div>
           <div><span class="label">Setor atual</span><strong>${escapeHtml(row.setor_atual || '-')}</strong></div>
-          <div><span class="label">Evidências</span><strong>${evidences.length}</strong></div>
         </div>
         ${row.erro ? `<p class="empty-note">${escapeHtml(row.erro)}</p>` : ''}
         ${evidences.length ? Object.entries(grouped).map(([chapter, items]) => renderReportChapter(chapter, items)).join('') : '<p class="empty-note">Nenhuma evidência de Validação foi encontrada para este registro.</p>'}
@@ -1277,7 +1476,9 @@
             <span class="pill">${escapeHtml(evidence.tipo || 'Sem tipo')}</span>
           </div>
         </div>
-        <div class="evidence-body">${renderEvidenceText(evidence.conteudo_texto || '')}</div>
+        <div class="evidence-body">
+          ${renderEvidenceMessages(evidence)}
+        </div>
       </div>`;
     }
 
@@ -1297,6 +1498,7 @@
 
     function renderEvidenceText(text) {
       const normalized = String(text || '').replace(/\r\n/g, '\n').trim();
+      if (!normalized) return '';
       if (!normalized) return '<span class="muted">Sem conteÃºdo.</span>';
 
       return normalized
@@ -1305,7 +1507,96 @@
         .join('');
     }
 
+    function renderEvidenceMessages(evidence) {
+      const messages = getEvidenceMessages(evidence);
+      if (!messages.length) {
+        return `${renderEvidenceText(evidence.conteudo_texto || '')}${renderEvidenceImages(evidence)}`;
+      }
+
+      return messages.map((message, index) => `
+        <div class="evidence-message">
+          ${index === 0 ? '<p class="message-title">Mensagem do validador</p>' : ''}
+          ${renderEvidenceText(message.conteudo_texto || '')}
+          ${renderImageList(message.imagens || [])}
+        </div>
+      `).join('');
+    }
+
+    function getEvidenceMessages(evidence) {
+      if (Array.isArray(evidence.mensagens_evidencia) && evidence.mensagens_evidencia.length) {
+        return evidence.mensagens_evidencia
+          .map((message, index) => ({
+            ordem: Number(message.ordem || index + 1),
+            data_evidencia: message.data_evidencia || evidence[`data_evidencia_${index + 1}`] || '',
+            conteudo_texto: message.conteudo_texto || '',
+            imagens: Array.isArray(message.imagens) ? message.imagens : []
+          }))
+          .sort((a, b) => a.ordem - b.ordem);
+      }
+
+      const keys = Object.keys(evidence)
+        .filter((key) => /^conteudo_texto_\d+$/.test(key))
+        .sort((a, b) => Number(a.split('_').pop()) - Number(b.split('_').pop()));
+
+      return keys.map((key) => {
+        const index = Number(key.split('_').pop());
+        return {
+          ordem: index,
+          data_evidencia: evidence[`data_evidencia_${index}`] || '',
+          conteudo_texto: evidence[key] || '',
+          imagens: Array.isArray(evidence[`imagens_${index}`]) ? evidence[`imagens_${index}`] : []
+        };
+      });
+    }
+
+    function renderEvidenceImages(evidence) {
+      const images = getEvidenceImages(evidence);
+      if (!images.length) return '';
+
+      return renderImageList(images);
+    }
+
+    function renderImageList(images) {
+      if (!Array.isArray(images) || !images.length) return '';
+
+      return `<div class="evidence-images">
+        ${images.map((image, index) => {
+          const href = escapeAttr(fileHref(image));
+          return `
+          <figure>
+            <img src="${href}" alt="Imagem da evidencia ${index + 1}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+            <a class="image-fallback" href="${href}" target="_blank" hidden>Abrir imagem ${index + 1}</a>
+          </figure>
+        `;
+        }).join('')}
+      </div>`;
+    }
+
+    function getEvidenceImages(evidence) {
+      const images = [];
+      const add = (items) => {
+        if (!Array.isArray(items)) return;
+        items.forEach((item) => {
+          const value = String(item || '').trim();
+          if (value && !images.includes(value)) images.push(value);
+        });
+      };
+
+      add(evidence.imagens);
+      Object.keys(evidence)
+        .filter((key) => /^imagens_\d+$/.test(key))
+        .sort((a, b) => Number(a.split('_').pop()) - Number(b.split('_').pop()))
+        .forEach((key) => add(evidence[key]));
+
+      if (Array.isArray(evidence.mensagens_evidencia)) {
+        evidence.mensagens_evidencia.forEach((message) => add(message.imagens));
+      }
+
+      return images;
+    }
+
     function sanitizeEvidenceHtml(html) {
+      if (!html) return '';
       if (!html) return '<span class="muted">Sem conteúdo.</span>';
       const template = document.createElement('template');
       template.innerHTML = String(html);

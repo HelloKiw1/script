@@ -62,6 +62,11 @@ def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+def normalize_percentage_text(value: str) -> str:
+    match = re.search(r"\b(\d{1,3}(?:[,.]\d+)?)\s*%", value or "")
+    return f"{match.group(1).strip()}%" if match else ""
+
+
 def first_value(data: Dict[str, Any], keys: Iterable[str]) -> str:
     for key in keys:
         value = data.get(key)
@@ -478,20 +483,18 @@ def extract_percentage_from_questionnaire(page: Page, url: str, fallback: str = 
     except PlaywrightTimeoutError as exc:
         raise RuntimeError(f"questionario nao carregou: {url}") from exc
 
-    candidates: List[str] = []
-    for attr_value in page.locator("[aria-valuenow]").evaluate_all(
-        "els => els.map(el => el.getAttribute('aria-valuenow')).filter(Boolean)"
-    ):
-        candidates.append(f"{str(attr_value).strip()} %")
+    percentage_boxes = page.locator("div.display-6.fw-bold")
+    try:
+        for index in range(percentage_boxes.count()):
+            percentage = normalize_percentage_text(percentage_boxes.nth(index).inner_text(timeout=10_000))
+            if percentage:
+                return percentage
+    except PlaywrightError:
+        pass
 
-    body_text = page.locator("body").inner_text(timeout=10_000)
-    candidates.extend(re.findall(r"\b\d{1,3}(?:[,.]\d+)?\s*%", body_text))
-
-    normalized_fallback = normalize_text(fallback.replace("%", " porcento"))
-    for candidate in candidates:
-        if normalize_text(candidate.replace("%", " porcento")) == normalized_fallback:
-            return candidate.strip()
-    return candidates[0].strip() if candidates else fallback.strip()
+    # Fallback seguro: coluna "Indice" da tabela Minhas Avaliacoes. Nao varre outros
+    # componentes com porcentagem dentro do questionario.
+    return fallback.strip()
 
 
 def logout(page: Page) -> None:

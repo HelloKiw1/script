@@ -281,25 +281,51 @@
     }
 
     .compare-table table {
-      min-width: 1120px;
+      min-width: 860px;
     }
 
     .change-list {
       display: grid;
-      gap: 4px;
-      min-width: 260px;
+      gap: 8px;
+      min-width: 420px;
     }
 
     .change-item {
       display: grid;
-      gap: 2px;
+      gap: 4px;
       font-size: 12px;
       color: var(--muted);
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-soft);
     }
 
     .change-item strong {
       color: var(--text);
       font-size: 13px;
+    }
+
+    .change-values {
+      display: grid;
+      gap: 3px;
+    }
+
+    .change-before,
+    .change-after {
+      overflow-wrap: anywhere;
+    }
+
+    .change-before::before {
+      content: "Antes: ";
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .change-after::before {
+      content: "Depois: ";
+      color: var(--muted);
+      font-weight: 700;
     }
 
     .toolbar {
@@ -528,6 +554,65 @@
       flex-wrap: wrap;
     }
 
+    .collector-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .collector-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .collector-card h3 {
+      font-size: 15px;
+      margin: 0 0 8px;
+    }
+
+    .collector-card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin: 0 0 14px;
+    }
+
+    .collector-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .collector-form label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .collector-status {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-top: 14px;
+      min-height: 44px;
+      padding: 12px;
+      white-space: pre-wrap;
+    }
+
+    .collector-output {
+      max-height: 180px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
     a {
       color: var(--accent-dark);
       font-weight: 700;
@@ -573,6 +658,10 @@
       .compare-summary {
         grid-template-columns: 1fr 1fr;
       }
+
+      .collector-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 620px) {
@@ -609,6 +698,7 @@
 
     <nav class="tab-list" aria-label="Areas do visualizador">
       <button class="tab-button active" type="button" data-tab="resultsPanel" aria-controls="resultsPanel" aria-selected="true">Resultados</button>
+      <button class="tab-button" type="button" data-tab="collectorPanel" aria-controls="collectorPanel" aria-selected="false">Coletor</button>
       <button class="tab-button" type="button" data-tab="comparePanel" aria-controls="comparePanel" aria-selected="false">Comparador</button>
     </nav>
 
@@ -668,12 +758,61 @@
 
     </section>
 
+    <section id="collectorPanel" class="tab-panel" hidden>
+      <div class="compare-head">
+        <div class="compare-title">
+          <span class="eyebrow">Executar coleta</span>
+          <h2>Rodar o coletor pelo visualizador</h2>
+          <p class="subtitle">Use esta area para iniciar uma nova verificacao sem voltar ao terminal.</p>
+        </div>
+      </div>
+
+      <section class="collector-grid" aria-label="Opcoes do coletor">
+        <div class="collector-card">
+          <h3>Todas as cidades</h3>
+          <p>Usa o arquivo orgaos_avalia.json e coleta somente status e porcentagem.</p>
+          <button id="runAllCollector" type="button">Verificar todas</button>
+        </div>
+
+        <div class="collector-card">
+          <h3>Cidade especifica</h3>
+          <p>Coleta status, porcentagem e manifestacoes/evidencias da cidade escolhida.</p>
+          <div class="collector-form">
+            <label>
+              Orgao
+              <select id="collectorOrgao">
+                <option value="">Carregando...</option>
+              </select>
+            </label>
+            <label>
+              Cidade / usuario
+              <select id="collectorAccount">
+                <option value="">Selecione um orgao</option>
+              </select>
+            </label>
+            <button id="runSpecificCollector" type="button" disabled>Verificar selecionada</button>
+          </div>
+        </div>
+
+        <div class="collector-card">
+          <h3>JSON externo</h3>
+          <p>Envia um JSON de contas para o coletor local e carrega o resultado aqui.</p>
+          <div class="collector-form">
+            <input id="collectorExternalJson" type="file" accept=".json,application/json">
+            <button id="runExternalCollector" type="button">Verificar JSON externo</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="collectorStatus" class="collector-status">Abra este visualizador pelo coletor para executar novas verificacoes por aqui.</div>
+    </section>
+
     <section id="comparePanel" class="tab-panel compare-panel" hidden>
       <div class="compare-head">
         <div class="compare-title">
           <span class="eyebrow">Comparador de JSON</span>
           <h2>Comparar dois relatorios</h2>
-          <p class="subtitle">O arquivo principal carregado acima sera comparado com o segundo JSON selecionado aqui.</p>
+          <p class="subtitle">O arquivo principal carregado acima sera comparado com o segundo JSON selecionado aqui. A tabela mostra apenas o que mudou.</p>
         </div>
         <div class="compare-controls">
           <input id="compareInput" type="file" accept=".json,application/json" disabled>
@@ -695,11 +834,7 @@
               <th>Resultado</th>
               <th>Orgao</th>
               <th>Cidade</th>
-              <th>Status principal</th>
-              <th>Status comparado</th>
-              <th>Porcentagem</th>
-              <th>Erro</th>
-              <th>Campos alterados</th>
+              <th>Diferença</th>
             </tr>
           </thead>
           <tbody id="compareTableBody"></tbody>
@@ -714,6 +849,7 @@
       filtered: [],
       compareRows: [],
       comparisons: [],
+      collectorAccounts: [],
       sortKey: 'cidade',
       sortDir: 'asc'
     };
@@ -738,6 +874,13 @@
     const compareEmpty = document.getElementById('compareEmpty');
     const compareTableShell = document.getElementById('compareTableShell');
     const compareTableBody = document.getElementById('compareTableBody');
+    const collectorOrgao = document.getElementById('collectorOrgao');
+    const collectorAccount = document.getElementById('collectorAccount');
+    const collectorExternalJson = document.getElementById('collectorExternalJson');
+    const runAllCollector = document.getElementById('runAllCollector');
+    const runSpecificCollector = document.getElementById('runSpecificCollector');
+    const runExternalCollector = document.getElementById('runExternalCollector');
+    const collectorStatus = document.getElementById('collectorStatus');
     const tabButtons = [...document.querySelectorAll('.tab-button')];
     const tabPanels = [...document.querySelectorAll('.tab-panel')];
 
@@ -763,9 +906,15 @@
       applyFilters();
     });
     clearCompare.addEventListener('click', clearComparison);
+    collectorOrgao.addEventListener('change', renderCollectorAccounts);
+    runAllCollector.addEventListener('click', () => runCollector({ mode: 'all' }));
+    runSpecificCollector.addEventListener('click', runCollectorSpecific);
+    runExternalCollector.addEventListener('click', runCollectorExternal);
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => switchTab(button.dataset.tab));
     });
+    loadJsonFromUrlParam();
+    loadCollectorAccounts();
 
     document.querySelectorAll('th[data-key]').forEach((th) => {
       th.addEventListener('click', () => {
@@ -786,17 +935,7 @@
 
       try {
         const text = await file.text();
-        const parsed = JSON.parse(text);
-        const rows = Array.isArray(parsed) ? parsed : [parsed];
-        state.rows = rows.map(normalizeRow);
-        fileMeta.innerHTML = `<strong>${escapeHtml(file.name)}</strong><span>${state.rows.length} registro(s)</span>`;
-        fillFilterOptions();
-        applyFilters();
-        exportCsv.disabled = state.rows.length === 0;
-        generateReport.disabled = state.rows.length === 0;
-        generateChecklist.disabled = state.rows.length === 0;
-        resetComparison('Selecione o segundo JSON para comparar.');
-        compareInput.disabled = state.rows.length === 0;
+        loadMainJsonText(text, file.name);
       } catch (error) {
         state.rows = [];
         state.filtered = [];
@@ -811,6 +950,170 @@
         generateReport.disabled = true;
         generateChecklist.disabled = true;
       }
+    }
+
+    function loadMainJsonText(text, sourceName) {
+      const parsed = JSON.parse(text);
+      const rows = Array.isArray(parsed) ? parsed : [parsed];
+      state.rows = rows.map(normalizeRow);
+      fileMeta.innerHTML = `<strong>${escapeHtml(sourceName)}</strong><span>${state.rows.length} registro(s)</span>`;
+      fillFilterOptions();
+      applyFilters();
+      exportCsv.disabled = state.rows.length === 0;
+      generateReport.disabled = state.rows.length === 0;
+      generateChecklist.disabled = state.rows.length === 0;
+      resetComparison('Selecione o segundo JSON para comparar.');
+      compareInput.disabled = state.rows.length === 0;
+    }
+
+    function showMainJsonError(error) {
+      state.rows = [];
+      state.filtered = [];
+      resetComparison('Carregue um JSON principal valido antes de comparar.');
+      compareInput.disabled = true;
+      fileMeta.textContent = 'Nenhum arquivo carregado.';
+      renderTable();
+      emptyState.hidden = false;
+      tableShell.hidden = true;
+      emptyState.textContent = `JSON invalido: ${error.message}`;
+      exportCsv.disabled = true;
+      generateReport.disabled = true;
+      generateChecklist.disabled = true;
+    }
+
+    async function loadJsonFromUrlParam() {
+      const params = new URLSearchParams(window.location.search);
+      const jsonUrl = params.get('json');
+      if (!jsonUrl) return;
+
+      try {
+        fileMeta.textContent = 'Carregando JSON gerado...';
+        const response = await fetch(jsonUrl, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`falha ao carregar ${jsonUrl}: HTTP ${response.status}`);
+        }
+        const text = await response.text();
+        const sourceName = decodeURIComponent(jsonUrl.split('/').pop() || 'resultado_atricon.json');
+        loadMainJsonText(text, sourceName);
+      } catch (error) {
+        showMainJsonError(error);
+      }
+    }
+
+    async function loadCollectorAccounts() {
+      try {
+        const response = await fetch('/api/coletor/contas', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        if (!payload.ok) throw new Error(payload.error || 'falha ao carregar contas');
+        state.collectorAccounts = payload.accounts || [];
+        renderCollectorOrgaos();
+        collectorStatus.textContent = 'Coletor local conectado. Escolha uma opcao para iniciar.';
+      } catch (error) {
+        state.collectorAccounts = [];
+        collectorOrgao.innerHTML = '<option value="">Indisponivel</option>';
+        collectorAccount.innerHTML = '<option value="">Abra pelo coletor</option>';
+        runAllCollector.disabled = true;
+        runSpecificCollector.disabled = true;
+        runExternalCollector.disabled = true;
+        collectorStatus.textContent = 'Coletor local indisponivel. Abra o visualizador pelo comando python atricon\\coletor_atricon.py para executar novas verificacoes daqui.';
+      }
+    }
+
+    function renderCollectorOrgaos() {
+      const orgaos = [...new Set(state.collectorAccounts.map((item) => item.orgao).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      collectorOrgao.innerHTML = orgaos.map((orgao) => `<option value="${escapeHtml(orgao)}">${escapeHtml(orgao)}</option>`).join('');
+      runAllCollector.disabled = false;
+      runExternalCollector.disabled = false;
+      renderCollectorAccounts();
+    }
+
+    function renderCollectorAccounts() {
+      const orgao = collectorOrgao.value;
+      const accounts = state.collectorAccounts
+        .map((account, index) => ({ ...account, index }))
+        .filter((account) => account.orgao === orgao)
+        .sort((a, b) => String(a.cidade || '').localeCompare(String(b.cidade || ''), 'pt-BR'));
+
+      collectorAccount.innerHTML = accounts.map((account) => {
+        const status = account.has_access ? account.user : 'sem acesso';
+        const label = `${account.cidade || 'sem cidade'} - ${status}`;
+        return `<option value="${account.index}" ${account.has_access ? '' : 'disabled'}>${escapeHtml(label)}</option>`;
+      }).join('');
+      runSpecificCollector.disabled = !accounts.some((account) => account.has_access);
+    }
+
+    async function runCollectorSpecific() {
+      const selectedIndex = Number(collectorAccount.value);
+      const account = state.collectorAccounts[selectedIndex];
+      if (!account) {
+        collectorStatus.textContent = 'Selecione uma cidade antes de iniciar.';
+        return;
+      }
+      await runCollector({
+        mode: 'specific',
+        orgao: account.orgao,
+        cidade: account.cidade,
+        user: account.user
+      });
+    }
+
+    async function runCollectorExternal() {
+      const file = collectorExternalJson.files[0];
+      if (!file) {
+        collectorStatus.textContent = 'Selecione um JSON externo antes de iniciar.';
+        return;
+      }
+      const content = await file.text();
+      await runCollector({
+        mode: 'external',
+        filename: file.name.replace(/\.json$/i, ''),
+        content
+      });
+    }
+
+    async function runCollector(payload) {
+      setCollectorRunning(true);
+      collectorStatus.textContent = 'Executando coleta. Aguarde ate o navegador terminar os logins...';
+      try {
+        const response = await fetch('/api/coletor/executar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (result.json_url) {
+          await loadJsonFromCollectorResult(result.json_url, result.output_path);
+        }
+        if (!response.ok || !result.ok) {
+          throw new Error(result.error || result.stderr || 'coleta finalizada com erro');
+        }
+        const output = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
+        collectorStatus.innerHTML = `Coleta concluida.\nJSON: ${escapeHtml(result.output_path || '')}${output ? `\n\n<pre class="collector-output">${escapeHtml(output)}</pre>` : ''}`;
+        switchTab('resultsPanel');
+      } catch (error) {
+        collectorStatus.textContent = `Erro ao executar coleta: ${error.message}`;
+      } finally {
+        setCollectorRunning(false);
+      }
+    }
+
+    async function loadJsonFromCollectorResult(jsonUrl, outputPath) {
+      const response = await fetch(jsonUrl, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`resultado gerado, mas nao carregou no visualizador: HTTP ${response.status}`);
+      const text = await response.text();
+      const sourceName = String(outputPath || jsonUrl).split(/[\\/]/).pop() || 'resultado_atricon.json';
+      loadMainJsonText(text, sourceName);
+    }
+
+    function setCollectorRunning(isRunning) {
+      runAllCollector.disabled = isRunning;
+      runSpecificCollector.disabled = isRunning || !collectorAccount.value;
+      runExternalCollector.disabled = isRunning;
+      collectorOrgao.disabled = isRunning;
+      collectorAccount.disabled = isRunning;
+      collectorExternalJson.disabled = isRunning;
     }
 
     async function handleCompareFile(event) {
@@ -829,7 +1132,8 @@
         const rows = Array.isArray(parsed) ? parsed : [parsed];
         state.compareRows = rows.map(normalizeRow);
         state.comparisons = buildComparisons();
-        compareMeta.innerHTML = `<strong>${escapeHtml(file.name)}</strong><span> ${state.compareRows.length} registro(s) comparado(s)</span>`;
+        const changedCount = state.comparisons.filter((item) => item.type !== 'Igual').length;
+        compareMeta.innerHTML = `<strong>${escapeHtml(file.name)}</strong><span> ${state.compareRows.length} registro(s) comparado(s), ${changedCount} diferenÃ§a(s)</span>`;
         clearCompare.disabled = false;
         renderComparison();
       } catch (error) {
@@ -975,35 +1279,61 @@
         return;
       }
 
-      compareEmpty.hidden = state.comparisons.length !== 0;
-      compareTableShell.hidden = state.comparisons.length === 0;
-      compareTableBody.innerHTML = state.comparisons.map(renderComparisonRow).join('');
+      const changedItems = state.comparisons.filter((item) => item.type !== 'Igual');
+      compareEmpty.hidden = changedItems.length !== 0;
+      compareTableShell.hidden = changedItems.length === 0;
+      compareEmpty.textContent = changedItems.length
+        ? ''
+        : 'Nenhuma diferença encontrada entre os dois JSONs.';
+      compareTableBody.innerHTML = changedItems.map(renderComparisonRow).join('');
     }
 
     function renderComparisonRow(item) {
       const statusClass = item.type === 'Igual' ? 'ok' : item.type === 'Alterado' ? 'warn' : 'error';
       const base = item.base || {};
       const compare = item.compare || {};
-      const changeList = item.changes.length
-        ? `<span class="change-list">${item.changes.map(renderChangeItem).join('')}</span>`
-        : '<span class="muted">-</span>';
+      const changeList = renderDifferenceSummary(item, base, compare);
 
       return `
         <tr>
           <td><span class="badge ${statusClass}">${escapeHtml(item.type)}</span></td>
           <td>${escapeHtml(item.orgao)}</td>
           <td>${escapeHtml(item.cidade)}</td>
-          <td>${escapeHtml(base.status || '-')}</td>
-          <td>${escapeHtml(compare.status || '-')}</td>
-          <td>${escapeHtml(formatPair(base.porcentagem, compare.porcentagem))}</td>
-          <td class="error-cell">${escapeHtml(formatPair(base.erro, compare.erro))}</td>
           <td>${changeList}</td>
         </tr>
       `;
     }
 
+    function renderDifferenceSummary(item, base, compare) {
+      if (item.type === 'So no principal') {
+        return `<span class="change-list"><span class="change-item"><strong>Registro removido do comparado</strong><span>Existia apenas no JSON principal.</span>${renderCompactRowSnapshot(base)}</span></span>`;
+      }
+      if (item.type === 'So no comparado') {
+        return `<span class="change-list"><span class="change-item"><strong>Registro novo no comparado</strong><span>Não existia no JSON principal.</span>${renderCompactRowSnapshot(compare)}</span></span>`;
+      }
+      if (!item.changes.length) {
+        return '<span class="muted">-</span>';
+      }
+      return `<span class="change-list">${item.changes.map(renderChangeItem).join('')}</span>`;
+    }
+
+    function renderCompactRowSnapshot(row) {
+      const parts = [
+        row.status ? `Status: ${row.status}` : '',
+        row.porcentagem ? `Porcentagem: ${row.porcentagem}` : '',
+        row.erro ? `Erro: ${row.erro}` : ''
+      ].filter(Boolean);
+      return parts.length ? `<span>${escapeHtml(parts.join(' | '))}</span>` : '';
+    }
+
     function renderChangeItem(change) {
-      return `<span class="change-item"><strong>${escapeHtml(change.label)}</strong><span>${escapeHtml(change.before)} -> ${escapeHtml(change.after)}</span></span>`;
+      return `<span class="change-item">
+        <strong>${escapeHtml(change.label)}</strong>
+        <span class="change-values">
+          <span class="change-before">${escapeHtml(change.before)}</span>
+          <span class="change-after">${escapeHtml(change.after)}</span>
+        </span>
+      </span>`;
     }
 
     function formatPair(before, after) {
@@ -1765,6 +2095,8 @@
     .evidence-card {
       margin: 12px 0;
       overflow: hidden;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .evidence-head {
       padding: 12px 14px;
@@ -1772,6 +2104,8 @@
       border-bottom: 1px solid var(--brand-line);
       display: grid;
       gap: 6px;
+      break-after: avoid;
+      page-break-after: avoid;
     }
     .evidence-title {
       font-weight: 800;
@@ -1898,9 +2232,22 @@
         -webkit-box-decoration-break: clone;
         box-decoration-break: clone;
       }
-      .evidence-card { break-inside: auto; page-break-inside: auto; }
+      .evidence-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        display: block;
+      }
+      .evidence-head {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+      .evidence-body {
+        break-before: avoid;
+        page-break-before: avoid;
+      }
       .evidence-message,
       .evidence-images figure { break-inside: avoid; page-break-inside: avoid; }
+      .evidence-body img { max-height: 360px; }
       .evidence-sections { page-break-before: auto; }
       .chapter { break-inside: auto; page-break-inside: auto; }
       .chapter h3 { page-break-after: avoid; break-after: avoid; }
@@ -2193,11 +2540,22 @@
     }
 
     function fileHref(value) {
-      const text = String(value || '');
-      if (/^[A-Za-z]:[\\/]/.test(text)) {
-        return `file:///${text.replace(/\\/g, '/')}`;
+      const text = String(value || '').trim();
+      if (!text) return '';
+      if (/^(https?:|data:|blob:)/i.test(text)) return text;
+
+      const normalized = text.replace(/\\/g, '/');
+      if (/^[A-Za-z]:\//.test(normalized)) {
+        const marker = '/atricon/';
+        const markerIndex = normalized.toLowerCase().lastIndexOf(marker);
+        if (markerIndex >= 0 && /^https?:$/i.test(window.location.protocol)) {
+          const relativeToViewer = normalized.slice(markerIndex + marker.length);
+          return `${window.location.origin}${encodeURI(`/${relativeToViewer}`)}`;
+        }
+        return `file:///${encodeURI(normalized)}`;
       }
-      return text;
+
+      return encodeURI(normalized);
     }
   </script>
 </body>

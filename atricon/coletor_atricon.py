@@ -56,6 +56,14 @@ LOGIN_URL = f"{BASE_URL}/login/"
 OAUTH_START_URL = f"{BASE_URL}/oauth/authenticate/"
 HOME_URL = f"{BASE_URL}/"
 MINHAS_AVALIACOES_URL = f"{BASE_URL}/avaliacoes/minhas-avaliacoes/"
+VALIDATION_ITEM_LABELS = {
+    "disponibilidade": "Disponibilidade",
+    "atualidade": "Atualidade",
+    "serie historica": "Série Histórica",
+    "gravacao de relatorios": "Gravação de Relatórios",
+    "filtros de pesquisa": "Filtros de Pesquisa",
+    "filtro de pesquisa": "Filtros de Pesquisa",
+}
 LOGOUT_URL = f"{BASE_URL}/logout/"
 ORGAO_KEYS = ("orgao", "orgão", "órgão")
 
@@ -117,6 +125,11 @@ def has_value(value: Any) -> bool:
 
 def clean_text(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip()
+
+
+def canonical_validation_item(value: str) -> str:
+    normalized = normalize_text(value)
+    return VALIDATION_ITEM_LABELS.get(normalized, clean_text(value))
 
 
 def parse_brazilian_datetime(value: str) -> tuple[str, datetime | None]:
@@ -1317,6 +1330,97 @@ def evidence_content_text(locator: Any) -> str:
         return ""
 
 
+def extract_criterion_context(button: Any) -> Dict[str, Any]:
+    empty = {
+        "criterio": "",
+        "grau_importancia": "",
+        "validacoes_avaliacao": [],
+        "validacoes_validacao": [],
+        "validacoes_nao_atendidas": [],
+        "validacoes_nao_atendidas_texto": "",
+    }
+
+    try:
+        data = button.evaluate(
+            """
+            (button) => {
+              const clean = (value) => String(value || '').replace(/\\s+/g, ' ').trim();
+              const normalize = (value) => clean(value)
+                .normalize('NFD')
+                .replace(/[\\u0300-\\u036f]/g, '')
+                .toLowerCase();
+              const card = button.closest('.card');
+              if (!card) return {};
+
+              const titleNode = card.querySelector('[data-bs-target^="#Criterio"], [data-bs-target*="Criterio"]');
+              const titleClone = titleNode ? titleNode.cloneNode(true) : null;
+              const titleBadge = titleClone ? titleClone.querySelector('.badge') : null;
+              const grau = titleBadge ? clean(titleBadge.textContent) : '';
+              if (titleBadge) titleBadge.remove();
+              const criterio = clean(titleClone ? titleClone.textContent : '');
+
+              const readColumn = (needle) => {
+                const headers = Array.from(card.querySelectorAll('h6'));
+                const header = headers.find((item) => normalize(item.textContent).includes(needle));
+                const column = header ? header.closest('[class*="col-"]') : null;
+                if (!column) return [];
+                return Array.from(column.querySelectorAll('.mb-2')).map((item) => {
+                  const badge = item.querySelector('.badge');
+                  const clone = item.cloneNode(true);
+                  const cloneBadge = clone.querySelector('.badge');
+                  if (cloneBadge) cloneBadge.remove();
+                  return {
+                    item: clean(clone.textContent),
+                    status: clean(badge ? badge.textContent : '')
+                  };
+                }).filter((item) => item.item);
+              };
+
+              const validacao = readColumn('validacao');
+              return {
+                criterio,
+                grau_importancia: grau,
+                validacoes_avaliacao: readColumn('avaliacao'),
+                validacoes_validacao: validacao,
+                validacoes_nao_atendidas: validacao
+                  .filter((item) => normalize(item.status).startsWith('nao'))
+                  .map((item) => item.item)
+              };
+            }
+            """
+        )
+    except PlaywrightError:
+        return empty
+
+    context = dict(empty)
+    context["criterio"] = clean_text(str(data.get("criterio") or ""))
+    context["grau_importancia"] = clean_text(str(data.get("grau_importancia") or ""))
+    context["validacoes_avaliacao"] = [
+        {
+            "item": canonical_validation_item(str(item.get("item") or "")),
+            "status": clean_text(str(item.get("status") or "")),
+        }
+        for item in data.get("validacoes_avaliacao") or []
+        if isinstance(item, dict) and clean_text(str(item.get("item") or ""))
+    ]
+    context["validacoes_validacao"] = [
+        {
+            "item": canonical_validation_item(str(item.get("item") or "")),
+            "status": clean_text(str(item.get("status") or "")),
+        }
+        for item in data.get("validacoes_validacao") or []
+        if isinstance(item, dict) and clean_text(str(item.get("item") or ""))
+    ]
+    failures: List[str] = []
+    for item in data.get("validacoes_nao_atendidas") or []:
+        label = canonical_validation_item(str(item or ""))
+        if label and label not in failures:
+            failures.append(label)
+    context["validacoes_nao_atendidas"] = failures
+    context["validacoes_nao_atendidas_texto"] = ", ".join(failures)
+    return context
+
+
 def extract_modal_validation_evidences(
     page: Page,
     modal_selector: str,
@@ -1325,6 +1429,7 @@ def extract_modal_validation_evidences(
     criterio_id: str,
     start_order: int,
     output_path: Path,
+    criterio_context: Dict[str, Any] | None = None,
 ) -> List[Dict[str, Any]]:
     modal = page.locator(modal_selector).first
     desc = modal.locator("p.card-title-desc").first
@@ -1421,6 +1526,18 @@ def extract_modal_validation_evidences(
         "ordem": start_order,
         "mensagens_evidencia": [],
     }
+
+    if criterio_context:
+        evidence_group.update(
+            {
+                "criterio": criterio_context.get("criterio", ""),
+                "grau_importancia": criterio_context.get("grau_importancia", ""),
+                "validacoes_avaliacao": criterio_context.get("validacoes_avaliacao", []),
+                "validacoes_validacao": criterio_context.get("validacoes_validacao", []),
+                "validacoes_nao_atendidas": criterio_context.get("validacoes_nao_atendidas", []),
+                "validacoes_nao_atendidas_texto": criterio_context.get("validacoes_nao_atendidas_texto", ""),
+            }
+        )
 
     for message in mensagens:
         ordem_mensagem = message["ordem_na_evidencia"]
@@ -1832,6 +1949,7 @@ def collect_validation_evidences_from_form(
                 continue
             visited_buttons.add(button_key)
             botoes_evidencias += 1
+            criterio_context = extract_criterion_context(button)
 
             evidencias_pre_load = extract_modal_validation_evidences(
                 page,
@@ -1841,6 +1959,7 @@ def collect_validation_evidences_from_form(
                 criterio_id,
                 len(evidencias) + 1,
                 output_path,
+                criterio_context,
             )
 
             if load_evidence_modal_content(page, modal_selector, data["resposta_id"], data["tipo"]):
@@ -1854,6 +1973,7 @@ def collect_validation_evidences_from_form(
                 criterio_id,
                 len(evidencias) + 1,
                 output_path,
+                criterio_context,
             )
             evidencias.extend(evidencias_loaded or evidencias_pre_load)
 

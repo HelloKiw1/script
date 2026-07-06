@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Resultados Atricon</title>
-  <link rel="icon" type="image/png" href="assets/logo-da-empresa.png">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicons/atricon.svg">
+  <link rel="stylesheet" href="../assets/script-shell.css">
   <style>
     :root {
       color-scheme: dark;
@@ -40,7 +41,8 @@
       --shadow-soft: 0 1px 2px rgba(0, 0, 0, .26);
     }
 
-    body[data-theme="light"] {
+    body[data-theme="light"],
+    html[data-script-theme="light"] body {
       color-scheme: light;
       --bg: #f3f6f9;
       --bg-top: #eef5f8;
@@ -101,18 +103,19 @@
     .topbar {
       width: min(1320px, calc(100% - 32px));
       margin: 0 auto;
-      min-height: 104px;
+      min-height: 74px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
-      padding: 16px 0;
+      gap: 14px;
+      padding: 10px 0;
     }
 
     .brand {
       display: grid;
-      gap: 6px;
-      max-width: 580px;
+      gap: 3px;
+      min-width: 230px;
+      max-width: 420px;
     }
 
     .eyebrow {
@@ -125,7 +128,7 @@
 
     h1 {
       margin: 0;
-      font-size: 27px;
+      font-size: 22px;
       line-height: 1.2;
       font-weight: 800;
     }
@@ -137,27 +140,68 @@
     }
 
     .file-control {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(118px, auto));
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
       justify-content: flex-end;
-      max-width: 720px;
-      padding: 12px;
-      background: var(--panel);
+      width: min(820px, 100%);
+      max-width: 820px;
+      padding: 10px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .025), transparent),
+        var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow-soft);
     }
 
     input[type="file"] {
-      width: min(360px, 100%);
+      width: 100%;
       min-height: 40px;
       padding: 8px;
       border: 1px solid var(--line-strong);
       border-radius: 6px;
       background: var(--input-bg);
       color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    input[type="file"]::file-selector-button {
+      min-height: 28px;
+      margin-right: 10px;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 4px;
+      background: var(--line-strong);
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    input[type="file"]:hover::file-selector-button {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .file-control button {
+      width: 100%;
+      min-width: 0;
+      padding: 0 12px;
+    }
+
+    #fileInput {
+      grid-row: auto;
+    }
+
+    #exportCsv {
+      grid-column: auto;
+    }
+
+    #themeToggle {
+      display: none !important;
+      grid-column: auto;
     }
 
     main {
@@ -330,7 +374,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, 210px)) auto;
+      grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(150px, 210px)) auto;
       gap: 12px;
       align-items: end;
       background: var(--panel);
@@ -397,7 +441,7 @@
 
     .summary {
       display: grid;
-      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
     }
 
@@ -422,6 +466,12 @@
     .metric.error-metric::before { background: var(--error); }
     .metric.ok-metric::before { background: var(--ok); }
     .metric.filter-metric::before { background: #3b5b85; }
+    .metric.finished-metric::before { background: #198754; }
+    .metric.tce-metric::before { background: #74c0fc; }
+    .metric.manifestation-metric::before { background: #d11124; }
+    .metric.not-manifestation-metric::before { background: #6c757d; }
+    .metric.validating-metric::before { background: #6c757d; }
+    .metric.unknown-metric::before { background: #6f42c1; }
 
     .metric span {
       display: block;
@@ -450,7 +500,7 @@
 
     table {
       width: 100%;
-      min-width: 980px;
+      min-width: 1080px;
       border-collapse: separate;
       border-spacing: 0;
     }
@@ -511,6 +561,42 @@
       border-color: var(--error-line);
     }
 
+    .badge.finished {
+      color: #d7f8e3;
+      background: #116235;
+      border-color: #2f9e5b;
+    }
+
+    .badge.tce {
+      color: #0b3558;
+      background: #b9e2ff;
+      border-color: #74c0fc;
+    }
+
+    .badge.manifestation {
+      color: #fff5f5;
+      background: #c1121f;
+      border-color: #f03e3e;
+    }
+
+    .badge.not-manifestation {
+      color: #f8f9fa;
+      background: #495057;
+      border-color: #868e96;
+    }
+
+    .badge.validating {
+      color: #f8f9fa;
+      background: #495057;
+      border-color: #868e96;
+    }
+
+    .badge.unknown {
+      color: #f3e8ff;
+      background: #5f3dc4;
+      border-color: #9775fa;
+    }
+
     .status-stack {
       display: grid;
       gap: 5px;
@@ -524,6 +610,15 @@
       font-size: 12px;
       font-weight: 800;
       line-height: 1.3;
+    }
+
+    .manifestation-detail {
+      display: block;
+      max-width: 280px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
     }
 
     .muted { color: var(--muted); }
@@ -630,7 +725,9 @@
 
       .file-control {
         width: 100%;
-        justify-content: flex-start;
+        max-width: none;
+        grid-template-columns: minmax(240px, 1fr) repeat(3, minmax(112px, 150px));
+        justify-content: stretch;
       }
 
       .compare-head {
@@ -665,10 +762,18 @@
     }
 
     @media (max-width: 620px) {
+      .file-control,
       .toolbar,
       .summary,
       .compare-summary {
         grid-template-columns: 1fr;
+      }
+
+      #fileInput,
+      #exportCsv,
+      #themeToggle {
+        grid-column: auto;
+        grid-row: auto;
       }
 
       h1 { font-size: 21px; }
@@ -715,6 +820,12 @@
         </select>
       </label>
       <label>
+        Manifestação
+        <select id="manifestationFilter">
+          <option value="">Todas</option>
+        </select>
+      </label>
+      <label>
         Cidade
         <select id="cityFilter">
           <option value="">Todas</option>
@@ -724,7 +835,7 @@
         Resultado
         <select id="errorFilter">
           <option value="">Todos</option>
-          <option value="sem_erro">Sem erro</option>
+          <option value="sem_erro" selected>Sem erro</option>
           <option value="com_erro">Com erro</option>
         </select>
       </label>
@@ -734,8 +845,12 @@
     <section class="summary" aria-label="Resumo">
       <div class="metric"><span>Total</span><strong id="totalCount">0</strong></div>
       <div class="metric filter-metric"><span>Filtrados</span><strong id="filteredCount">0</strong></div>
-      <div class="metric ok-metric"><span>Validados</span><strong id="validatedCount">0</strong></div>
-      <div class="metric error-metric"><span>Com erro</span><strong id="errorCount">0</strong></div>
+      <div class="metric manifestation-metric"><span>Para manifestação</span><strong id="manifestationCount">0</strong></div>
+      <div class="metric not-manifestation-metric"><span>Fora manifestação</span><strong id="notManifestationCount">0</strong></div>
+      <div class="metric finished-metric"><span>Finalizado</span><strong id="finishedCount">0</strong></div>
+      <div class="metric tce-metric"><span>Tramitado TCE</span><strong id="tceForwardedCount">0</strong></div>
+      <div class="metric validating-metric"><span>TCE Validando</span><strong id="tceValidatingCount">0</strong></div>
+      <div class="metric unknown-metric"><span>Não sabemos</span><strong id="unknownCount">0</strong></div>
     </section>
 
     <section id="emptyState" class="empty">Selecione um arquivo JSON para visualizar os resultados.</section>
@@ -747,6 +862,7 @@
             <th data-key="orgao">Orgão</th>
             <th data-key="cidade">Cidade</th>
             <th data-key="status">Status</th>
+            <th data-key="manifestacao_sort">Manifestação</th>
             <th data-key="porcentagem">Porcentagem</th>
             <th data-key="erro">Erro</th>
             <th data-key="debug_html">Debug</th>
@@ -850,7 +966,7 @@
       compareRows: [],
       comparisons: [],
       collectorAccounts: [],
-      sortKey: 'cidade',
+      sortKey: 'manifestacao_sort',
       sortDir: 'asc'
     };
 
@@ -862,6 +978,7 @@
     const themeToggle = document.getElementById('themeToggle');
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
+    const manifestationFilter = document.getElementById('manifestationFilter');
     const cityFilter = document.getElementById('cityFilter');
     const errorFilter = document.getElementById('errorFilter');
     const clearFilters = document.getElementById('clearFilters');
@@ -883,6 +1000,8 @@
     const collectorStatus = document.getElementById('collectorStatus');
     const tabButtons = [...document.querySelectorAll('.tab-button')];
     const tabPanels = [...document.querySelectorAll('.tab-panel')];
+    const DEFAULT_MANIFESTATION_FILTER = 'Para manifestação';
+    const DEFAULT_ERROR_FILTER = 'sem_erro';
 
     setTheme(readSavedTheme() || 'dark', false);
 
@@ -896,11 +1015,13 @@
     });
     searchInput.addEventListener('input', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
+    manifestationFilter.addEventListener('change', applyFilters);
     cityFilter.addEventListener('change', applyFilters);
     errorFilter.addEventListener('change', applyFilters);
     clearFilters.addEventListener('click', () => {
       searchInput.value = '';
       statusFilter.value = '';
+      manifestationFilter.value = '';
       cityFilter.value = '';
       errorFilter.value = '';
       applyFilters();
@@ -958,6 +1079,7 @@
       state.rows = rows.map(normalizeRow);
       fileMeta.innerHTML = `<strong>${escapeHtml(sourceName)}</strong><span>${state.rows.length} registro(s)</span>`;
       fillFilterOptions();
+      setDefaultResultFilters();
       applyFilters();
       exportCsv.disabled = state.rows.length === 0;
       generateReport.disabled = state.rows.length === 0;
@@ -1240,6 +1362,7 @@
     function getRowChanges(base, compare) {
       const fields = [
         ['Status', (row) => row.status],
+        ['Critério', (row) => row.criterio],
         ['Setor atual', (row) => row.setor_atual],
         ['Data', (row) => row.data],
         ['Porcentagem', (row) => row.porcentagem],
@@ -1343,7 +1466,7 @@
     }
 
     function normalizeRow(row) {
-      return {
+      const normalized = {
         orgao: value(row['orgão'] ?? row['órgão'] ?? row.orgao),
         cidade: value(row.cidade),
         status: value(row.status),
@@ -1355,6 +1478,22 @@
         debug_screenshot: value(row.debug_screenshot),
         raw: row
       };
+      const criterio = manifestationCriterion(normalized);
+      const manifestacao = mainManifestationInfo(normalized);
+      return {
+        ...normalized,
+        criterio: criterio.label,
+        criterio_class: criterio.className,
+        criterio_prazo: criterio.prazo,
+        manifestacao: manifestacao.label,
+        manifestacao_class: manifestacao.className,
+        manifestacao_prazo: manifestacao.prazo,
+        manifestacao_limite: manifestacao.deadlineTime,
+        manifestacao_setor: manifestacao.setor,
+        manifestacao_sort: manifestacao.sortValue,
+        em_manifestacao: manifestacao.isActive,
+        manifestacao_vencida: manifestacao.isExpired
+      };
     }
 
     function value(input) {
@@ -1363,9 +1502,114 @@
       return String(input);
     }
 
+    function mainManifestationInfo(row) {
+      const setorAtual = String(row.setor_atual || '').replace(/\s+/g, ' ').trim();
+      if (!setorAtual) {
+        return {
+          label: 'Sem setor atual',
+          className: 'unknown',
+          prazo: '',
+          deadlineTime: null,
+          setor: '',
+          isActive: false,
+          isExpired: false,
+          sortValue: '2'
+        };
+      }
+
+      const match = setorAtual.match(/^(.*?)\s+Envio\s+para\s+Manifesta\S*\s+at\S*\s+(.+)$/i);
+      if (!match) {
+        return {
+          label: 'Fora de manifestação',
+          className: 'not-manifestation',
+          prazo: '',
+          deadlineTime: null,
+          setor: setorAtual,
+          isActive: false,
+          isExpired: false,
+          sortValue: `1 ${normalize(setorAtual)}`
+        };
+      }
+
+      const setor = match[1].trim();
+      const prazo = match[2].trim();
+      const deadlineTime = parseDeadlineTime(prazo);
+      const isExpired = deadlineTime !== null && deadlineTime < Date.now();
+
+      if (isExpired) {
+        return {
+          label: 'Manifestação vencida',
+          className: 'not-manifestation',
+          prazo,
+          deadlineTime,
+          setor,
+          isActive: false,
+          isExpired: true,
+          sortValue: `2 ${sortableDeadline(prazo)} ${normalize(setor)}`
+        };
+      }
+
+      return {
+        label: 'Para manifestação',
+        className: 'manifestation',
+        prazo,
+        deadlineTime,
+        setor,
+        isActive: true,
+        isExpired: false,
+        sortValue: `0 ${sortableDeadline(prazo)} ${normalize(setor)}`
+      };
+    }
+
+    function parseDeadlineTime(value) {
+      const text = String(value || '').trim();
+      const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+      if (!match) return null;
+      const [, day, month, year, hour = '23', minute = '59'] = match;
+      const date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), 59, 999);
+      if (
+        date.getFullYear() !== Number(year) ||
+        date.getMonth() !== Number(month) - 1 ||
+        date.getDate() !== Number(day) ||
+        date.getHours() !== Number(hour) ||
+        date.getMinutes() !== Number(minute)
+      ) {
+        return null;
+      }
+      const time = date.getTime();
+      return Number.isNaN(time) ? null : time;
+    }
+
+    function sortableDeadline(value) {
+      const text = String(value || '').trim();
+      const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+      if (!match) return text;
+      const [, day, month, year, hour = '23', minute = '59'] = match;
+      return `${year}-${month}-${day} ${hour}:${minute}`;
+    }
+
     function fillFilterOptions() {
-      setOptions(statusFilter, uniqueValues(state.rows.map((row) => row.status).filter(Boolean)), 'Todos');
-      setOptions(cityFilter, uniqueValues(state.rows.map((row) => row.cidade).filter(Boolean)), 'Todas');
+      const visibleRows = state.rows.filter((row) => !row.manifestacao_vencida);
+      const manifestationOptions = uniqueValues(visibleRows
+        .map((row) => row.manifestacao)
+        .filter(Boolean));
+      if (!manifestationOptions.includes(DEFAULT_MANIFESTATION_FILTER)) {
+        manifestationOptions.unshift(DEFAULT_MANIFESTATION_FILTER);
+      }
+
+      setOptions(statusFilter, uniqueValues(visibleRows.map((row) => row.status).filter(Boolean)), 'Todos');
+      setOptions(manifestationFilter, manifestationOptions, 'Todas');
+      setOptions(cityFilter, uniqueValues(visibleRows.map((row) => row.cidade).filter(Boolean)), 'Todas');
+    }
+
+    function setDefaultResultFilters() {
+      searchInput.value = '';
+      statusFilter.value = '';
+      cityFilter.value = '';
+      manifestationFilter.value = [...manifestationFilter.options].some((option) => option.value === DEFAULT_MANIFESTATION_FILTER)
+        ? DEFAULT_MANIFESTATION_FILTER
+        : '';
+      errorFilter.value = DEFAULT_ERROR_FILTER;
     }
 
     function setOptions(select, options, firstLabel) {
@@ -1387,14 +1631,21 @@
     function applyFilters() {
       const query = normalize(searchInput.value);
       const status = statusFilter.value;
+      const manifestacao = manifestationFilter.value;
       const cidade = cityFilter.value;
       const errorMode = errorFilter.value;
 
       state.filtered = state.rows.filter((row) => {
+        if (row.manifestacao_vencida) return false;
+
         const searchable = normalize(Object.values({
           orgao: row.orgao,
           cidade: row.cidade,
           status: row.status,
+          manifestacao: row.manifestacao,
+          manifestacao_prazo: row.manifestacao_prazo,
+          manifestacao_setor: row.manifestacao_setor,
+          criterio: row.criterio,
           setor_atual: row.setor_atual,
           data: row.data,
           porcentagem: row.porcentagem,
@@ -1403,6 +1654,7 @@
 
         if (query && !searchable.includes(query)) return false;
         if (status && row.status !== status) return false;
+        if (manifestacao && row.manifestacao !== manifestacao) return false;
         if (cidade && row.cidade !== cidade) return false;
         if (errorMode === 'com_erro' && !row.erro) return false;
         if (errorMode === 'sem_erro' && row.erro) return false;
@@ -1439,6 +1691,40 @@
       };
     }
 
+    function manifestationCriterion(row) {
+      const status = normalize(row.status);
+      const setor = normalize(row.setor_atual);
+      const entrega = deliveryInfo(row);
+
+      if (!status) {
+        return { label: 'Não sabemos', className: 'unknown', prazo: '' };
+      }
+
+      if (status === 'finalizado ug' || status === 'finalizado') {
+        return { label: 'Finalizado', className: 'finished', prazo: '' };
+      }
+
+      if (setor.includes('envio para analise da manifestacao')) {
+        return { label: 'Tramitado TCE', className: 'tce', prazo: '' };
+      }
+
+      if (entrega.prazo && setor.includes('envio para manifestacao')) {
+        return { label: 'EM Manifestação', className: 'manifestation', prazo: entrega.prazo };
+      }
+
+      if (
+        status === 'aguardando validacao' ||
+        status === 'em validacao' ||
+        status === 'validado' ||
+        setor.includes('tribunal de contas') ||
+        setor.includes('garantia da qualidade')
+      ) {
+        return { label: 'TCE Validando', className: 'validating', prazo: '' };
+      }
+
+      return { label: 'Não sabemos', className: 'unknown', prazo: '' };
+    }
+
     function renderTable() {
       updateMetrics();
 
@@ -1456,7 +1742,7 @@
       tableShell.hidden = state.filtered.length === 0;
 
       const sorted = [...state.filtered].sort((a, b) => {
-        const result = a[state.sortKey].localeCompare(b[state.sortKey], 'pt-BR', { numeric: true });
+        const result = String(a[state.sortKey] || '').localeCompare(String(b[state.sortKey] || ''), 'pt-BR', { numeric: true });
         return state.sortDir === 'asc' ? result : -result;
       });
 
@@ -1466,7 +1752,12 @@
     function renderRow(row) {
       const statusClass = row.erro ? 'error' : normalize(row.status) === 'validado' ? 'ok' : 'warn';
       const statusText = row.status || (row.erro ? 'Erro' : 'Sem status');
-      const entrega = deliveryInfo(row);
+      const manifestationDeadline = row.manifestacao_prazo
+        ? `<span class="deadline-note">Para manifestação até ${escapeHtml(row.manifestacao_prazo)}</span>`
+        : '';
+      const manifestationDetail = row.manifestacao_setor
+        ? `<span class="manifestation-detail">Setor atual: ${escapeHtml(row.manifestacao_setor)}</span>`
+        : '<span class="manifestation-detail">Sem setor atual informado.</span>';
       const debugLinks = [
         row.debug_html ? `<a href="${escapeAttr(fileHref(row.debug_html))}" target="_blank">HTML</a>` : '',
         row.debug_screenshot ? `<a href="${escapeAttr(fileHref(row.debug_screenshot))}" target="_blank">Imagem</a>` : ''
@@ -1476,7 +1767,8 @@
         <tr>
           <td>${escapeHtml(row.orgao)}</td>
           <td>${escapeHtml(row.cidade)}</td>
-          <td><span class="status-stack"><span class="badge ${statusClass}">${escapeHtml(statusText)}</span>${entrega.aviso ? `<span class="deadline-note">${escapeHtml(entrega.aviso)}</span>` : ''}</span></td>
+          <td><span class="status-stack"><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></span></td>
+          <td><span class="status-stack"><span class="badge ${escapeAttr(row.manifestacao_class)}">${escapeHtml(row.manifestacao)}</span>${manifestationDeadline}${manifestationDetail}</span></td>
           <td>${escapeHtml(row.porcentagem) || '<span class="muted">-</span>'}</td>
           <td class="error-cell ${row.erro ? 'error-text' : 'muted'}">${escapeHtml(row.erro) || 'Sem erro'}</td>
           <td><span class="debug-links">${debugLinks || '<span class="muted">-</span>'}</span></td>
@@ -1485,12 +1777,21 @@
     }
 
     function updateMetrics() {
-      document.getElementById('totalCount').textContent = state.rows.length;
+      const visibleRows = state.rows.filter((row) => !row.manifestacao_vencida);
+      document.getElementById('totalCount').textContent = visibleRows.length;
       document.getElementById('filteredCount').textContent = state.filtered.length;
-      document.getElementById('validatedCount').textContent =
-        state.rows.filter((row) => normalize(row.status) === 'validado' && !row.erro).length;
-      document.getElementById('errorCount').textContent =
-        state.rows.filter((row) => row.erro).length;
+      document.getElementById('manifestationCount').textContent =
+        visibleRows.filter((row) => row.em_manifestacao).length;
+      document.getElementById('notManifestationCount').textContent =
+        visibleRows.filter((row) => !row.em_manifestacao).length;
+      document.getElementById('finishedCount').textContent =
+        visibleRows.filter((row) => row.criterio === 'Finalizado').length;
+      document.getElementById('tceForwardedCount').textContent =
+        visibleRows.filter((row) => row.criterio === 'Tramitado TCE').length;
+      document.getElementById('tceValidatingCount').textContent =
+        visibleRows.filter((row) => row.criterio === 'TCE Validando').length;
+      document.getElementById('unknownCount').textContent =
+        visibleRows.filter((row) => row.criterio === 'Não sabemos').length;
     }
 
     function updateComparisonMetrics() {
@@ -1531,7 +1832,10 @@
       }
 
       const items = rows.flatMap((row) => getEvidences(row).map((evidence) => ({
-        titulo: evidence.titulo_evidencia || evidence.titulo || 'Evidencia sem titulo'
+        titulo: evidence.titulo_evidencia || evidence.titulo || 'Evidencia sem titulo',
+        criterio: evidence.criterio || evidence.titulo_evidencia || '',
+        grau_importancia: evidence.grau_importancia || evidence.tipo || '',
+        validacoes_nao_atendidas: validationFailures(evidence).join(', ')
       })));
 
       if (!items.length) {
@@ -1637,9 +1941,66 @@
     }
     th:first-child,
     td:first-child {
-      width: 76px;
+      width: 70px;
       text-align: center;
     }
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 96px;
+    }
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 18%;
+    }
+    .failure-list {
+      display: grid;
+      gap: 4px;
+    }
+    .failure-tag {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 20px;
+      padding: 2px 7px;
+      border: 1px solid #f04438;
+      border-radius: 3px;
+      background: #fee4e2;
+      color: #912018;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .importance-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 21px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+    }
+    .importance-essential {
+      border-color: #fecdca;
+      background: #fef3f2;
+      color: #b42318;
+    }
+    .importance-required {
+      border-color: #fedf89;
+      background: #fffaeb;
+      color: #93370d;
+    }
+    .importance-recommended {
+      border-color: #abefc6;
+      background: #ecfdf3;
+      color: #067647;
+    }
+    tr.importance-essential-row td { background: #fef3f2; color: #7a271a; }
+    tr.importance-required-row td { background: #fffaeb; color: #7a2e0e; }
+    tr.importance-recommended-row td { background: #ecfdf3; color: #075e45; }
     input[type="checkbox"] {
       width: 18px;
       height: 18px;
@@ -1672,11 +2033,13 @@
       <thead>
         <tr>
           <th>Concluido</th>
+          <th>Importancia</th>
+          <th>Validacao nao atendida</th>
           <th>Titulo da evidencia</th>
         </tr>
       </thead>
       <tbody>
-        ${items.map((item) => `<tr><td><input type="checkbox"></td><td>${escapeHtml(truncateWords(item.titulo, 10))}</td></tr>`).join('')}
+        ${items.map((item) => `<tr class="${escapeAttr(checklistImportanceRowClass(item.grau_importancia))}"><td><input type="checkbox"></td><td>${renderChecklistImportance(item.grau_importancia)}</td><td>${renderChecklistFailureTags(item.validacoes_nao_atendidas)}</td><td>${escapeHtml(truncateWords(item.titulo, 10))}</td></tr>`).join('')}
       </tbody>
     </table>
   </article>
@@ -1690,9 +2053,13 @@
       const margin = 42;
       const tableTop = 748;
       const headerHeight = 24;
-      const rowHeight = 26;
-      const bottom = 48;
+      const rowHeight = 72;
+      const bottom = 56;
       const rowsPerPage = Math.max(1, Math.floor((tableTop - headerHeight - bottom) / rowHeight));
+      const colCheck = 56;
+      const colImportance = 70;
+      const colFailure = 110;
+      const colEvidence = pageWidth - (margin * 2) - colCheck - colImportance - colFailure;
       const objects = [];
 
       const reserveObject = () => {
@@ -1738,33 +2105,48 @@
         const pageTitle = pageIndex === 0 ? title : `${title} - continuação`;
 
         drawText(content, margin, 800, 17, pageTitle);
-        drawTableHeader(content, margin, tableTop, pageWidth - (margin * 2), headerHeight);
+        drawTableHeader(content, margin, tableTop, pageWidth - (margin * 2), headerHeight, {
+          colCheck,
+          colImportance,
+          colFailure
+        });
 
         chunk.forEach((item, rowIndex) => {
           const globalIndex = pageIndex * rowsPerPage + rowIndex + 1;
           const yTop = tableTop - headerHeight - (rowIndex * rowHeight);
           const yBottom = yTop - rowHeight;
-          const checkX = margin + 28;
-          const checkY = yBottom + 6;
-          const titleX = margin + 90;
-          const textY = yBottom + 9;
-          const titleText = clampPdfText(truncateWords(item.titulo, 10), 92);
+          const checkX = margin + 24;
+          const checkY = yBottom + ((rowHeight - 14) / 2);
+          const importanceX = margin + colCheck + 6;
+          const failureX = margin + colCheck + colImportance + 6;
+          const titleX = margin + colCheck + colImportance + colFailure + 6;
+          const textY = yTop - 18;
+          const titleText = clampPdfText(truncateWords(item.titulo, 10), Math.floor(colEvidence / 5.2));
+          const importanceText = clampPdfText(item.grau_importancia || '-', 14);
+          const importanceStyle = checklistImportanceStyle(item.grau_importancia);
+          const rowStyle = checklistImportanceRowStyle(item.grau_importancia);
+          const failureItems = checklistFailureItems(item.validacoes_nao_atendidas);
           const fieldRef = addObject(
             `<< /Type /Annot /FT /Btn /Subtype /Widget /T ${pdfLiteral(`check_${globalIndex}`)} /V /Off /AS /Off /Rect [${num(checkX)} ${num(checkY)} ${num(checkX + 14)} ${num(checkY + 14)}] /F 4 /P ${pageRef} 0 R /AP << /N << /Off ${offAppearanceRef} 0 R /Yes ${yesAppearanceRef} 0 R >> >> >>`
           );
 
           fieldRefs.push(fieldRef);
           annots.push(fieldRef);
+          drawFilledRect(content, margin, yBottom, pageWidth - (margin * 2), rowHeight, rowStyle.bg);
           drawLine(content, margin, yTop, pageWidth - margin, yTop);
-          drawText(content, titleX, textY, 10, titleText);
+          drawBadge(content, importanceX, textY - 5, Math.min(colImportance - 12, 58), 14, importanceText, importanceStyle);
+          drawFailureBoxes(content, failureX, yTop - 14, colFailure - 12, failureItems, rowStyle);
+          drawColoredText(content, titleX, textY, 9.5, titleText, rowStyle.text);
         });
 
         const tableBottom = tableTop - headerHeight - (chunk.length * rowHeight);
         drawLine(content, margin, tableBottom, pageWidth - margin, tableBottom);
         drawLine(content, margin, tableTop, margin, tableBottom);
-        drawLine(content, margin + 76, tableTop, margin + 76, tableBottom);
+        drawLine(content, margin + colCheck, tableTop, margin + colCheck, tableBottom);
+        drawLine(content, margin + colCheck + colImportance, tableTop, margin + colCheck + colImportance, tableBottom);
+        drawLine(content, margin + colCheck + colImportance + colFailure, tableTop, margin + colCheck + colImportance + colFailure, tableBottom);
         drawLine(content, pageWidth - margin, tableTop, pageWidth - margin, tableBottom);
-        drawText(content, pageWidth - margin - 24, 28, 9, String(pageIndex + 1));
+        drawChecklistFooter(content, margin, pageWidth, pageIndex + 1);
 
         const contentRef = addStream(
           '<< /Length __LENGTH__ >>',
@@ -1787,14 +2169,21 @@
       return writePdf(objects, catalogRef);
     }
 
-    function drawTableHeader(content, x, y, width, height) {
+    function drawTableHeader(content, x, y, width, height, columns) {
+      const colCheck = columns.colCheck;
+      const colImportance = columns.colImportance;
+      const colFailure = columns.colFailure;
       content.push('0.917 0.953 1 rg');
       content.push(`${num(x)} ${num(y - height)} ${num(width)} ${num(height)} re f`);
       content.push('0.745 0.835 0.949 RG 1 w');
       content.push(`${num(x)} ${num(y - height)} ${num(width)} ${num(height)} re S`);
-      drawText(content, x + 14, y - 16, 8, 'CONCLUIDO');
-      drawText(content, x + 90, y - 16, 8, 'EVIDENCIA');
-      drawLine(content, x + 76, y, x + 76, y - height);
+      drawText(content, x + 10, y - 16, 8, 'CONCLUIDO');
+      drawText(content, x + colCheck + 6, y - 16, 8, 'IMPORTANCIA');
+      drawText(content, x + colCheck + colImportance + 6, y - 16, 8, 'NAO ATENDIDA');
+      drawText(content, x + colCheck + colImportance + colFailure + 6, y - 16, 8, 'EVIDENCIA');
+      drawLine(content, x + colCheck, y, x + colCheck, y - height);
+      drawLine(content, x + colCheck + colImportance, y, x + colCheck + colImportance, y - height);
+      drawLine(content, x + colCheck + colImportance + colFailure, y, x + colCheck + colImportance + colFailure, y - height);
     }
 
     function drawText(content, x, y, size, text) {
@@ -1802,9 +2191,51 @@
       content.push(`BT /F1 ${num(size)} Tf ${num(x)} ${num(y)} Td ${pdfLiteral(text)} Tj ET`);
     }
 
+    function drawColoredText(content, x, y, size, text, color) {
+      content.push(`${num(color[0])} ${num(color[1])} ${num(color[2])} rg`);
+      content.push(`BT /F1 ${num(size)} Tf ${num(x)} ${num(y)} Td ${pdfLiteral(text)} Tj ET`);
+    }
+
+    function drawFilledRect(content, x, y, width, height, color) {
+      content.push(`${num(color[0])} ${num(color[1])} ${num(color[2])} rg`);
+      content.push(`${num(x)} ${num(y)} ${num(width)} ${num(height)} re f`);
+    }
+
+    function drawBadge(content, x, y, width, height, text, style) {
+      drawFilledRect(content, x, y, width, height, style.bg);
+      drawColoredText(content, x + 4, y + 4, 7, text, style.text);
+    }
+
+    function drawFailureBoxes(content, x, yTop, width, items, rowStyle) {
+      const list = items.length ? items : ['-'];
+      let cursorY = yTop;
+      list.forEach((item) => {
+        const lines = wrapPdfText(item, 36, 2);
+        const boxHeight = 12 + ((lines.length - 1) * 8);
+        const textWidth = Math.max(...lines.map((line) => pdfSafeText(line).length * 3.65));
+        const boxWidth = Math.min(width, Math.max(26, textWidth + 8));
+        drawFilledRect(content, x, cursorY - boxHeight + 2, boxWidth, boxHeight, [0.996, 0.894, 0.886]);
+        content.push('0.941 0.267 0.22 RG 0.7 w');
+        content.push(`${num(x)} ${num(cursorY - boxHeight + 2)} ${num(boxWidth)} ${num(boxHeight)} re S`);
+        lines.forEach((line, lineIndex) => {
+          drawColoredText(content, x + 4, cursorY - 7 - (lineIndex * 8), 6.8, line, [0.569, 0.126, 0.094]);
+        });
+        cursorY -= boxHeight + 3;
+      });
+    }
+
     function drawLine(content, x1, y1, x2, y2) {
       content.push('0.745 0.835 0.949 RG 0.8 w');
       content.push(`${num(x1)} ${num(y1)} m ${num(x2)} ${num(y2)} l S`);
+    }
+
+    function drawChecklistFooter(content, margin, pageWidth, pageNumber) {
+      drawLine(content, margin, 58, pageWidth - margin, 58);
+      drawText(content, margin, 44, 7, 'Legenda de importancia');
+      drawBadge(content, margin, 25, 62, 14, 'Essencial', checklistImportanceStyle('Essencial'));
+      drawBadge(content, margin + 72, 25, 72, 14, 'Obrigatorio', checklistImportanceStyle('Obrigatorio'));
+      drawBadge(content, margin + 154, 25, 82, 14, 'Recomendado', checklistImportanceStyle('Recomendado'));
+      drawText(content, pageWidth - margin - 24, 24, 9, String(pageNumber));
     }
 
     function writePdf(objects, rootRef) {
@@ -1849,6 +2280,71 @@
       return normalize(value).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'checklist';
     }
 
+    function renderChecklistFailureTags(value) {
+      const failures = String(value || '').split(/\s*,\s*/).map((item) => item.trim()).filter(Boolean);
+      if (!failures.length) return '<span class="muted">-</span>';
+      return `<span class="failure-list">${failures.map((item) => `<span class="failure-tag">${escapeHtml(item)}</span>`).join('')}</span>`;
+    }
+
+    function renderChecklistImportance(value) {
+      const label = String(value || '').trim() || '-';
+      return `<span class="importance-tag ${escapeAttr(checklistImportanceClass(label))}">${escapeHtml(label)}</span>`;
+    }
+
+    function checklistImportanceClass(value) {
+      const text = normalize(value);
+      if (text.includes('essencial')) return 'importance-essential';
+      if (text.includes('obrigat')) return 'importance-required';
+      if (text.includes('recomend')) return 'importance-recommended';
+      return '';
+    }
+
+    function checklistImportanceRowClass(value) {
+      const text = normalize(value);
+      if (text.includes('essencial')) return 'importance-essential-row';
+      if (text.includes('obrigat')) return 'importance-required-row';
+      if (text.includes('recomend')) return 'importance-recommended-row';
+      return '';
+    }
+
+    function checklistImportanceStyle(value) {
+      const text = normalize(value);
+      if (text.includes('essencial')) {
+        return { bg: [0.996, 0.953, 0.949], text: [0.706, 0.137, 0.094] };
+      }
+      if (text.includes('obrigat')) {
+        return { bg: [1, 0.98, 0.922], text: [0.576, 0.216, 0.051] };
+      }
+      if (text.includes('recomend')) {
+        return { bg: [0.925, 0.992, 0.953], text: [0.024, 0.463, 0.278] };
+      }
+      return { bg: [0.973, 0.98, 0.988], text: [0.2, 0.255, 0.333] };
+    }
+
+    function checklistImportanceRowStyle(value) {
+      const text = normalize(value);
+      if (text.includes('essencial')) {
+        return { bg: [0.996, 0.953, 0.949], text: [0.478, 0.153, 0.102] };
+      }
+      if (text.includes('obrigat')) {
+        return { bg: [1, 0.98, 0.922], text: [0.478, 0.18, 0.055] };
+      }
+      if (text.includes('recomend')) {
+        return { bg: [0.925, 0.992, 0.953], text: [0.027, 0.369, 0.271] };
+      }
+      return { bg: [1, 1, 1], text: [0, 0, 0] };
+    }
+
+    function checklistFailureItems(value) {
+      return String(value || '').split(/\s*,\s*/).map((item) => item.trim()).filter(Boolean);
+    }
+
+    function checklistFailureLines(value) {
+      const items = checklistFailureItems(value);
+      if (!items.length) return ['-'];
+      return items.flatMap((item) => wrapPdfText(item, 38, 2));
+    }
+
     function pdfLiteral(value) {
       const text = pdfSafeText(value).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
       return `(${text})`;
@@ -1866,6 +2362,31 @@
     function clampPdfText(value, limit) {
       const text = pdfSafeText(value);
       return text.length <= limit ? text : `${text.slice(0, Math.max(0, limit - 4)).trim()} ...`;
+    }
+
+    function wrapPdfText(value, lineLimit, maxLines) {
+      const words = pdfSafeText(value).split(/\s+/).filter(Boolean);
+      const lines = [];
+      let current = '';
+
+      words.forEach((word) => {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= lineLimit) {
+          current = candidate;
+          return;
+        }
+
+        if (current) lines.push(current);
+        current = word.length > lineLimit ? clampPdfText(word, lineLimit) : word;
+      });
+
+      if (current) lines.push(current);
+      if (!lines.length) return ['-'];
+      if (lines.length <= maxLines) return lines;
+
+      const limited = lines.slice(0, maxLines);
+      limited[maxLines - 1] = clampPdfText(`${limited[maxLines - 1]} ...`, lineLimit);
+      return limited;
     }
 
     function num(value) {
@@ -2107,9 +2628,27 @@
       break-after: avoid;
       page-break-after: avoid;
     }
+    .evidence-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .evidence-chapter-label {
+      display: none;
+    }
     .evidence-title {
       font-weight: 800;
       color: var(--danger);
+    }
+    .evidence-title.importance-essential {
+      color: #b42318;
+    }
+    .evidence-title.importance-required {
+      color: #93370d;
+    }
+    .evidence-title.importance-recommended {
+      color: #067647;
     }
     .evidence-meta {
       display: flex;
@@ -2125,6 +2664,50 @@
       border-radius: 999px;
       background: #ffffff;
       border: 1px solid var(--brand-line);
+    }
+    .report-importance {
+      display: inline-flex;
+      width: fit-content;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+    }
+    .report-importance.importance-essential {
+      border-color: #fecdca;
+      background: #fef3f2;
+      color: #b42318;
+    }
+    .report-importance.importance-required {
+      border-color: #fedf89;
+      background: #fffaeb;
+      color: #93370d;
+    }
+    .report-importance.importance-recommended {
+      border-color: #abefc6;
+      background: #ecfdf3;
+      color: #067647;
+    }
+    .report-failures {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+    .report-failure-box {
+      display: inline-flex;
+      width: fit-content;
+      padding: 2px 7px;
+      border: 1px solid #f04438;
+      border-radius: 3px;
+      background: #fee4e2;
+      color: #912018;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
     }
     .evidence-body {
       padding: 14px;
@@ -2148,6 +2731,10 @@
       display: grid;
       gap: 12px;
       margin-top: 12px;
+    }
+    .evidence-images-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
     }
     .evidence-images figure {
       margin: 0;
@@ -2236,21 +2823,57 @@
         break-inside: avoid;
         page-break-inside: avoid;
         display: block;
+        margin: 0 0 8px;
       }
       .evidence-head {
         break-after: avoid;
         page-break-after: avoid;
+        padding: 8px 10px;
       }
       .evidence-body {
         break-before: avoid;
         page-break-before: avoid;
+        padding: 10px;
+        font-size: 11px;
+        line-height: 1.25;
+      }
+      .evidence-message {
+        margin-bottom: 8px;
+        padding: 8px;
+      }
+      .evidence-message p {
+        margin: 0 0 6px;
+      }
+      .evidence-images {
+        gap: 6px;
+        margin-top: 6px;
+      }
+      .evidence-images-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .evidence-message,
       .evidence-images figure { break-inside: avoid; page-break-inside: avoid; }
-      .evidence-body img { max-height: 360px; }
+      .evidence-body img {
+        width: 100%;
+        max-width: 100%;
+        max-height: 104mm;
+        margin: 0;
+      }
+      .evidence-images-count-2 img { max-height: 84mm; }
+      .evidence-images-count-3 img,
+      .evidence-images-count-4 img { max-height: 58mm; }
+      .evidence-images-compact img { max-height: 38mm; }
+      .evidence-images figcaption { display: none; }
       .evidence-sections { page-break-before: auto; }
       .chapter { break-inside: auto; page-break-inside: auto; }
-      .chapter h3 { page-break-after: avoid; break-after: avoid; }
+      .chapter h3 { display: none; }
+      .evidence-chapter-label {
+        display: block;
+        color: #475569;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
       .footer { padding: 8mm 14mm 0; }
     }
   </style>
@@ -2337,7 +2960,6 @@
       const grouped = groupByChapter(evidences);
 
       return `<section class="section">
-        <h2>${escapeHtml(row.orgao)} de ${escapeHtml(row.cidade)}${row.porcentagem ? ` - ${escapeHtml(row.porcentagem)}` : ''}</h2>
         ${row.erro ? `<p class="empty-note">${escapeHtml(row.erro)}</p>` : ''}
         ${evidences.length ? Object.entries(grouped).map(([chapter, items]) => renderReportChapter(chapter, items)).join('') : '<p class="empty-note">Nenhuma evidência de Validação foi encontrada para este registro.</p>'}
       </section>`;
@@ -2346,16 +2968,41 @@
     function renderReportChapter(chapter, evidences) {
       return `<div class="chapter">
         <h3>${escapeHtml(chapter || 'Sem capítulo')}</h3>
-        ${evidences.map(renderReportEvidence).join('')}
+        ${evidences.map((evidence) => renderReportEvidence(evidence, chapter)).join('')}
       </div>`;
     }
 
-    function renderReportEvidence(evidence) {
+    function renderValidationFailureMeta(evidence) {
+      const failures = validationFailures(evidence);
+      const parts = [
+        failures.length ? renderReportFailureBoxes(failures) : ''
+      ].filter(Boolean);
+      return parts.join('');
+    }
+
+    function renderReportImportance(value) {
+      const label = String(value || '').trim();
+      if (!label) return '';
+      return `<span class="report-importance ${escapeAttr(checklistImportanceClass(label))}">${escapeHtml(label)}</span>`;
+    }
+
+    function renderReportFailureBoxes(failures) {
+      return `<span class="report-failures">
+        ${failures.map((item) => `<span class="report-failure-box">${escapeHtml(item)}</span>`).join('')}
+      </span>`;
+    }
+
+    function renderReportEvidence(evidence, chapter) {
+      const titleImportance = evidence.grau_importancia || evidence.tipo || '';
       return `<div class="evidence-card">
         <div class="evidence-head">
-          <div class="evidence-title">${escapeHtml(evidence.titulo_evidencia || 'Evidência sem título')}</div>
+          <div class="evidence-chapter-label">${escapeHtml(chapter || 'Sem capítulo')}</div>
+          <div class="evidence-title-row">
+            ${renderReportImportance(titleImportance || 'Sem tipo')}
+            <div class="evidence-title ${escapeAttr(checklistImportanceClass(titleImportance))}">${escapeHtml(evidence.titulo_evidencia || 'Evidência sem título')}</div>
+          </div>
           <div class="evidence-meta">
-            <span class="pill">${escapeHtml(evidence.tipo || 'Sem tipo')}</span>
+            ${renderValidationFailureMeta(evidence)}
           </div>
         </div>
         <div class="evidence-body">
@@ -2367,6 +3014,17 @@
     function getEvidences(row) {
       const evidences = row.raw.evidencias_validacao;
       return Array.isArray(evidences) ? evidences : [];
+    }
+
+    function validationFailures(evidence) {
+      if (Array.isArray(evidence.validacoes_nao_atendidas)) {
+        return evidence.validacoes_nao_atendidas
+          .map((item) => String(item || '').trim())
+          .filter(Boolean);
+      }
+
+      const text = String(evidence.validacoes_nao_atendidas_texto || '').trim();
+      return text ? text.split(/\s*,\s*/).filter(Boolean) : [];
     }
 
     function groupByChapter(evidences) {
@@ -2440,8 +3098,14 @@
 
     function renderImageList(images) {
       if (!Array.isArray(images) || !images.length) return '';
+      const imageClasses = [
+        'evidence-images',
+        images.length > 1 ? 'evidence-images-grid' : '',
+        `evidence-images-count-${Math.min(images.length, 4)}`,
+        images.length > 4 ? 'evidence-images-compact' : ''
+      ].filter(Boolean).join(' ');
 
-      return `<div class="evidence-images">
+      return `<div class="${escapeAttr(imageClasses)}">
         ${images.map((image, index) => {
           const href = escapeAttr(fileHref(image));
           return `
@@ -2497,6 +3161,7 @@
         ['orgão', 'orgao'],
         ['cidade', 'cidade'],
         ['status', 'status'],
+        ['criterio', 'criterio'],
         ['porcentagem', 'porcentagem'],
         ['erro', 'erro'],
         ['debug_html', 'debug_html'],
@@ -2558,5 +3223,6 @@
       return encodeURI(normalized);
     }
   </script>
+  <script src="../assets/script-shell.js"></script>
 </body>
 </html>

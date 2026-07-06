@@ -1,0 +1,488 @@
+[
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Ananás",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Aparecida do Rio Negro",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Araguaçu",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Araguanã",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Carmolândia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Centenário",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Colméia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Dueré",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Envira",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Itaguatins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Lajeado",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Lizarda",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Luzinópolis",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Mateiros",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Miranorte",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Nazaré",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Nova Olinda",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Novo Acordo",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Palmeirante",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Palmeiras do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Pau D\u0027Arco",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Pindorama do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Recursolândia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Riachinho",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Rio Sono",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Santa Maria do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "São Bento do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "São Félix do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "São Gabriel da Cachoeira",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Silvanópolis",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Câmara Municipal",
+        "cidade":  "Tabocão",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Aparecida do Rio Negro",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Araguaína",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Arapoema",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Babaçulândia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Carmolândia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Centenário",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Divinópolis do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Filadélfia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Lagoa da Confusão",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Lajeado",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Mateiros",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Miranorte",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Monte do Carmo",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Nazaré",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Piraquê",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Ponte Alta do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Pugmil",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Recursolândia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Santa Fé do Araguaia",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Santa Maria do Tocantins",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Silvanópolis",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Tocantinópolis",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    },
+    {
+        "orgão":  "Prefeitura Municipal",
+        "cidade":  "Tupirama",
+        "nota_2022":  null,
+        "nota_2023":  null,
+        "nota_2024":  null,
+        "nota_2025":  null,
+        "nota_2026":  null
+    }
+]

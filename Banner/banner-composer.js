@@ -23,15 +23,23 @@ const SEAL_FILES = [
   'prata_2025.png',
 ];
 
+const INITIAL_NOTES_PATH = '../.venv/nota_avalia.json';
+const SUPPORTED_YEARS = [2022, 2023, 2024, 2025];
+const SEAL_PRIORITY = {
+  diamante: 3,
+  ouro: 2,
+  prata: 1,
+};
+
 const SEAL_LAYOUTS = {
   1: [{ centerX: 577, centerY: 278, size: 471 }],
   2: [
     { centerX: 365, centerY: 261, size: 490 },
-    { centerX: 701, centerY: 366, size: 300 },
+    { centerX: 701, centerY: 366, size: 379 },
   ],
   3: [
     { centerX: 365, centerY: 261, size: 490 },
-    { centerX: 701, centerY: 366, size: 300 },
+    { centerX: 701, centerY: 366, size: 379 },
     { centerX: 609, centerY: 144, size: 281 },
   ],
 };
@@ -42,6 +50,9 @@ const elements = {
   sealSelect1: document.getElementById('sealSelect1'),
   sealSelect2: document.getElementById('sealSelect2'),
   sealSelect3: document.getElementById('sealSelect3'),
+  jsonFile: document.getElementById('jsonFile'),
+  recordSelect: document.getElementById('recordSelect'),
+  scorePreview: document.getElementById('scorePreview'),
   renderBtn: document.getElementById('renderBtn'),
   downloadBtn: document.getElementById('downloadBtn'),
   panelModeBtn: document.getElementById('panelModeBtn'),
@@ -60,6 +71,9 @@ const state = {
   sealCount: Number(elements.sealCount.value),
   backgroundColor: elements.backgroundColor.value,
   sealChoices: ['', '', ''],
+  noteRecords: [],
+  currentRecord: null,
+  currentSeals: [],
   renderedBlob: null,
 };
 
@@ -72,6 +86,112 @@ function getSealMeta(fileName) {
     type,
     year,
   };
+}
+
+function getRecordValue(record, keys) {
+  return keys.map((key) => record?.[key]).find((value) => value !== undefined && value !== null && value !== '');
+}
+
+function getRecordLabel(record, index) {
+  const agency = getRecordValue(record, ['órgão', 'orgão', 'orgao', 'orgÃ£o']) || 'Entidade';
+  const city = getRecordValue(record, ['cidade', 'município', 'municipio']) || `Registro ${index + 1}`;
+  return `${agency} - ${city}`;
+}
+
+function parseScore(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const parsed = Number(String(value).replace('%', '').replace(',', '.').trim());
+
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  return parsed > 0 && parsed <= 1 ? parsed * 100 : parsed;
+}
+
+function getSealTypeFromScore(score) {
+  if (score >= 95 && score <= 100) {
+    return 'diamante';
+  }
+
+  if (score >= 85 && score < 95) {
+    return 'ouro';
+  }
+
+  if (score >= 75 && score < 85) {
+    return 'prata';
+  }
+
+  return null;
+}
+
+function getSealsFromRecord(record) {
+  return SUPPORTED_YEARS
+    .map((year) => {
+      const score = parseScore(record?.[`nota_${year}`]);
+      const type = score === null ? null : getSealTypeFromScore(score);
+      const fileName = type ? `${type}_${year}.png` : '';
+
+      return {
+        year,
+        score,
+        type,
+        fileName,
+        isAvailable: Boolean(fileName && SEAL_FILES.includes(fileName)),
+      };
+    })
+    .filter((seal) => seal.type && seal.isAvailable)
+    .sort((a, b) => {
+      const priorityDiff = SEAL_PRIORITY[b.type] - SEAL_PRIORITY[a.type];
+
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+
+      const scoreDiff = b.score - a.score;
+
+      if (scoreDiff !== 0) {
+        return scoreDiff;
+      }
+
+      return b.year - a.year;
+    })
+    .slice(0, 3);
+}
+
+function renderScorePreview(seals) {
+  elements.scorePreview.innerHTML = '';
+
+  if (!seals.length) {
+    const empty = document.createElement('li');
+    empty.textContent = 'Nenhuma nota entre 75% e 100% nos anos com selo disponivel.';
+    elements.scorePreview.appendChild(empty);
+    return;
+  }
+
+  seals.forEach((seal, index) => {
+    const item = document.createElement('li');
+    const title = document.createElement('strong');
+    const value = document.createElement('span');
+
+    title.textContent = `${index + 1}. ${seal.type} ${seal.year}`;
+    value.textContent = `${seal.score.toLocaleString('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}%`;
+
+    item.append(title, value);
+    elements.scorePreview.appendChild(item);
+  });
+}
+
+function syncPickerSelections() {
+  [elements.sealSelect1, elements.sealSelect2, elements.sealSelect3].forEach((picker, index) => {
+    selectSealChoice(picker, state.sealChoices[index] || '');
+  });
 }
 
 function selectSealChoice(picker, fileName) {
@@ -122,6 +242,107 @@ function populateSealPicker(picker, defaultValue = '') {
 
 function setStatus(message) {
   elements.status.textContent = message;
+}
+
+function populateRecordSelect(records) {
+  elements.recordSelect.innerHTML = '';
+
+  if (!records.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Nenhum registro encontrado';
+    elements.recordSelect.appendChild(option);
+    renderScorePreview([]);
+    return;
+  }
+
+  records.forEach((record, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = getRecordLabel(record, index);
+    elements.recordSelect.appendChild(option);
+  });
+}
+
+async function applyRecordByIndex(index) {
+  const record = state.noteRecords[index];
+
+  if (!record) {
+    return;
+  }
+
+  const seals = getSealsFromRecord(record);
+
+  state.currentRecord = record;
+  state.currentSeals = seals;
+  state.sealChoices = ['', '', ''];
+  seals.forEach((seal, sealIndex) => {
+    state.sealChoices[sealIndex] = seal.fileName;
+  });
+
+  elements.sealCount.value = String(seals.length);
+  syncPickerSelections();
+  updateSealSlotVisibility();
+  renderScorePreview(seals);
+  await renderBanner();
+}
+
+async function loadNoteRecords(records, sourceLabel) {
+  if (!Array.isArray(records)) {
+    throw new Error('O JSON precisa ser uma lista de registros.');
+  }
+
+  state.noteRecords = records;
+  populateRecordSelect(records);
+
+  if (!records.length) {
+    state.currentRecord = null;
+    state.currentSeals = [];
+    state.sealChoices = ['', '', ''];
+    elements.sealCount.value = '0';
+    syncPickerSelections();
+    updateSealSlotVisibility();
+    renderScorePreview([]);
+    await renderBanner();
+    setStatus(`JSON carregado de ${sourceLabel}, mas sem registros.`);
+    return;
+  }
+
+  elements.recordSelect.value = '0';
+  await applyRecordByIndex(0);
+  setStatus(`JSON carregado de ${sourceLabel}. ${records.length} registro(s) disponivel(is).`);
+}
+
+async function loadInitialNotes() {
+  try {
+    const response = await fetch(INITIAL_NOTES_PATH, { cache: 'no-store' });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const records = await response.json();
+    await loadNoteRecords(records, INITIAL_NOTES_PATH);
+  } catch (error) {
+    console.warn(error);
+    populateRecordSelect([]);
+    setStatus('Nao foi possivel carregar ../.venv/nota_avalia.json automaticamente. Importe um JSON para gerar por nota.');
+  }
+}
+
+function readJsonFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        resolve(JSON.parse(reader.result));
+      } catch (error) {
+        reject(new Error('Arquivo JSON invalido.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Nao foi possivel ler o arquivo JSON.'));
+    reader.readAsText(file);
+  });
 }
 
 function updateSealSlotVisibility() {
@@ -182,13 +403,15 @@ async function renderBanner() {
     ctx.drawImage(templateImage, 0, 0, BANNER_WIDTH, BANNER_HEIGHT);
 
     const layout = SEAL_LAYOUTS[count] ?? [];
-    layout.forEach((box, index) => {
-      const image = sealImages[index];
-      if (image) {
-        const halfSize = box.size / 2;
-        ctx.drawImage(image, box.centerX - halfSize, box.centerY - halfSize, box.size, box.size);
-      }
-    });
+    layout
+      .map((box, index) => ({ box, image: sealImages[index] }))
+      .reverse()
+      .forEach(({ box, image }) => {
+        if (image) {
+          const halfSize = box.size / 2;
+          ctx.drawImage(image, box.centerX - halfSize, box.centerY - halfSize, box.size, box.size);
+        }
+      });
 
     state.renderedBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     elements.downloadBtn.disabled = !state.renderedBlob;
@@ -201,6 +424,15 @@ async function renderBanner() {
   }
 }
 
+function sanitizeFilePart(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+}
+
 function downloadBanner() {
   if (!state.renderedBlob) {
     setStatus('Gere o banner antes de baixar.');
@@ -209,8 +441,13 @@ function downloadBanner() {
 
   const link = document.createElement('a');
   const objectUrl = URL.createObjectURL(state.renderedBlob);
+  const recordName = state.currentRecord
+    ? sanitizeFilePart(getRecordLabel(state.currentRecord, elements.recordSelect.value || 0))
+    : '';
   link.href = objectUrl;
-  link.download = `banner-${state.sealCount}-selos.png`;
+  link.download = recordName
+    ? `banner-${recordName}.png`
+    : `banner-${state.sealCount}-selos.png`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -365,6 +602,27 @@ elements.backgroundColor.addEventListener('input', async () => {
   await renderBanner();
 });
 
+elements.recordSelect.addEventListener('change', async () => {
+  await applyRecordByIndex(Number(elements.recordSelect.value));
+});
+
+elements.jsonFile.addEventListener('change', async () => {
+  const [file] = elements.jsonFile.files;
+
+  if (!file) {
+    return;
+  }
+
+  try {
+    setStatus('Lendo JSON importado...');
+    const records = await readJsonFile(file);
+    await loadNoteRecords(records, file.name);
+  } catch (error) {
+    console.error(error);
+    setStatus(error.message || 'Nao foi possivel importar o JSON.');
+  }
+});
+
 elements.renderBtn.addEventListener('click', renderBanner);
 elements.downloadBtn.addEventListener('click', downloadBanner);
 elements.panelModeBtn.addEventListener('click', toggleFloatingPanel);
@@ -392,4 +650,5 @@ updateSealSlotVisibility();
 const initialContext = elements.previewCanvas.getContext('2d');
 initialContext.fillStyle = elements.backgroundColor.value;
 initialContext.fillRect(0, 0, BANNER_WIDTH, BANNER_HEIGHT);
-setStatus('Selecione os selos e clique em Gerar banner.');
+setStatus('Carregando notas...');
+loadInitialNotes();

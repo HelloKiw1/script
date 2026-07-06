@@ -1,0 +1,183 @@
+:root[data-theme="retro"],
+[data-theme="retro"] {
+  color-scheme: light;
+  --color-base-100: oklch(91.637% 0.034 90.515);
+  --color-base-200: oklch(88.272% 0.049 91.774);
+  --color-base-300: oklch(84.133% 0.065 90.856);
+  --color-base-content: oklch(41% 0.112 45.904);
+  --color-primary: oklch(76% 0.16 75.834);
+  --color-primary-content: oklch(31% 0.09 55);
+  --color-secondary: oklch(92% 0.084 155.995);
+  --color-secondary-content: oklch(44% 0.119 151.328);
+  --color-accent: oklch(68% 0.162 75.834);
+  --color-accent-content: oklch(41% 0.112 45.904);
+  --color-neutral: oklch(44% 0.011 73.639);
+  --color-neutral-content: oklch(86% 0.005 56.366);
+  --color-info: oklch(58% 0.158 241.966);
+  --color-info-content: oklch(96% 0.059 95.617);
+  --color-success: oklch(51% 0.096 186.391);
+  --color-success-content: oklch(96% 0.059 95.617);
+  --color-warning: oklch(64% 0.222 41.116);
+  --color-warning-content: oklch(96% 0.059 95.617);
+  --color-error: oklch(70% 0.191 22.216);
+  --color-error-content: oklch(40% 0.123 38.172);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+html[data-script-theme="light"] body.script-shell-ready {
+  background:
+    radial-gradient(circle at top left, oklch(80% 0.114 19.571 / .24), transparent 340px),
+    radial-gradient(circle at bottom right, oklch(92% 0.084 155.995 / .24), transparent 360px),
+    linear-gradient(180deg, var(--color-base-100) 0, var(--color-base-200) 340px) !important;
+  color: var(--color-base-content) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  .dash-panel,
+  .top-bar,
+  .glass-panel,
+  .card,
+  .panel,
+  .soft-panel,
+  .stat-card,
+  .stat-tile,
+  .drop-zone,
+  .preview-frame,
+  .log-panel,
+  .toolbar,
+  .table-shell,
+  .metric,
+  .file-control,
+  .tab-list,
+  .compare-panel,
+  .collector-card,
+  .collector-status,
+  .note-panel,
+  .sidebar,
+  .config-head,
+  .template-panel,
+  .canvas-panel,
+  [class*="panel"],
+  [class*="card"],
+  [class*="preview"],
+  [class*="stage"],
+  [class*="canvas"],
+  [class*="workspace"],
+  [class*="config"]
+) {
+  background: color-mix(in oklch, var(--color-base-100) 88%, white 12%) !important;
+  border-color: color-mix(in oklch, var(--color-base-content) 18%, transparent) !important;
+  color: var(--color-base-content) !important;
+  box-shadow: 0 12px 34px color-mix(in oklch, var(--color-base-content) 14%, transparent) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  .stat-item,
+  .feature-chip,
+  .badge,
+  .alert,
+  .log-entry,
+  .file-upload,
+  .input,
+  .select,
+  .textarea,
+  input,
+  select,
+  textarea
+) {
+  background-color: color-mix(in oklch, var(--color-base-200) 82%, white 18%) !important;
+  border-color: color-mix(in oklch, var(--color-base-content) 20%, transparent) !important;
+  color: var(--color-base-content) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  [class*="bg-base-"],
+  [class*="bg-slate-"],
+  [class*="bg-zinc-"],
+  [class*="bg-gray-"],
+  [class*="bg-neutral-"]
+) {
+  background-color: color-mix(in oklch, var(--color-base-100) 88%, white 12%) !important;
+  color: var(--color-base-content) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  [class*="text-white"],
+  [class*="text-slate-"],
+  [class*="text-zinc-"],
+  [class*="text-gray-"],
+  [class*="text-neutral-"],
+  .logo-subtitle,
+  .stat-label,
+  .hero-subtitle,
+  .lead
+) {
+  color: color-mix(in oklch, var(--color-base-content) 72%, transparent) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  h1,
+  h2,
+  h3,
+  .card-title,
+  .logo-title,
+  .hero-title,
+  .stat-value,
+  .stat-item-value
+) {
+  color: var(--color-base-content) !important;
+  -webkit-text-fill-color: currentColor !important;
+  background: none !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  .btn-primary,
+  .btn-secondary,
+  .tab-btn,
+  .tab-button,
+  .file-control > button,
+  .toolbar > button,
+  .compare-controls > button,
+  #renderBtn,
+  #templateRenderBtn,
+  #downloadBtn,
+  #templateDownloadBtn,
+  #panelModeBtn
+) {
+  background: var(--color-primary) !important;
+  border-color: color-mix(in oklch, var(--color-primary) 70%, black 10%) !important;
+  color: var(--color-primary-content) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  .seal-option,
+  .score-list li,
+  .image-fallback
+) {
+  background: color-mix(in oklch, var(--color-base-100) 92%, white 8%) !important;
+  border-color: color-mix(in oklch, var(--color-base-content) 18%, transparent) !important;
+  color: var(--color-base-content) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  .seal-option.is-selected,
+  .seal-option:hover
+) {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 26%, transparent) !important;
+}
+
+html[data-script-theme="light"] body.script-shell-ready :where(
+  .progress,
+  .progress-bar,
+  #dashProgressFill
+) {
+  background: var(--color-primary) !important;
+}

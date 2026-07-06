@@ -1,0 +1,795 @@
+﻿<!doctype html>
+<html lang="pt-BR" data-theme="halloween">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marcelo - Script Tools</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicons/script-tools.svg">
+  <link rel="stylesheet" href="../assets/script-shell.css">
+  <link rel="stylesheet" href="../assets/script-js-page.css">
+</head>
+<body class="js-page">
+  <main class="js-page-shell">
+    <section class="js-hero">
+      <div>
+        <div class="js-eyebrow">Preenchimento .js</div>
+        <h1>Marcelo</h1>
+        <p>Automacao para preencher formularios a partir de dados em JSON, com painel de acompanhamento no navegador.</p>
+      </div>
+      <div class="js-actions">
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+        <a class="js-button secondary" href="marcelo.js" download>Baixar marcelo.js</a>
+      </div>
+    </section>
+
+    <nav class="js-tabs" aria-label="Abas do script">
+      <button class="js-tab is-active" type="button" data-js-tab="help" aria-selected="true">Como usar</button>
+      <button class="js-tab" type="button" data-js-tab="code" aria-selected="false">Codigo .js</button>
+    </nav>
+
+    <section class="js-panel" data-js-panel="help">
+      <div class="js-panel-head">
+        <div>
+          <div class="js-eyebrow">Uso no navegador</div>
+          <h2>Colar pelo inspecionar</h2>
+          <p>Use este metodo quando quiser rodar o script apenas na pagina aberta, sem instalar extensao.</p>
+        </div>
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+      </div>
+
+      <div class="step-grid">
+        <article class="step-card">
+          <span>Passo 1</span>
+          <strong>Abra a pagina alvo</strong>
+          <p>Entre no sistema ou site onde o script deve atuar. Aguarde a pagina carregar completamente.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 2</span>
+          <strong>Abra o inspecionar</strong>
+          <p>Pressione F12 ou Ctrl + Shift + I e escolha a aba Console.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 3</span>
+          <strong>Liberar colagem</strong>
+          <p>Se Chrome ou Edge bloquear a colagem, digite allow pasting no Console, pressione Enter, e depois cole o codigo.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 4</span>
+          <strong>Execute o codigo</strong>
+          <p>Cole o .js copiado, pressione Enter e use o painel que o script abrir na propria pagina.</p>
+        </article>
+      </div>
+
+      <div class="notice">Execute apenas em paginas onde voce tem permissao para automatizar acoes. Antes de iniciar um lote grande, rode um teste pequeno e confira o resultado.</div>
+      <div class="copy-status" data-copy-status></div>
+    </section>
+
+    <section class="js-panel" data-js-panel="code" hidden>
+      <div class="js-panel-head">
+        <div>
+          <div class="js-eyebrow">Formulario</div>
+          <h2>marcelo.js</h2>
+          <p>Codigo completo pronto para copiar e colar no Console do navegador.</p>
+        </div>
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+      </div>
+      <div class="code-wrap" tabindex="0"><pre><code id="codeView"></code></pre></div>
+      <div class="copy-status" data-copy-status></div>
+    </section>
+  </main>
+
+  <textarea id="scriptSource" hidden readonly>// ==UserScript==
+// @name         Marcelo
+// @namespace    https://github.com/eduar
+// @version      0.1.0
+// @description  Preenche o formul&#225;rio automaticamente usando dados do JSON
+// @match        *://*/*
+// @grant        none
+// @run-at       document-end
+// ==/UserScript==
+
+(async function () {
+  // Estado e op&#231;&#245;es (inspirado no painel do Baixatron)
+  const state = {
+    paused: false,
+    stopped: false,
+    running: false,
+    currentIndex: 0,
+    total: 0,
+    processed: 0,
+    errors: 0,
+    skipped: 0,
+    percent: 0,
+    theme: localStorage.getItem(&#39;__marcelo-theme&#39;) || &#39;dark&#39;,
+    speedFactor: parseFloat(localStorage.getItem(&#39;__marcelo-speedFactor&#39;) || &#39;1&#39;),
+    startedAt: null,
+    sumItemDuration: 0,
+  };
+
+  let arquivos = [];
+  let arquivosFiltrados = [];
+
+  // Utilit&#225;rios
+  const wait = (ms) =&gt; new Promise((r) =&gt; setTimeout(r, ms));
+  const scaledSleep = async (ms) =&gt; {
+    const goal = ms * Math.max(0.25, Math.min(4, state.speedFactor));
+    const start = Date.now();
+    while (Date.now() - start &lt; goal) {
+      if (state.stopped) throw new Error(&#39;Script parado pelo usu&#225;rio&#39;);
+      while (state.paused &amp;&amp; !state.stopped) await wait(100);
+      await wait(60);
+    }
+  };
+
+  const waitForElement = async (selector, shouldExist = true, timeout = 10000) =&gt; {
+    const startTime = Date.now();
+    while (Date.now() - startTime &lt; timeout) {
+      if (state.stopped) throw new Error(&#39;Script parado pelo usu&#225;rio&#39;);
+      if (state.paused) await wait(100);
+      const el = document.querySelector(selector);
+      if (shouldExist &amp;&amp; el) return el;
+      if (!shouldExist &amp;&amp; !el) return true;
+      await wait(100);
+    }
+    throw new Error(`Timeout aguardando elemento: ${selector}`);
+  };
+
+  const waitForSaveComplete = async () =&gt; {
+    await wait(900);
+    const startedAt = Date.now();
+    const timeout = 20000;
+    while (Date.now() - startedAt &lt; timeout) {
+      const loading = document.querySelector(&#39;.p-button-loading-icon, .pi-spinner, .pi-spin&#39;);
+      const saveButton = document.querySelector(&#39;button[aria-label=&quot;Salvar e Publicar&quot;], button[aria-label=&quot;Salvar&quot;], form button[type=&quot;submit&quot;]&#39;);
+      if (!saveButton) return true;
+      if (!loading &amp;&amp; !saveButton.disabled) {
+        await wait(250);
+        return true;
+      }
+      await wait(120);
+    }
+    throw new Error(&#39;Timeout aguardando conclus&#227;o do salvamento&#39;);
+  };
+
+  const normalizeText = (value) =&gt; String(value ?? &#39;&#39;).trim();
+  const normalizeUrl = (value) =&gt; {
+    const raw = normalizeText(value);
+    if (!raw) return &#39;&#39;;
+    return raw
+      .replace(/^https?:\/\/(www\.)?araguaina\.to\.gov\.br\/?/i, &#39;&#39;)
+      .replace(/^(www\.)?araguaina\.to\.gov\.br\/?/i, &#39;&#39;)
+      .replace(/^\/+/, &#39;&#39;);
+  };
+  const isVisible = (el) =&gt; !!(el &amp;&amp; (el.offsetParent || el.getClientRects().length));
+
+  const findFirstVisible = (selectors) =&gt; {
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      if (isVisible(el)) return el;
+    }
+    return null;
+  };
+
+  const setFieldValue = (el, value) =&gt; {
+    if (!el) return;
+    el.value = value;
+    el.focus();
+    const enterEvent = new KeyboardEvent(&#39;keydown&#39;, {
+      key: &#39;Enter&#39;,
+      code: &#39;Enter&#39;,
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true,
+    });
+    el.dispatchEvent(enterEvent);
+    el.dispatchEvent(new Event(&#39;input&#39;, { bubbles: true }));
+    el.dispatchEvent(new Event(&#39;change&#39;, { bubbles: true }));
+    el.blur();
+  };
+
+  const preencherLinkArquivo = async (url) =&gt; {
+    const value = normalizeUrl(url);
+    if (!value) return true;
+
+    let input = findFirstVisible([
+      &#39;.p-fileupload-content input[type=&quot;text&quot;]&#39;,
+      &#39;.p-fileupload-content input:not([type=&quot;file&quot;])&#39;,
+      &#39;.p-fileupload-content textarea&#39;,
+      &#39;input[placeholder*=&quot;url&quot; i]&#39;,
+      &#39;input[placeholder*=&quot;link&quot; i]&#39;,
+    ]);
+
+    if (!input) {
+      const btnOpenLink = findFirstVisible([
+        &#39;.p-fileupload-buttonbar button.p-button-help&#39;,
+        &#39;.p-fileupload-buttonbar button[aria-label*=&quot;URL&quot; i]&#39;,
+        &#39;.p-fileupload-buttonbar button[aria-label*=&quot;Link&quot; i]&#39;,
+      ]);
+
+      if (btnOpenLink) {
+        btnOpenLink.click();
+        await scaledSleep(350);
+        input = findFirstVisible([
+          &#39;.p-fileupload-content input[type=&quot;text&quot;]&#39;,
+          &#39;.p-fileupload-content input:not([type=&quot;file&quot;])&#39;,
+          &#39;.p-fileupload-content textarea&#39;,
+          &#39;input[placeholder*=&quot;url&quot; i]&#39;,
+          &#39;input[placeholder*=&quot;link&quot; i]&#39;,
+        ]);
+      }
+    }
+
+    if (!input) {
+      console.warn(&#39;Campo de URL do arquivo n&#227;o encontrado.&#39;);
+      return false;
+    }
+
+    setFieldValue(input, value);
+    await scaledSleep(180);
+    if (normalizeText(input.value) !== value) {
+      setFieldValue(input, value);
+    }
+    return true;
+  };
+
+  const fillInput = (selector, value) =&gt; {
+    const el = document.querySelector(selector);
+    if (!el) return console.warn(&#39;Elemento n&#227;o encontrado:&#39;, selector);
+    el.value = value;
+    el.focus();
+    const enterEvent = new KeyboardEvent(&#39;keydown&#39;, {
+      key: &#39;Enter&#39;,
+      code: &#39;Enter&#39;,
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true,
+    });
+    el.dispatchEvent(enterEvent);
+    el.dispatchEvent(new Event(&#39;input&#39;, { bubbles: true }));
+    el.dispatchEvent(new Event(&#39;change&#39;, { bubbles: true }));
+  };
+
+  const click = (selector) =&gt; {
+    const el = document.querySelector(selector);
+    if (!el) return console.warn(&#39;Elemento n&#227;o encontrado:&#39;, selector);
+    el.focus();
+    el.click();
+  };
+
+  // Procura e clica em um &lt;li&gt; de dropdown pelo aria-label ou texto
+  const selectByAriaLabel = (label) =&gt; {
+    if (!label) return false;
+    const targetLabel = normalizeText(label);
+    const items = Array.from(document.querySelectorAll(&#39;li[aria-label]&#39;));
+    const target = items.find((el) =&gt; {
+      const aria = normalizeText(el.getAttribute(&#39;aria-label&#39;));
+      const text = normalizeText(el.textContent);
+      return (
+        aria === targetLabel ||
+        text === targetLabel ||
+        aria.startsWith(`${targetLabel} -`) ||
+        text.startsWith(`${targetLabel} -`)
+      );
+    });
+    if (!target) {
+      console.warn(`Op&#231;&#227;o n&#227;o encontrada para aria-label: ${label}`);
+      return false;
+    }
+    target.click();
+    return true;
+  };
+
+  // =============================
+  // UI: Painel Marcelo
+  // =============================
+  const CSS = `
+    * { box-sizing: border-box; }
+    #marcelo-panel { position: fixed; top: 14px; right: 14px; width: 460px; max-height: 86vh; border-radius: 10px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif; z-index: 999999; color: #fff; background: #181a1f; box-shadow: 0 8px 32px rgba(0,0,0,.45); }
+    #marcelo-panel.light { background: #f5f6f8; color: #111; }
+    #marcelo-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; background: #21232b; cursor: move; user-select: none; border-bottom: 1px solid #2c2f37; font-weight: 700; font-size: 13px; }
+    #marcelo-panel.light #marcelo-header { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+    #marcelo-title { display: flex; align-items: center; gap: 8px; }
+    #marcelo-actions { display: flex; gap: 6px; }
+    .m-btn-icon { border: none; background: transparent; color: #aab; font-size: 16px; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: .2s; }
+    .m-btn-icon:hover { background: rgba(255,255,255,.08); color: #fff; }
+    #marcelo-panel.light .m-btn-icon { color: #555; }
+    #marcelo-panel.light .m-btn-icon:hover { background: #f1f5f9; color: #111; }
+    #marcelo-warning { background: #2b2935; border-left: 4px solid #8b5cf6; padding: 10px 12px; font-size: 11px; line-height: 1.4; }
+    #marcelo-panel.light #marcelo-warning { background: #ede9fe; color: #2d1b69; border-left-color: #7c3aed; }
+    #marcelo-body { display: flex; flex-direction: column; max-height: calc(86vh - 48px); }
+    #marcelo-stats { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; padding: 10px 12px; border-bottom: 1px solid #2c2f37; background: #1b1e26; }
+    #marcelo-panel.light #marcelo-stats { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+    .m-stat { display: flex; flex-direction: column; gap: 2px; }
+    .m-stat .lbl { font-size: 10px; opacity: .7; text-transform: uppercase; letter-spacing: .4px; }
+    .m-stat .val { font-size: 15px; font-weight: 800; }
+    #marcelo-progress { padding: 10px 12px; border-bottom: 1px solid #2c2f37; }
+    #marcelo-panel.light #marcelo-progress { border-bottom: 1px solid #e5e7eb; }
+    .m-bar { height: 8px; background: #2c2f37; border-radius: 4px; overflow: hidden; }
+    .m-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #22d3ee); transition: width .25s; }
+    #marcelo-controls { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; padding: 10px 12px; border-bottom: 1px solid #2c2f37; }
+    #marcelo-panel.light #marcelo-controls { border-bottom: 1px solid #e5e7eb; }
+    .m-btn { padding: 9px 10px; border-radius: 8px; border: 1px solid #30343d; background: #242833; color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; transition: .2s; }
+    .m-btn:hover { background: #2b3040; border-color: #3b404c; }
+    .m-btn.primary { background: #10b981; border-color: #10b981; color: #0b1a14; }
+    .m-btn.primary:hover { background: #0ea371; border-color: #0ea371; }
+    .m-btn.danger { background: #ef4444; border-color: #ef4444; color: #fff; }
+    .m-btn.danger:hover { background: #dc2626; border-color: #dc2626; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .row input[type=&quot;text&quot;] { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #30343d; background: #1d212a; color: #fff; font-size: 12px; outline: none; }
+    #marcelo-panel.light .row input[type=&quot;text&quot;] { background: #fff; color: #111; border: 1px solid #e5e7eb; }
+    .m-help { font-size: 10px; opacity: .75; padding: 2px 2px 0; }
+    #marcelo-speed { padding: 10px 12px; border-top: 1px solid #2c2f37; font-size: 11px; }
+    #marcelo-panel.light #marcelo-speed { border-top: 1px solid #e5e7eb; }
+    input[type=&quot;range&quot;] { width: 100%; height: 4px; background: #2c2f37; border-radius: 2px; appearance: none; }
+    input[type=&quot;range&quot;]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 999px; background: #10b981; cursor: pointer; }
+    #marcelo-collapsed { display: none; }
+    #marcelo-panel.min { width: 260px; }
+    #marcelo-panel.min #marcelo-body { display: none; }
+    @media (max-width: 640px){ #marcelo-panel{ width: calc(100% - 20px); left: 10px; right: 10px; } #marcelo-controls{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  `;
+
+  const injectStyle = () =&gt; {
+    if (document.getElementById(&#39;marcelo-style&#39;)) return;
+    const style = document.createElement(&#39;style&#39;);
+    style.id = &#39;marcelo-style&#39;;
+    style.textContent = CSS;
+    document.head.appendChild(style);
+  };
+
+  const enableDrag = (panel, handle) =&gt; {
+    const drag = { active: false, dx: 0, dy: 0 };
+    const onMove = (e) =&gt; {
+      if (!drag.active) return;
+      const x = e.clientX - drag.dx;
+      const y = e.clientY - drag.dy;
+      panel.style.right = &#39;&#39;;
+      panel.style.left = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, x)) + &#39;px&#39;;
+      panel.style.top = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, y)) + &#39;px&#39;;
+    };
+    const onUp = () =&gt; {
+      drag.active = false;
+      document.removeEventListener(&#39;mousemove&#39;, onMove);
+      document.removeEventListener(&#39;mouseup&#39;, onUp);
+    };
+    handle.addEventListener(&#39;mousedown&#39;, (e) =&gt; {
+      drag.active = true;
+      const r = panel.getBoundingClientRect();
+      drag.dx = e.clientX - r.left;
+      drag.dy = e.clientY - r.top;
+      document.addEventListener(&#39;mousemove&#39;, onMove);
+      document.addEventListener(&#39;mouseup&#39;, onUp);
+    });
+  };
+
+  const setStatus = (txt) =&gt; {
+    const el = document.getElementById(&#39;marcelo-status&#39;);
+    if (el) el.textContent = txt;
+  };
+
+  const updateStats = () =&gt; {
+    const q = {
+      fila: state.total - state.processed,
+      ativos: state.running &amp;&amp; !state.paused ? 1 : 0,
+      proc: state.processed,
+      sel: arquivosFiltrados.length,
+      err: state.errors,
+    };
+    const total = state.total || 0;
+    const pct = total ? Math.round((state.processed / total) * 100) : 0;
+    state.percent = pct;
+    const fill = document.getElementById(&#39;marcelo-fill&#39;);
+    const pctEl = document.getElementById(&#39;marcelo-pct&#39;);
+    const qEls = {
+      fila: document.getElementById(&#39;m-q-fila&#39;),
+      ativos: document.getElementById(&#39;m-q-ativos&#39;),
+      proc: document.getElementById(&#39;m-q-proc&#39;),
+      sel: document.getElementById(&#39;m-q-sel&#39;),
+      err: document.getElementById(&#39;m-q-err&#39;),
+    };
+    if (fill) fill.style.width = pct + &#39;%&#39;;
+    if (pctEl) pctEl.textContent = pct + &#39;%&#39;;
+    if (qEls.fila) qEls.fila.textContent = String(q.fila);
+    if (qEls.ativos) qEls.ativos.textContent = String(q.ativos);
+    if (qEls.proc) qEls.proc.textContent = String(q.proc);
+    if (qEls.sel) qEls.sel.textContent = String(q.sel);
+    if (qEls.err) qEls.err.textContent = String(q.err);
+    const prog = document.getElementById(&#39;marcelo-progress-label&#39;);
+    if (prog) prog.textContent = `${state.currentIndex} / ${state.total}`;
+
+    // timers
+    const elapsedEl = document.getElementById(&#39;marcelo-elapsed&#39;);
+    const etaEl = document.getElementById(&#39;marcelo-eta&#39;);
+    if (elapsedEl) {
+      const secs = state.startedAt ? Math.floor((Date.now() - state.startedAt) / 1000) : 0;
+      elapsedEl.textContent = `⏱️ ${formatTime(secs)}`;
+    }
+    if (etaEl) {
+      const etaSecs = getEstimatedSeconds();
+      etaEl.textContent = `🕒 ${etaSecs ? formatTime(etaSecs) : &#39;--:--&#39;}`;
+    }
+  };
+
+  const toggleTheme = () =&gt; {
+    const panel = document.getElementById(&#39;marcelo-panel&#39;);
+    if (!panel) return;
+    if (state.theme === &#39;dark&#39;) {
+      state.theme = &#39;light&#39;;
+      panel.classList.add(&#39;light&#39;);
+    } else {
+      state.theme = &#39;dark&#39;;
+      panel.classList.remove(&#39;light&#39;);
+    }
+    localStorage.setItem(&#39;__marcelo-theme&#39;, state.theme);
+  };
+
+  const renderPanel = () =&gt; {
+    const existing = document.getElementById(&#39;marcelo-panel&#39;);
+    if (existing) existing.remove();
+
+    injectStyle();
+    const panel = document.createElement(&#39;div&#39;);
+    panel.id = &#39;marcelo-panel&#39;;
+    if (state.theme === &#39;light&#39;) panel.classList.add(&#39;light&#39;);
+    panel.innerHTML = `
+      &lt;div id=&quot;marcelo-header&quot;&gt;
+        &lt;div id=&quot;marcelo-title&quot;&gt;🧩 Marcelo — Automa&#231;&#227;o&lt;/div&gt;
+        &lt;div id=&quot;marcelo-actions&quot;&gt;
+          &lt;button id=&quot;m-theme&quot; class=&quot;m-btn-icon&quot; title=&quot;Tema&quot;&gt;${state.theme === &#39;light&#39; ? &#39;☀️&#39; : &#39;🌙&#39;}&lt;/button&gt;
+          &lt;button id=&quot;m-min&quot; class=&quot;m-btn-icon&quot; title=&quot;Minimizar&quot;&gt;➖&lt;/button&gt;
+          &lt;button id=&quot;m-close&quot; class=&quot;m-btn-icon&quot; title=&quot;Fechar&quot;&gt;✕&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;marcelo-body&quot;&gt;
+        &lt;div id=&quot;marcelo-warning&quot;&gt;
+          Dica: use barra de espa&#231;o para Pausar/Continuar &#183; T: tema &#183; S: parar
+        &lt;/div&gt;
+        &lt;div id=&quot;marcelo-stats&quot;&gt;
+          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Fila&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-fila&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Ativos&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-ativos&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Processados&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-proc&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Selecionados&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-sel&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Erros&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-err&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;marcelo-progress&quot;&gt;
+          &lt;div class=&quot;row&quot; style=&quot;justify-content: space-between;&quot;&gt;
+            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-status&quot;&gt;Aguardando arquivo JSON…&lt;/div&gt;
+            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-pct&quot;&gt;0%&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;m-bar&quot;&gt;&lt;div class=&quot;m-fill&quot; id=&quot;marcelo-fill&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;m-help&quot; id=&quot;marcelo-progress-label&quot; style=&quot;margin-top:6px;&quot;&gt;0 / 0&lt;/div&gt;
+          &lt;div class=&quot;row&quot; style=&quot;justify-content: space-between; margin-top:6px;&quot;&gt;
+            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-elapsed&quot;&gt;⏱️ 00:00&lt;/div&gt;
+            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-eta&quot;&gt;🕒 --:--&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;marcelo-controls&quot;&gt;
+          &lt;button id=&quot;m-start&quot; class=&quot;m-btn primary&quot; disabled&gt;▶ Iniciar&lt;/button&gt;
+          &lt;button id=&quot;m-pause&quot; class=&quot;m-btn&quot; disabled&gt;⏸ Pausar&lt;/button&gt;
+          &lt;button id=&quot;m-stop&quot; class=&quot;m-btn danger&quot;&gt;⏹ Parar&lt;/button&gt;
+          &lt;button id=&quot;m-loadjson&quot; class=&quot;m-btn&quot; style=&quot;grid-column: span 3;&quot;&gt;📂 Carregar JSON&lt;/button&gt;
+          &lt;div class=&quot;row&quot; style=&quot;grid-column: span 3;&quot;&gt;
+            &lt;input id=&quot;m-startfrom&quot; type=&quot;text&quot; placeholder=&quot;Come&#231;ar a partir do decreto (ex: 123)&quot;&gt;
+            &lt;button id=&quot;m-apply&quot; class=&quot;m-btn&quot;&gt;Aplicar&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;m-help&quot; id=&quot;m-startinfo&quot; style=&quot;grid-column: span 3;&quot;&gt;Carregue o arquivo JSON para come&#231;ar&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;marcelo-speed&quot;&gt;
+          &lt;div class=&quot;row&quot; style=&quot;justify-content: space-between; margin-bottom:6px&quot;&gt;&lt;span&gt;Velocidade&lt;/span&gt;&lt;span id=&quot;m-speed-label&quot;&gt;${state.speedFactor.toFixed(2)}x&lt;/span&gt;&lt;/div&gt;
+          &lt;input id=&quot;m-speed&quot; type=&quot;range&quot; min=&quot;0.25&quot; max=&quot;3&quot; step=&quot;0.05&quot; value=&quot;${state.speedFactor}&quot;&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    `;
+
+    document.body.appendChild(panel);
+
+    // Eventos
+    const btnStart = document.getElementById(&#39;m-start&#39;);
+    const btnPause = document.getElementById(&#39;m-pause&#39;);
+    const btnStop = document.getElementById(&#39;m-stop&#39;);
+    const btnApply = document.getElementById(&#39;m-apply&#39;);
+    const btnLoadJson = document.getElementById(&#39;m-loadjson&#39;);
+    const inputStart = document.getElementById(&#39;m-startfrom&#39;);
+    const startInfo = document.getElementById(&#39;m-startinfo&#39;);
+    const statusEl = document.getElementById(&#39;marcelo-status&#39;);
+
+    document.getElementById(&#39;m-close&#39;).onclick = () =&gt; panel.remove();
+    document.getElementById(&#39;m-min&#39;).onclick = () =&gt; {
+      if (panel.classList.contains(&#39;min&#39;)) {
+        panel.classList.remove(&#39;min&#39;);
+      } else {
+        panel.classList.add(&#39;min&#39;);
+      }
+    };
+    document.getElementById(&#39;m-theme&#39;).onclick = () =&gt; {
+      toggleTheme();
+      document.getElementById(&#39;m-theme&#39;).textContent = state.theme === &#39;light&#39; ? &#39;☀️&#39; : &#39;🌙&#39;;
+    };
+
+    enableDrag(panel, document.getElementById(&#39;marcelo-header&#39;));
+
+    btnPause.onclick = () =&gt; {
+      state.paused = !state.paused;
+      btnPause.textContent = state.paused ? &#39;▶ Continuar&#39; : &#39;⏸ Pausar&#39;;
+      setStatus(state.paused ? &#39;⏸️ Pausado&#39; : &#39;▶️ Executando...&#39;);
+    };
+    btnStop.onclick = () =&gt; {
+      state.stopped = true;
+      state.running = false;
+      setStatus(&#39;⏹️ Parando...&#39;);
+      updateStats();
+    };
+    btnStart.onclick = async () =&gt; {
+      if (!arquivosFiltrados.length) return;
+      if (state.running) return;
+      state.stopped = false;
+      state.paused = false;
+      state.running = true;
+      state.startedAt = Date.now();
+      state.sumItemDuration = 0;
+      btnPause.disabled = false;
+      // Atualizar timers periodicamente
+      state.__tick = setInterval(updateStats, 500);
+      await loop();
+    };
+    btnLoadJson.onclick = async () =&gt; {
+      await carregarJson();
+    };
+    btnApply.onclick = async () =&gt; {
+      const numeroInicial = inputStart.value.trim();
+      if (!numeroInicial) {
+        arquivosFiltrados = arquivos;
+        state.skipped = 0;
+        state.total = arquivos.length;
+        state.currentIndex = 0;
+        state.processed = 0;
+        state.errors = 0;
+        btnStart.disabled = arquivosFiltrados.length === 0;
+        startInfo.textContent = &#39;Processando todos os decretos&#39;;
+        startInfo.style.opacity = &#39;0.9&#39;;
+        updateStats();
+        return;
+      }
+      const idx = arquivos.findIndex((item) =&gt; normalizeText(item.numeroDecreto) === numeroInicial || normalizeText(item.numero) === numeroInicial);
+      if (idx !== -1) {
+        arquivosFiltrados = arquivos.slice(idx);
+        state.skipped = idx;
+        state.total = arquivosFiltrados.length;
+        state.currentIndex = 0;
+        state.processed = 0;
+        state.errors = 0;
+        btnStart.disabled = arquivosFiltrados.length === 0;
+        startInfo.textContent = `✓ Pulando ${state.skipped} decreto(s)`;
+        startInfo.style.color = &#39;#10b981&#39;;
+        updateStats();
+      } else {
+        startInfo.textContent = `✗ Decreto &quot;${numeroInicial}&quot; n&#227;o encontrado`;
+        startInfo.style.color = &#39;#ef4444&#39;;
+      }
+    };
+
+    // Velocidade
+    const speed = document.getElementById(&#39;m-speed&#39;);
+    const speedLbl = document.getElementById(&#39;m-speed-label&#39;);
+    speed.oninput = (e) =&gt; {
+      state.speedFactor = parseFloat(e.target.value || &#39;1&#39;);
+      speedLbl.textContent = `${state.speedFactor.toFixed(2)}x`;
+      localStorage.setItem(&#39;__marcelo-speedFactor&#39;, String(state.speedFactor));
+    };
+
+    // Atalhos
+    window.addEventListener(&#39;keydown&#39;, (e) =&gt; {
+      if ([&#39;INPUT&#39;, &#39;TEXTAREA&#39;].includes((e.target || {}).tagName)) return;
+      if (e.key === &#39; &#39;) {
+        e.preventDefault();
+        if (!btnPause.disabled) btnPause.click();
+      } else if (e.key.toLowerCase() === &#39;s&#39;) {
+        e.preventDefault();
+        btnStop.click();
+      } else if (e.key.toLowerCase() === &#39;t&#39;) {
+        e.preventDefault();
+        document.getElementById(&#39;m-theme&#39;).click();
+      }
+    });
+
+    // Estado inicial
+    statusEl.textContent = &#39;Aguardando arquivo JSON…&#39;;
+    btnPause.disabled = true;
+    btnStart.disabled = true;
+    updateStats();
+  };
+
+  // =============================
+  // N&#250;cleo da automa&#231;&#227;o (adaptado do script original)
+  // =============================
+  const loop = async () =&gt; {
+    try {
+      const btnPause = document.getElementById(&#39;m-pause&#39;);
+      const btnStart = document.getElementById(&#39;m-start&#39;);
+      const inputStart = document.getElementById(&#39;m-startfrom&#39;);
+      const btnApply = document.getElementById(&#39;m-apply&#39;);
+      btnPause.disabled = false;
+      inputStart.disabled = true;
+      btnApply.disabled = true;
+
+      setStatus(`▶️ Iniciando processamento (${arquivosFiltrados.length} decretos)`);
+
+      for (const data of arquivosFiltrados) {
+        if (state.stopped) break;
+        while (state.paused &amp;&amp; !state.stopped) await wait(120);
+
+        state.currentIndex++;
+        setStatus(`▶️ Processando decreto ${state.currentIndex}/${state.total}`);
+        updateStats();
+
+        const itemStart = Date.now();
+
+        // Fluxo de decreto/documento (igual ao Formtron)
+        fillInput(&#39;#acao-form &gt; div:nth-child(1) &gt; div.pt-1.w-full &gt; div:nth-child(1) &gt; div &gt; div:nth-child(1) &gt; span &gt; div &gt; div &gt; div:nth-child(1) &gt; span &gt; div &gt; div &gt; span &gt; input&#39;, data.numero ?? &#39;&#39;);
+        await scaledSleep(2000);
+        click(&#39;#tipo_documento &gt; div&#39;);
+        await scaledSleep(400);
+        click(&#39;#tipo_documento_38&#39;);
+        await scaledSleep(400);
+
+        fillInput(&#39;#numero input&#39;, data.numeroDoDocumento ?? &#39;&#39;);
+
+        if (normalizeText(data.letra)) {
+          fillInput(&#39;#letra&#39;, data.letra);
+        }
+
+        fillInput(&#39;#data input&#39;, data.data ?? &#39;&#39;);
+
+        fillInput(&#39;textarea.p-inputtextarea&#39;, data.descricao ?? &#39;&#39;);
+
+        const urlOk = await preencherLinkArquivo(data.url);
+        if (!urlOk) {
+          state.errors++;
+          setStatus(`⚠️ URL n&#227;o encontrada no formul&#225;rio (decreto ${state.currentIndex})`);
+        }
+        await scaledSleep(220);
+
+        // Salvar
+        setStatus(`💾 Salvando decreto ${state.currentIndex}...`);
+        click(&#39;#acao-form button[aria-label=&quot;Salvar&quot;]&#39;);
+        try {
+          await waitForSaveComplete();
+          state.sumItemDuration += (Date.now() - itemStart);
+          state.processed++;
+          updateStats();
+          if (state.currentIndex &lt; state.total) {
+            setStatus(&#39;➕ Criando novo formul&#225;rio...&#39;);
+            click(&#39;button[aria-label=&quot;Novo&quot;]&#39;);
+            await scaledSleep(800);
+          }
+        } catch (error) {
+          if (error?.response &amp;&amp; String(error.response.message || &#39;&#39;).includes(&#39;Too Many Attemps&#39;)) {
+            await scaledSleep(20000);
+            setStatus(`💾 (Retry) Salvando decreto ${state.currentIndex}...`);
+            click(&#39;#acao-form button[aria-label=&quot;Salvar&quot;]&#39;);
+            await waitForSaveComplete();
+            state.sumItemDuration += (Date.now() - itemStart);
+            state.processed++;
+            updateStats();
+            if (state.currentIndex &lt; state.total) {
+              setStatus(&#39;➕ Criando novo formul&#225;rio...&#39;);
+              click(&#39;button[aria-label=&quot;Novo&quot;]&#39;);
+              await scaledSleep(800);
+            }
+          } else {
+            console.error(error);
+            state.errors++;
+          }
+        }
+      }
+
+      if (state.stopped) {
+        setStatus(&#39;⏹️ Script parado pelo usu&#225;rio&#39;);
+      } else {
+        setStatus(`✅ Conclu&#237;do! ${state.total} decretos processados`);
+      }
+    } catch (e) {
+      console.error(&#39;Erro:&#39;, e);
+      setStatus(`❌ Erro: ${e}`);
+    } finally {
+      state.running = false;
+      const btnPause = document.getElementById(&#39;m-pause&#39;);
+      const btnStart = document.getElementById(&#39;m-start&#39;);
+      const inputStart = document.getElementById(&#39;m-startfrom&#39;);
+      const btnApply = document.getElementById(&#39;m-apply&#39;);
+      if (btnPause) btnPause.disabled = true;
+      if (btnStart) btnStart.disabled = false;
+      if (inputStart) inputStart.disabled = false;
+      if (btnApply) btnApply.disabled = false;
+      if (state.__tick) { clearInterval(state.__tick); state.__tick = null; }
+      updateStats();
+    }
+  };
+
+  // Tempo: helpers
+  const formatTime = (seconds) =&gt; {
+    if (!seconds || seconds &lt;= 0) return &#39;00:00&#39;;
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs &gt; 0) return `${hrs}:${String(mins).padStart(2, &#39;0&#39;)}:${String(secs).padStart(2, &#39;0&#39;)}`;
+    return `${String(mins).padStart(2, &#39;0&#39;)}:${String(secs).padStart(2, &#39;0&#39;)}`;
+  };
+
+  const getEstimatedSeconds = () =&gt; {
+    if (!state.running || !state.total) return null;
+    if (state.processed &lt;= 0 || state.sumItemDuration &lt;= 0) return null;
+    const avgMs = state.sumItemDuration / state.processed;
+    const remaining = Math.max(0, state.total - state.processed);
+    const estMs = remaining * avgMs;
+    return Math.ceil(estMs / 1000);
+  };
+
+  // =============================
+  // Carregar arquivo JSON
+  // =============================
+  const pickJson = async () =&gt; {
+    return new Promise((resolve) =&gt; {
+      const input = document.createElement(&#39;input&#39;);
+      input.type = &#39;file&#39;;
+      input.accept = &#39;.json&#39;;
+      input.onchange = (e) =&gt; {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) =&gt; {
+          try {
+            const data = JSON.parse(ev.target.result);
+            resolve(data);
+          } catch (err) {
+            alert(&#39;Arquivo JSON inv&#225;lido&#39;);
+            resolve([]);
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    });
+  };
+
+  const carregarJson = async () =&gt; {
+    arquivos = await pickJson();
+    if (!Array.isArray(arquivos)) arquivos = [];
+    arquivosFiltrados = arquivos;
+    state.total = arquivos.length;
+    state.currentIndex = 0;
+    state.processed = 0;
+    state.errors = 0;
+    const startInfo = document.getElementById(&#39;m-startinfo&#39;);
+    if (startInfo) startInfo.textContent = arquivos.length ? `Total: ${arquivos.length} decreto(s) no arquivo` : &#39;Nenhum dado carregado&#39;;
+    const btnStart = document.getElementById(&#39;m-start&#39;);
+    if (btnStart) btnStart.disabled = arquivos.length === 0;
+    setStatus(arquivos.length ? `Arquivo carregado: ${arquivos.length} decreto(s)` : &#39;Nenhum dado carregado&#39;);
+    updateStats();
+  };
+
+  // Expor API m&#237;nima
+  window.__marcelo = {
+    pause: () =&gt; (state.paused = true),
+    resume: () =&gt; (state.paused = false),
+    stop: () =&gt; (state.stopped = true),
+    setSpeed: (f) =&gt; {
+      state.speedFactor = Math.max(0.25, Math.min(4, Number(f) || 1));
+      localStorage.setItem(&#39;__marcelo-speedFactor&#39;, String(state.speedFactor));
+      const lbl = document.getElementById(&#39;m-speed-label&#39;);
+      if (lbl) lbl.textContent = `${state.speedFactor.toFixed(2)}x`;
+    },
+    toggleTheme,
+  };
+
+  // Inicializa&#231;&#227;o
+  renderPanel();
+  // Aguarda o usu&#225;rio clicar em &quot;Carregar JSON&quot;
+  setStatus(&#39;Aguardando arquivo JSON…&#39;);
+  updateStats();
+})();
+</textarea>
+  <script src="../assets/script-shell.js"></script>
+  <script src="../assets/script-js-page.js"></script>
+</body>
+</html>

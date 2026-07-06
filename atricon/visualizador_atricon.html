@@ -262,6 +262,21 @@
       gap: 14px;
     }
 
+    #resultsPanel {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+
+    #resultsPanel > .toolbar {
+      grid-column: 1 / -1;
+    }
+
+    #resultsPanel > #emptyState,
+    #resultsPanel > #tableShell {
+      grid-column: 1;
+      min-width: 0;
+    }
+
     .tab-panel[hidden] {
       display: none !important;
     }
@@ -441,8 +456,121 @@
 
     .summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .metrics-drawer {
+      position: fixed;
+      top: 104px;
+      right: 0;
+      bottom: auto;
+      z-index: 1500;
+      width: min(292px, calc(100vw - 18px));
+      max-height: calc(100vh - 124px);
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      color: var(--text);
+      transform: translateX(calc(100% - 38px));
+      transition: transform .22s ease, filter .22s ease;
+      filter: drop-shadow(-12px 16px 24px rgba(0, 0, 0, .18));
+    }
+
+    .metrics-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .metrics-drawer-toggle {
+      width: 38px;
+      height: 138px;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border-radius: 8px 0 0 8px;
+      border: 1px solid var(--line);
+      border-right: 0;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white 12%), var(--accent));
+      color: #ffffff;
+      box-shadow: var(--shadow-soft);
+      align-self: start;
+    }
+
+    .metrics-drawer-toggle:hover {
+      background: var(--accent-dark);
+    }
+
+    .metrics-drawer-toggle span {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .metrics-drawer-panel {
+      align-content: start;
+      gap: 8px;
+      min-width: 0;
+      max-height: calc(100vh - 124px);
+      padding: 14px 12px;
+      overflow: auto;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--panel-soft) 62%, transparent), transparent 120px),
+        color-mix(in srgb, var(--panel) 96%, transparent);
+      border: 1px solid var(--line);
+      border-right: 0;
+      border-radius: 8px 0 0 8px;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(10px);
+    }
+
+    .metrics-drawer-panel::before {
+      content: "Contadores";
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin: 0 0 4px;
+      padding: 0 2px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metrics-drawer .metric {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 54px;
+      padding: 10px 12px 10px 14px;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--panel-soft) 48%, transparent), transparent),
+        var(--panel);
+      border-color: color-mix(in srgb, var(--line) 82%, transparent);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metrics-drawer .metric::before {
+      width: 3px;
+    }
+
+    .metrics-drawer .metric span {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .metrics-drawer .metric strong {
+      min-width: 36px;
+      font-size: 26px;
+      line-height: 1;
+      text-align: right;
+      color: var(--accent-dark);
     }
 
     .metric {
@@ -451,7 +579,7 @@
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 14px 16px;
+      padding: 12px 14px;
       box-shadow: var(--shadow);
     }
 
@@ -485,7 +613,7 @@
 
     .metric strong {
       display: block;
-      font-size: 22px;
+      font-size: 24px;
       line-height: 1.2;
     }
 
@@ -744,12 +872,21 @@
         grid-template-columns: 1fr 1fr;
       }
 
-      .toolbar label:first-child {
-        grid-column: 1 / -1;
+      #resultsPanel > #emptyState,
+      #resultsPanel > #tableShell {
+        grid-column: 1;
       }
 
       .summary {
         grid-template-columns: 1fr 1fr;
+      }
+
+      .metrics-drawer-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar label:first-child {
+        grid-column: 1 / -1;
       }
 
       .compare-summary {
@@ -777,6 +914,26 @@
       }
 
       h1 { font-size: 21px; }
+
+      .metrics-drawer {
+        top: 82px;
+        bottom: 12px;
+        width: min(286px, calc(100vw - 12px));
+        max-height: calc(100vh - 94px);
+        grid-template-columns: 36px minmax(0, 1fr);
+        transform: translateX(calc(100% - 36px));
+      }
+
+      .metrics-drawer-toggle {
+        width: 36px;
+        height: 132px;
+      }
+
+      .metrics-drawer-panel {
+        grid-template-columns: 1fr;
+        max-height: calc(100vh - 94px);
+        padding: 12px;
+      }
     }
   </style>
 </head>
@@ -842,16 +999,21 @@
       <button id="clearFilters" class="secondary-button" type="button">Limpar</button>
     </section>
 
-    <section class="summary" aria-label="Resumo">
-      <div class="metric"><span>Total</span><strong id="totalCount">0</strong></div>
-      <div class="metric filter-metric"><span>Filtrados</span><strong id="filteredCount">0</strong></div>
-      <div class="metric manifestation-metric"><span>Para manifestação</span><strong id="manifestationCount">0</strong></div>
-      <div class="metric not-manifestation-metric"><span>Fora manifestação</span><strong id="notManifestationCount">0</strong></div>
-      <div class="metric finished-metric"><span>Finalizado</span><strong id="finishedCount">0</strong></div>
-      <div class="metric tce-metric"><span>Tramitado TCE</span><strong id="tceForwardedCount">0</strong></div>
-      <div class="metric validating-metric"><span>TCE Validando</span><strong id="tceValidatingCount">0</strong></div>
-      <div class="metric unknown-metric"><span>Não sabemos</span><strong id="unknownCount">0</strong></div>
-    </section>
+    <aside id="metricsDrawer" class="metrics-drawer" aria-label="Contadores" aria-expanded="false">
+      <button id="metricsDrawerToggle" class="metrics-drawer-toggle" type="button" aria-controls="metricsDrawer" aria-expanded="false" title="Abrir contadores">
+        <span>Contadores</span>
+      </button>
+      <section class="summary metrics-drawer-panel" aria-label="Resumo">
+        <div class="metric"><span>Total</span><strong id="totalCount">0</strong></div>
+        <div class="metric filter-metric"><span>Filtrados</span><strong id="filteredCount">0</strong></div>
+        <div class="metric manifestation-metric"><span>Para manifestação</span><strong id="manifestationCount">0</strong></div>
+        <div class="metric not-manifestation-metric"><span>Fora manifestação</span><strong id="notManifestationCount">0</strong></div>
+        <div class="metric finished-metric"><span>Finalizado</span><strong id="finishedCount">0</strong></div>
+        <div class="metric tce-metric"><span>Tramitado TCE</span><strong id="tceForwardedCount">0</strong></div>
+        <div class="metric validating-metric"><span>TCE Validando</span><strong id="tceValidatingCount">0</strong></div>
+        <div class="metric unknown-metric"><span>Não sabemos</span><strong id="unknownCount">0</strong></div>
+      </section>
+    </aside>
 
     <section id="emptyState" class="empty">Selecione um arquivo JSON para visualizar os resultados.</section>
 
@@ -986,6 +1148,8 @@
     const tableShell = document.getElementById('tableShell');
     const tableBody = document.getElementById('tableBody');
     const fileMeta = document.getElementById('fileMeta');
+    const metricsDrawer = document.getElementById('metricsDrawer');
+    const metricsDrawerToggle = document.getElementById('metricsDrawerToggle');
     const clearCompare = document.getElementById('clearCompare');
     const compareMeta = document.getElementById('compareMeta');
     const compareEmpty = document.getElementById('compareEmpty');
@@ -1002,8 +1166,10 @@
     const tabPanels = [...document.querySelectorAll('.tab-panel')];
     const DEFAULT_MANIFESTATION_FILTER = 'Para manifestação';
     const DEFAULT_ERROR_FILTER = 'sem_erro';
+    const METRICS_DRAWER_STORAGE = 'atricon-metrics-drawer-open';
 
     setTheme(readSavedTheme() || 'dark', false);
+    setMetricsDrawerOpen(readMetricsDrawerState());
 
     fileInput.addEventListener('change', handleFile);
     compareInput.addEventListener('change', handleCompareFile);
@@ -1018,6 +1184,9 @@
     manifestationFilter.addEventListener('change', applyFilters);
     cityFilter.addEventListener('change', applyFilters);
     errorFilter.addEventListener('change', applyFilters);
+    metricsDrawerToggle.addEventListener('click', () => {
+      setMetricsDrawerOpen(!metricsDrawer.classList.contains('is-open'));
+    });
     clearFilters.addEventListener('click', () => {
       searchInput.value = '';
       statusFilter.value = '';
@@ -1294,6 +1463,27 @@
         button.classList.toggle('active', selected);
         button.setAttribute('aria-selected', String(selected));
       });
+    }
+
+    function readMetricsDrawerState() {
+      try {
+        return localStorage.getItem(METRICS_DRAWER_STORAGE) === '1';
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function setMetricsDrawerOpen(isOpen) {
+      metricsDrawer.classList.toggle('is-open', isOpen);
+      metricsDrawer.setAttribute('aria-expanded', String(isOpen));
+      metricsDrawerToggle.setAttribute('aria-expanded', String(isOpen));
+      metricsDrawerToggle.title = isOpen ? 'Recolher contadores' : 'Abrir contadores';
+
+      try {
+        localStorage.setItem(METRICS_DRAWER_STORAGE, isOpen ? '1' : '0');
+      } catch (error) {
+        // Local files can run with storage disabled in some browser policies.
+      }
     }
 
     function readSavedTheme() {

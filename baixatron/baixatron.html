@@ -1,0 +1,3767 @@
+﻿<!doctype html>
+<html lang="pt-BR" data-theme="halloween">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Baixatron - Script Tools</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicons/script-tools.svg">
+  <link rel="stylesheet" href="../assets/script-shell.css">
+  <link rel="stylesheet" href="../assets/script-js-page.css">
+</head>
+<body class="js-page">
+  <main class="js-page-shell">
+    <section class="js-hero">
+      <div>
+        <div class="js-eyebrow">Downloader .js</div>
+        <h1>Baixatron</h1>
+        <p>Painel visual para localizar links de arquivos e organizar downloads diretamente na pagina aberta.</p>
+      </div>
+      <div class="js-actions">
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+        <a class="js-button secondary" href="baixatron.js" download>Baixar baixatron.js</a>
+      </div>
+    </section>
+
+    <nav class="js-tabs" aria-label="Abas do script">
+      <button class="js-tab is-active" type="button" data-js-tab="help" aria-selected="true">Como usar</button>
+      <button class="js-tab" type="button" data-js-tab="code" aria-selected="false">Codigo .js</button>
+    </nav>
+
+    <section class="js-panel" data-js-panel="help">
+      <div class="js-panel-head">
+        <div>
+          <div class="js-eyebrow">Uso no navegador</div>
+          <h2>Colar pelo inspecionar</h2>
+          <p>Use este metodo quando quiser rodar o script apenas na pagina aberta, sem instalar extensao.</p>
+        </div>
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+      </div>
+
+      <div class="step-grid">
+        <article class="step-card">
+          <span>Passo 1</span>
+          <strong>Abra a pagina alvo</strong>
+          <p>Entre no sistema ou site onde o script deve atuar. Aguarde a pagina carregar completamente.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 2</span>
+          <strong>Abra o inspecionar</strong>
+          <p>Pressione F12 ou Ctrl + Shift + I e escolha a aba Console.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 3</span>
+          <strong>Liberar colagem</strong>
+          <p>Se Chrome ou Edge bloquear a colagem, digite allow pasting no Console, pressione Enter, e depois cole o codigo.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 4</span>
+          <strong>Execute o codigo</strong>
+          <p>Cole o .js copiado, pressione Enter e use o painel que o script abrir na propria pagina.</p>
+        </article>
+      </div>
+
+      <div class="notice">Execute apenas em paginas onde voce tem permissao para automatizar acoes. Antes de iniciar um lote grande, rode um teste pequeno e confira o resultado.</div>
+      <div class="copy-status" data-copy-status></div>
+    </section>
+
+    <section class="js-panel" data-js-panel="code" hidden>
+      <div class="js-panel-head">
+        <div>
+          <div class="js-eyebrow">Download</div>
+          <h2>baixatron.js</h2>
+          <p>Codigo completo pronto para copiar e colar no Console do navegador.</p>
+        </div>
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+      </div>
+      <div class="code-wrap" tabindex="0"><pre><code id="codeView"></code></pre></div>
+      <div class="copy-status" data-copy-status></div>
+    </section>
+  </main>
+
+  <textarea id="scriptSource" hidden readonly>  // ==UserScript==
+  // @name         BAIXATRON - Auto Downloader Universal
+  // @namespace    https://github.com/HelloKiw1
+  // @version      3.1
+  // @description  👾 O Alien que invade downloads! 📡 - Painel visual para download autom&#225;tico de arquivos
+  // @author       HelloKiw1
+  // @match        *://*/*
+  // @grant        none
+  // @run-at       document-idle
+  // @icon         data:image/svg+xml,&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 100 100&quot;&gt;&lt;text y=&quot;75&quot; font-size=&quot;75&quot;&gt;👾&lt;/text&gt;&lt;/svg&gt;
+  // ==/UserScript==
+
+  /**
+  * BAIXATRON - AUTO-DOWNLOADER UNIVERSAL v3.1 COM PAINEL VISUAL
+   * 
+   * 👾 O Alien que invade downloads! 📡
+   * 
+   * Produzido por HelloKiw1
+   * GitHub: https://github.com/HelloKiw1
+   * 
+   * Script com interface visual completa:
+   * - Painel de controle flutuante
+   * - Lista de downloads com checkboxes
+   * - Barra de progresso
+   * - Estat&#237;sticas em tempo real
+   * - Controles de velocidade
+   * 
+   * COMO USAR:
+   * - O painel aparece automaticamente ao carregar a p&#225;gina
+   * - Clique em [⊙] Escanear para encontrar downloads
+   * - Selecione os arquivos desejados
+   * - Clique em [▶] Iniciar para come&#231;ar
+   * 
+   * SEMPRE COME&#199;A COM dryRun: true (MODO SEGURO)
+   */
+
+  (() =&gt; {
+    if (window.__dl?.stop) window.__dl.stop();
+
+    // ============================================
+    // CONFIGURA&#199;&#213;ES INICIAIS
+    // ============================================
+    const opts = {
+      dryRun: true,
+      delayMs: 2000,
+      waitForDownload: true,
+      waitForDownloadTimeout: 3000,
+      concurrency: 1,
+      maxRetries: 1,
+      tableExpandWaitMs: 900,
+      tableExpandMaxClicks: 12,
+      tableSweepMaxPages: 25,
+      tableSweepTabs: true,
+      tableSweepMaxTabs: 20,
+      folderSweepEnabled: true,
+      folderExpandWaitMs: 450,
+      folderExpandMaxClicks: 400,
+      rootSelector: null,
+      autoDetectIframe: true,
+      maxClicks: Infinity,
+      dedupe: true,
+      verbose: true // ativar logs para debug
+    };
+
+    // ============================================
+    // UTILIT&#193;RIOS
+    // ============================================
+    const exts = /\.(pdf|docx?|xlsx?|pptx?|zip|rar|7z|odt|ods|txt|csv|rtf)$/i;
+    const norm = s =&gt; (s || &#39;&#39;).replace(/\s+/g, &#39; &#39;).trim().toLowerCase();
+    const normLoose = s =&gt; {
+      const base = norm(s || &#39;&#39;);
+      try {
+        return base.normalize(&#39;NFD&#39;).replace(/[\u0300-\u036f]/g, &#39;&#39;);
+      } catch {
+        return base;
+      }
+    };
+
+    const parseNameFilterTerms = raw =&gt; (raw || &#39;&#39;)
+      .split(/[\n,;|]+/)
+      .map(term =&gt; term.trim())
+      .filter(Boolean);
+
+    const FILE_TYPE_ALIAS = {
+      pdf: &#39;pdf&#39;,
+      csv: &#39;csv&#39;,
+      doc: &#39;doc&#39;,
+      docx: &#39;docx&#39;,
+      word: &#39;doc&#39;,
+      xls: &#39;xls&#39;,
+      xlsx: &#39;xlsx&#39;,
+      excel: &#39;xls&#39;,
+      xml: &#39;xml&#39;,
+      txt: &#39;txt&#39;,
+      text: &#39;txt&#39;,
+      rtf: &#39;rtf&#39;,
+      zip: &#39;zip&#39;,
+      rar: &#39;rar&#39;,
+      &#39;7z&#39;: &#39;7z&#39;,
+      odt: &#39;odt&#39;,
+      ods: &#39;ods&#39;,
+      ppt: &#39;ppt&#39;,
+      pptx: &#39;pptx&#39;
+    };
+
+    const normalizeFileTypeToken = raw =&gt; {
+      const cleaned = normLoose(raw || &#39;&#39;)
+        .replace(/^\.+/, &#39;&#39;)
+        .replace(/[^a-z0-9]+/g, &#39;&#39;);
+
+      if (!cleaned) return &#39;&#39;;
+      return FILE_TYPE_ALIAS[cleaned] || &#39;&#39;;
+    };
+
+    const parseTypeFilterTerms = raw =&gt; {
+      const terms = parseNameFilterTerms(raw);
+      const tokens = new Set();
+
+      const knownRegex = /\b(pdf|csv|docx?|xlsx?|xls|xml|txt|text|rtf|zip|rar|7z|odt|ods|pptx?|excel|word)\b/g;
+
+      for (const term of terms) {
+        const loose = normLoose(term)
+          .replace(/^\s*(tipo|type)\s*[:#=\-]?\s*/i, &#39;&#39;)
+          .trim();
+
+        const direct = normalizeFileTypeToken(loose);
+        if (direct) {
+          tokens.add(direct);
+          continue;
+        }
+
+        knownRegex.lastIndex = 0;
+        let match;
+        while ((match = knownRegex.exec(loose)) !== null) {
+          const normalized = normalizeFileTypeToken(match[1]);
+          if (normalized) tokens.add(normalized);
+        }
+      }
+
+      return Array.from(tokens);
+    };
+
+    const parseFilterCriteria = raw =&gt; {
+      const terms = parseNameFilterTerms(raw);
+      const ids = new Set();
+      const idRanges = [];
+      const textTokens = [];
+
+      for (const term of terms) {
+        const cleaned = term.trim();
+        if (!cleaned) continue;
+
+        const loose = normLoose(cleaned);
+        const rangeMatch = loose.match(/^(?:de\s*)?(?:id\s*[:#-]?\s*)?(\d{1,10})\s*(?:-|ate|a|to|\.\.)\s*(?:id\s*[:#-]?\s*)?(\d{1,10})$/i);
+        if (rangeMatch &amp;&amp; rangeMatch[1] &amp;&amp; rangeMatch[2]) {
+          const a = parseInt(rangeMatch[1], 10);
+          const b = parseInt(rangeMatch[2], 10);
+          if (Number.isFinite(a) &amp;&amp; Number.isFinite(b) &amp;&amp; a &gt; 0 &amp;&amp; b &gt; 0) {
+            idRanges.push([Math.min(a, b), Math.max(a, b)]);
+            continue;
+          }
+        }
+
+        const idMatch = cleaned.match(/^id\s*[:#-]?\s*(\d{1,10})$/i) || cleaned.match(/^(\d{1,10})$/);
+        if (idMatch &amp;&amp; idMatch[1]) {
+          const numeric = parseInt(idMatch[1], 10);
+          if (Number.isFinite(numeric) &amp;&amp; numeric &gt; 0) {
+            ids.add(numeric);
+            continue;
+          }
+        }
+
+        textTokens.push(loose);
+      }
+
+      return {
+        terms,
+        ids,
+        idRanges,
+        textTokens: textTokens.filter(Boolean)
+      };
+    };
+
+    const toAbs = href =&gt; {
+      if (!href || typeof href !== &#39;string&#39;) return &#39;&#39;;
+      const cleaned = href.trim();
+      if (!cleaned || cleaned === &#39;#&#39; || /^javascript:/i.test(cleaned)) return &#39;&#39;;
+      try {
+        return new URL(cleaned, document.baseURI).href;
+      } catch {
+        return &#39;&#39;;
+      }
+    };
+    
+    const hash = s =&gt; { 
+      let h = 0; 
+      for (let i = 0; i &lt; s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; 
+      return (h &gt;&gt;&gt; 0).toString(36); 
+    };
+
+    const sanitizeFileName = (name, defaultExt = &#39;pdf&#39;) =&gt; {
+      const base = (name || &#39;&#39;)
+        .replace(/[\\/:*?&quot;&lt;&gt;|]/g, &#39;_&#39;)
+        .replace(/\s+/g, &#39; &#39;)
+        .trim();
+
+      if (!base) return `download.${defaultExt}`;
+
+      // Se ja tem extensao, respeita.
+      if (/\.[a-z0-9]{2,5}$/i.test(base)) return base;
+      return `${base}.${defaultExt}`;
+    };
+
+    const fileNameFromContentDisposition = headerValue =&gt; {
+      if (!headerValue) return &#39;&#39;;
+      const starMatch = headerValue.match(/filename\*=UTF-8&#39;&#39;([^;]+)/i);
+      if (starMatch &amp;&amp; starMatch[1]) {
+        try {
+          return decodeURIComponent(starMatch[1].trim().replace(/^&quot;|&quot;$/g, &#39;&#39;));
+        } catch {
+          return starMatch[1].trim().replace(/^&quot;|&quot;$/g, &#39;&#39;);
+        }
+      }
+      const match = headerValue.match(/filename=([^;]+)/i);
+      return match ? match[1].trim().replace(/^&quot;|&quot;$/g, &#39;&#39;) : &#39;&#39;;
+    };
+
+    const fileNameFromUrl = url =&gt; {
+      if (!url) return &#39;&#39;;
+
+      try {
+        const parsed = new URL(url, document.baseURI);
+        const fromQuery =
+          parsed.searchParams.get(&#39;filename&#39;) ||
+          parsed.searchParams.get(&#39;file&#39;) ||
+          parsed.searchParams.get(&#39;name&#39;);
+
+        if (fromQuery) return decodeURIComponent(fromQuery.trim());
+
+        const segment = (parsed.pathname.split(&#39;/&#39;).pop() || &#39;&#39;).trim();
+        if (!segment) return &#39;&#39;;
+        return decodeURIComponent(segment);
+      } catch {
+        return &#39;&#39;;
+      }
+    };
+
+    const splitFileNameExt = fileName =&gt; {
+      const raw = String(fileName || &#39;&#39;).trim();
+      if (!raw) return { base: &#39;&#39;, ext: &#39;&#39; };
+
+      const extMatch = raw.match(/\.([a-z0-9]{2,5})$/i);
+      if (!extMatch || !extMatch[1]) {
+        return { base: raw, ext: &#39;&#39; };
+      }
+
+      const base = raw.slice(0, -extMatch[0].length).trim();
+      const ext = normalizeFileTypeToken(extMatch[1]) || extMatch[1].toLowerCase();
+      return { base, ext };
+    };
+
+    const cleanRecordLabel = raw =&gt; {
+      let text = String(raw || &#39;&#39;).replace(/\s+/g, &#39; &#39;).trim();
+      if (!text) return &#39;&#39;;
+
+      // Remove sufixo de data de publicacao quando existir.
+      text = text.replace(/\s*-\s*publicado em.*$/i, &#39;&#39;).trim();
+      return text;
+    };
+
+    const normalizeFileSegment = (raw, compact = false) =&gt; {
+      let text = cleanRecordLabel(raw);
+      if (!text) return &#39;&#39;;
+
+      text = text
+        .replace(/[\\/:*?&quot;&lt;&gt;|]/g, &#39;&#39;)
+        .replace(/[_]+/g, &#39;_&#39;)
+        .trim();
+
+      if (compact) {
+        text = text.replace(/\s+/g, &#39;&#39;);
+      } else {
+        text = text.replace(/\s+/g, &#39; &#39;);
+      }
+
+      return text.replace(/^[_\-. ]+|[_\-. ]+$/g, &#39;&#39;).trim();
+    };
+
+    const isLikelyRandomBaseName = rawBase =&gt; {
+      const base = normLoose(rawBase || &#39;&#39;);
+      if (!base) return true;
+
+      if (/^(download|arquivo|file|document|documento|anexo)$/i.test(base)) return true;
+      if (/^\d{6,}$/.test(base)) return true;
+      if (/^[a-f0-9]{16,}$/i.test(base)) return true;
+
+      // Tokens longos alfanumericos sem separadores geralmente sao IDs/hash.
+      if (/^[a-z0-9]{14,}$/i.test(base) &amp;&amp; /[a-z]/i.test(base) &amp;&amp; /\d/.test(base) &amp;&amp; !/[_\- ]/.test(base)) {
+        return true;
+      }
+
+      if (base.length &gt;= 24 &amp;&amp; !/[_\- ]/.test(base)) return true;
+      return false;
+    };
+
+    const isGenericDownloadTitle = rawTitle =&gt; {
+      const title = normLoose(rawTitle || &#39;&#39;);
+      if (!title) return true;
+      return /(baixe|baixar|download|arquivo em|clique aqui|visualizar|abrir arquivo)/i.test(title);
+    };
+
+    const blobLooksLikeHtml = async blob =&gt; {
+      if (!blob || blob.size === 0) return false;
+
+      try {
+        const head = (await blob.slice(0, 512).text()).trim().toLowerCase();
+        return (
+          head.startsWith(&#39;&lt;!doctype html&#39;) ||
+          head.startsWith(&#39;&lt;html&#39;) ||
+          head.includes(&#39;&lt;head&#39;) ||
+          head.includes(&#39;&lt;body&#39;)
+        );
+      } catch {
+        return false;
+      }
+    };
+
+    const isVisible = el =&gt; {
+      if (!el || !el.isConnected) return false;
+
+      try {
+        // Ignora elementos n&#227;o renderizados (inclusive quando o pai est&#225; com display:none).
+        if (el.getClientRects().length === 0) return false;
+      } catch {
+        return false;
+      }
+
+      let cur = el;
+      while (cur &amp;&amp; cur.nodeType === 1) {
+        const s = getComputedStyle(cur);
+        if (s.display === &#39;none&#39; || s.visibility === &#39;hidden&#39; || s.opacity === &#39;0&#39;) return false;
+        cur = cur.parentElement;
+      }
+
+      return true;
+    };
+
+    const downloadIconSignatures = [
+      &#39;M216 0h80c13.3 0 24 10.7 24 24v168&#39;,
+      &#39;M387.66 192H332V48&#39;
+    ];
+
+    const viewIconSignatures = [
+      &#39;M572.52 241.4C518.29 135.59 410.93 64 288 64&#39;
+    ];
+
+    const hasIconPath = (el, signatures) =&gt; {
+      const svgPaths = Array.from(el.querySelectorAll(&#39;svg path&#39;));
+      return svgPaths.some(path =&gt; {
+        const d = path.getAttribute(&#39;d&#39;) || &#39;&#39;;
+        return signatures.some(sig =&gt; d.includes(sig));
+      });
+    };
+
+    const hasDownloadIcon = el =&gt; {
+      const classText = norm(el.className || &#39;&#39;);
+      if (/(fa-download|ri-download|icon-download|btn-download|download-btn|download-icon)/i.test(classText)) {
+        return true;
+      }
+
+      return hasIconPath(el, downloadIconSignatures);
+    };
+
+    const hasViewIcon = el =&gt; hasIconPath(el, viewIconSignatures);
+
+    const looksLikeDownload = el =&gt; {
+      const text = norm(
+        [
+          el.innerText,
+          el.textContent,
+          el.getAttribute(&#39;aria-label&#39;),
+          el.getAttribute(&#39;title&#39;),
+          el.dataset?.tooltip,
+          el.dataset?.title
+        ].filter(Boolean).join(&#39; &#39;)
+      );
+      const cls = norm(el.className);
+      const hrefAttr = el.getAttribute(&#39;href&#39;) || el.dataset.href || el.dataset.url || el.dataset.file || &#39;&#39;;
+      const hrefAbs = toAbs(hrefAttr);
+      const onclick = el.getAttribute(&#39;onclick&#39;) || &#39;&#39;;
+      const isButton = el.tagName === &#39;BUTTON&#39; || el.getAttribute(&#39;role&#39;) === &#39;button&#39;;
+      const iconOnlyButton = isButton &amp;&amp; !text;
+      const iconDownload = hasDownloadIcon(el);
+      const iconView = hasViewIcon(el);
+
+      const uiKeywords = /fechar|aplicar|cancelar|limpar|remover|ir para|visualizar|adicionar|campo|p[a&#225;]gina|pagina[c&#231;][a&#227;]o|exportar|export|filtro|pesquisar|buscar/i;
+      if (uiKeywords.test(text)) return false;
+
+      if (iconView &amp;&amp; !iconDownload) return false;
+
+      if (iconOnlyButton) {
+        return iconDownload;
+      }
+
+      return (
+        iconDownload ||
+        el.hasAttribute(&#39;download&#39;) ||
+        /download|baixar|baixe|arquivo|anexo|\.pdf/i.test(text) ||
+        /scgridfieldoddlink|scgridfieldevenlink|css_arquivo_documento|download|arquivo|anexo/i.test(cls) ||
+        exts.test(hrefAttr) || exts.test(hrefAbs) ||
+        /nm_mostra_doc|arquivo|anexo|download/i.test(hrefAttr) ||
+        /wpdm-download|download-file/i.test(hrefAttr) ||
+        /wpdm-download-button/i.test(cls) ||
+        /download|baixar|nm_mostra_doc/i.test(onclick)
+      );
+    };
+
+    const getContainer = el =&gt;
+      el.closest(&#39;article, li, .elementor-post, .elementor-widget, .wpdm-link-template, .card, .list-group-item, .entry, .item, .row, tr, [id]&#39;) || 
+      el.parentElement || 
+      el;
+
+    const getRecordTitle = el =&gt; {
+      // Caso tabela desktop: pega titulo da primeira coluna da linha.
+      const row = el.closest(&#39;tr&#39;);
+      if (row) {
+        const firstCell = row.querySelector(&#39;td[title], th[title], td, th&#39;);
+        if (firstCell) {
+          const fromTitle = (firstCell.getAttribute(&#39;title&#39;) || &#39;&#39;).trim();
+          if (fromTitle) return fromTitle;
+          const fromText = (firstCell.textContent || &#39;&#39;).trim();
+          if (fromText) return fromText;
+        }
+      }
+
+      // Caso card mobile: tenta localizar campo &quot;Titulo:&quot;.
+      const card = el.closest(&#39;div&#39;);
+      if (card) {
+        const spans = Array.from(card.querySelectorAll(&#39;span&#39;));
+        const titleLabel = spans.find(s =&gt; /t[i&#237;]tulo\s*:/i.test((s.textContent || &#39;&#39;).trim()));
+        if (titleLabel &amp;&amp; titleLabel.nextElementSibling) {
+          const titleValue = (titleLabel.nextElementSibling.textContent || &#39;&#39;).trim();
+          if (titleValue) return titleValue;
+        }
+      }
+
+      // Estrutura em arvore (ano/mes) com bloco .isFileLink.
+      const fileLinkBlock = el.closest(&#39;.isFileLink&#39;);
+      if (fileLinkBlock) {
+        const blockText = cleanRecordLabel(fileLinkBlock.textContent || &#39;&#39;);
+        if (blockText) return blockText;
+      }
+
+      return &#39;&#39;;
+    };
+
+    const getFolderHierarchyFromElement = el =&gt; {
+      if (!el || !el.closest) return [];
+
+      const folders = [];
+      let node = el.closest(&#39;li&#39;);
+
+      while (node) {
+        if (node.classList &amp;&amp; node.classList.contains(&#39;has-children&#39;)) {
+          let label = null;
+          try {
+            label = node.querySelector(&#39;:scope &gt; label&#39;);
+          } catch {
+            label = node.querySelector(&#39;label&#39;);
+          }
+
+          const labelText = normalizeFileSegment(label?.textContent || &#39;&#39;, true);
+          if (labelText) folders.push(labelText);
+        }
+
+        const parentUl = node.parentElement;
+        node = parentUl &amp;&amp; parentUl.closest ? parentUl.closest(&#39;li&#39;) : null;
+      }
+
+      return folders.reverse();
+    };
+
+    const getContextFileTitleFromElement = el =&gt; {
+      if (!el || !el.closest) return &#39;&#39;;
+
+      const fileLinkBlock = el.closest(&#39;.isFileLink&#39;);
+      if (fileLinkBlock) {
+        const blockText = cleanRecordLabel(fileLinkBlock.textContent || &#39;&#39;);
+        if (blockText) return blockText;
+      }
+
+      const liText = cleanRecordLabel(el.closest(&#39;li&#39;)?.textContent || &#39;&#39;);
+      if (liText) return liText;
+
+      return &#39;&#39;;
+    };
+
+    const extractDownloadUrl = el =&gt; {
+      if (!el) return &#39;&#39;;
+
+      const direct = [
+        el.getAttribute(&#39;href&#39;),
+        el.dataset?.downloadurl,
+        el.dataset?.href,
+        el.dataset?.url,
+        el.dataset?.file,
+        el.getAttribute(&#39;data-downloadurl&#39;),
+        el.getAttribute(&#39;data-href&#39;),
+        el.getAttribute(&#39;data-url&#39;),
+        el.getAttribute(&#39;data-file&#39;)
+      ];
+
+      for (const raw of direct) {
+        const abs = toAbs(raw || &#39;&#39;);
+        if (abs) return abs;
+      }
+
+      const cont = getContainer(el);
+      if (!cont || !cont.querySelectorAll) return &#39;&#39;;
+
+      const nearby = Array.from(cont.querySelectorAll(&#39;a[href], [data-href], [data-url], [data-file]&#39;));
+      for (const node of nearby) {
+        const raw =
+          node.getAttribute(&#39;href&#39;) ||
+          node.dataset?.downloadurl ||
+          node.dataset?.href ||
+          node.dataset?.url ||
+          node.dataset?.file ||
+          node.getAttribute(&#39;data-downloadurl&#39;) ||
+          node.getAttribute(&#39;data-href&#39;) ||
+          node.getAttribute(&#39;data-url&#39;) ||
+          node.getAttribute(&#39;data-file&#39;) ||
+          &#39;&#39;;
+
+        const abs = toAbs(raw);
+        if (!abs) continue;
+
+        const hint = norm([
+          raw,
+          node.className,
+          node.getAttribute(&#39;onclick&#39;),
+          node.getAttribute(&#39;title&#39;),
+          node.getAttribute(&#39;aria-label&#39;)
+        ].filter(Boolean).join(&#39; &#39;));
+
+        if (
+          exts.test(raw) || exts.test(abs) ||
+          /download|baixar|nm_mostra_doc|arquivo|anexo|wpdm-download/i.test(hint)
+        ) {
+          return abs;
+        }
+      }
+
+      return &#39;&#39;;
+    };
+
+    const inferFileTypeFromUrl = url =&gt; {
+      if (!url) return &#39;&#39;;
+
+      try {
+        const parsed = new URL(url, document.baseURI);
+        const pathname = (parsed.pathname || &#39;&#39;).toLowerCase();
+
+        const downloadPath = pathname.match(/\/download\/([a-z0-9]+)\//i);
+        if (downloadPath &amp;&amp; downloadPath[1]) {
+          const pathType = normalizeFileTypeToken(downloadPath[1]);
+          if (pathType) return pathType;
+        }
+
+        const extMatch = pathname.match(/\.([a-z0-9]{2,5})(?:$|\?)/i);
+        if (extMatch &amp;&amp; extMatch[1]) {
+          const extType = normalizeFileTypeToken(extMatch[1]);
+          if (extType) return extType;
+        }
+
+        const paramCandidates = [
+          parsed.searchParams.get(&#39;type&#39;),
+          parsed.searchParams.get(&#39;format&#39;),
+          parsed.searchParams.get(&#39;ext&#39;),
+          parsed.searchParams.get(&#39;filetype&#39;)
+        ];
+
+        for (const raw of paramCandidates) {
+          const token = normalizeFileTypeToken(raw || &#39;&#39;);
+          if (token) return token;
+        }
+      } catch {
+        const fallbackExt = String(url).toLowerCase().match(/\.([a-z0-9]{2,5})(?:$|\?)/i);
+        if (fallbackExt &amp;&amp; fallbackExt[1]) {
+          const extType = normalizeFileTypeToken(fallbackExt[1]);
+          if (extType) return extType;
+        }
+      }
+
+      return &#39;&#39;;
+    };
+
+    const inferFileTypeFromElement = (el, resolvedUrl = &#39;&#39;) =&gt; {
+      const byUrl = inferFileTypeFromUrl(resolvedUrl || extractDownloadUrl(el));
+      if (byUrl) return byUrl;
+
+      const imgSrc = el?.querySelector?.(&#39;img&#39;)?.getAttribute?.(&#39;src&#39;) || &#39;&#39;;
+      const iconClass = el?.querySelector?.(&#39;i,svg&#39;)?.getAttribute?.(&#39;class&#39;) || &#39;&#39;;
+
+      const hint = normLoose([
+        el?.innerText,
+        el?.textContent,
+        el?.getAttribute?.(&#39;aria-label&#39;),
+        el?.getAttribute?.(&#39;title&#39;),
+        el?.getAttribute?.(&#39;class&#39;),
+        el?.getAttribute?.(&#39;onclick&#39;),
+        imgSrc,
+        iconClass
+      ].filter(Boolean).join(&#39; &#39;));
+
+      const rules = [
+        [&#39;pdf&#39;, /\bpdf\b|pdf-icon/],
+        [&#39;csv&#39;, /\bcsv\b/],
+        [&#39;doc&#39;, /\bdoc\b|\bword\b|doc-icon/],
+        [&#39;docx&#39;, /\bdocx\b/],
+        [&#39;xls&#39;, /\bxls\b|\bexcel\b|excel-icon/],
+        [&#39;xlsx&#39;, /\bxlsx\b/],
+        [&#39;xml&#39;, /\bxml\b|xml-icon/],
+        [&#39;txt&#39;, /\btxt\b|\btext\b|txt-icon/],
+        [&#39;rtf&#39;, /\brtf\b/],
+        [&#39;zip&#39;, /\bzip\b/],
+        [&#39;rar&#39;, /\brar\b/],
+        [&#39;7z&#39;, /\b7z\b/],
+        [&#39;odt&#39;, /\bodt\b/],
+        [&#39;ods&#39;, /\bods\b/],
+        [&#39;ppt&#39;, /\bppt\b/],
+        [&#39;pptx&#39;, /\bpptx\b/]
+      ];
+
+      for (const [type, rx] of rules) {
+        if (rx.test(hint)) return type;
+      }
+
+      return &#39;&#39;;
+    };
+
+    const resolveDownloadFileName = (it, suggestedName, titleFallback, liveEl) =&gt; {
+      const el = liveEl || it?.el;
+      const folders = getFolderHierarchyFromElement(el);
+
+      const candidate = String(suggestedName || &#39;&#39;).trim();
+      const candidateParts = splitFileNameExt(candidate);
+      const fallbackParts = splitFileNameExt(titleFallback || &#39;&#39;);
+
+      const hasFolderContext = folders.length &gt;= 2;
+      const shouldUseHierarchy = hasFolderContext &amp;&amp; isLikelyRandomBaseName(candidateParts.base || &#39;&#39;);
+
+      let preferredTitle = cleanRecordLabel(it?.titleName || &#39;&#39;);
+      if (!preferredTitle) preferredTitle = cleanRecordLabel(getContextFileTitleFromElement(el));
+      if (!preferredTitle) preferredTitle = cleanRecordLabel(titleFallback || &#39;&#39;);
+
+      if (shouldUseHierarchy &amp;&amp; !isGenericDownloadTitle(preferredTitle)) {
+        const preferredParts = splitFileNameExt(preferredTitle);
+        const titleBase = normalizeFileSegment(preferredParts.base || preferredTitle, false);
+        const folderBase = folders
+          .map(segment =&gt; normalizeFileSegment(segment, true))
+          .filter(Boolean)
+          .join(&#39;_&#39;);
+
+        if (folderBase &amp;&amp; titleBase) {
+          const ext =
+            preferredParts.ext ||
+            candidateParts.ext ||
+            inferFileTypeFromUrl(it?.url) ||
+            normalizeFileTypeToken(it?.fileType) ||
+            &#39;pdf&#39;;
+
+          return sanitizeFileName(`${folderBase}_${titleBase}`, ext);
+        }
+      }
+
+      let fallbackName = candidate;
+      if (!fallbackName || fallbackName.length &lt; 3) {
+        fallbackName = preferredTitle || titleFallback || &#39;download&#39;;
+      }
+
+      const extHint =
+        splitFileNameExt(fallbackName).ext ||
+        fallbackParts.ext ||
+        candidateParts.ext ||
+        inferFileTypeFromUrl(it?.url) ||
+        normalizeFileTypeToken(it?.fileType) ||
+        &#39;pdf&#39;;
+
+      return sanitizeFileName(fallbackName, extHint);
+    };
+
+    const keyOf = (el, idx, fallbackText = &#39;&#39;, resolvedUrl = &#39;&#39;) =&gt; {
+      const href = resolvedUrl || extractDownloadUrl(el);
+      
+      if (el.dataset &amp;&amp; el.dataset.package) return `pkg:${el.dataset.package}`;
+      if (el.dataset &amp;&amp; el.dataset.id) return `id:${el.dataset.id}`;
+      if (el.getAttribute(&#39;data-id&#39;)) return `did:${el.getAttribute(&#39;data-id&#39;)}`;
+
+      const onclick = (el.getAttribute(&#39;onclick&#39;) || &#39;&#39;).replace(/\s+/g, &#39; &#39;).trim();
+      if (onclick &amp;&amp; /download|baixar|nm_mostra_doc|arquivo|anexo/i.test(onclick)) {
+        return &#39;oc:&#39; + hash(onclick.slice(0, 300));
+      }
+      
+      // Se tem URL v&#225;lida e &#250;nica, usar ela como chave principal
+      if (href &amp;&amp; href !== document.baseURI &amp;&amp; href.length &gt; 10) {
+        return &#39;url:&#39; + href;
+      }
+      
+      const cont = getContainer(el);
+      const contId = cont.getAttribute(&#39;id&#39;) || cont.getAttribute(&#39;data-id&#39;) || cont.getAttribute(&#39;data-package-id&#39;);
+      if (contId) return &#39;cont:&#39; + contId;
+      
+      const btnText = norm(el.innerText || el.textContent || fallbackText || &#39;&#39;).slice(0, 100);
+      const contText = norm(cont.innerText || &#39;&#39;).slice(0, 200);
+      const combined = btnText + &#39;|&#39; + contText;
+      
+      return &#39;txt:&#39; + hash(combined);
+    };
+
+    // ============================================
+    // SELETORES
+    // ============================================
+    const selectors = [
+      &#39;a[download]&#39;,
+      &#39;a[href*=&quot;/download&quot;]&#39;,
+      &#39;a[href*=&quot;nm_mostra_doc&quot;]&#39;,
+      &#39;a.scGridFieldOddLink, a.scGridFieldEvenLink&#39;,
+      &#39;a.css_arquivo_documento_grid_line&#39;,
+      &#39;a[href$=&quot;.pdf&quot;], a[href$=&quot;.doc&quot;], a[href$=&quot;.docx&quot;], a[href$=&quot;.xls&quot;], a[href$=&quot;.xlsx&quot;], &#39; +
+      &#39;a[href$=&quot;.ppt&quot;], a[href$=&quot;.pptx&quot;], a[href$=&quot;.zip&quot;], a[href$=&quot;.rar&quot;], a[href$=&quot;.7z&quot;], &#39; +
+      &#39;a[href$=&quot;.odt&quot;], a[href$=&quot;.ods&quot;], a[href$=&quot;.txt&quot;], a[href$=&quot;.csv&quot;], a[href$=&quot;.rtf&quot;]&#39;,
+      &#39;a.wpdm-download-button, a.wpdm-download-link&#39;,
+      &#39;a.elementor-button, a.elementor-button-link&#39;,
+      &#39;a.nt_btn&#39;,
+      &#39;[data-download], [data-file]&#39;,
+      &#39;button&#39;,
+      &#39;[role=&quot;button&quot;]&#39;
+    ].join(&#39;,&#39;);
+
+    // ============================================
+    // ESTADO GLOBAL
+    // ============================================
+    const state = {
+      queue: [],
+      processed: [],
+      running: false,
+      expandingTable: false,
+      blockedFrames: [],
+      timer: null,
+      startedAt: null,
+      errors: [],
+      doneKeys: new Set(),
+      queuedKeys: new Set(),
+      selectedKeys: new Set(),
+      itemIdByKey: new Map(),
+      nextItemId: 1,
+      pageType: null
+    };
+
+    const runningSet = new Set();
+
+    const detectPageType = () =&gt; {
+      const url = window.location.href.toLowerCase();
+      const html = document.documentElement.outerHTML.toLowerCase();
+      
+      if (html.includes(&#39;nmsc_iframe&#39;) || 
+          html.includes(&#39;scriptcase&#39;) ||
+          html.includes(&#39;pesq_publicacoes_grid&#39;)) {
+        return &#39;iframe-grid&#39;;
+      }
+      
+      if (html.includes(&#39;wpdm&#39;) || 
+          html.includes(&#39;download-monitor&#39;) ||
+          html.includes(&#39;elementor&#39;)) {
+        return &#39;direct-links&#39;;
+      }
+      
+      return &#39;generic&#39;;
+    };
+
+    state.pageType = detectPageType();
+
+    // ============================================
+    // COLETA DE LINKS
+    // ============================================
+    const collectFromRoot = root =&gt; {
+      if (!root || !root.querySelectorAll) return [];
+
+      const pageHint = getCurrentPageNumber();
+      const tabHint = getCurrentTabMarker();
+
+      return Array.from(root.querySelectorAll(selectors))
+        .filter(el =&gt; {
+          const tag = el.tagName;
+          const isBtn = tag === &#39;A&#39; || tag === &#39;BUTTON&#39; || el.getAttribute(&#39;role&#39;) === &#39;button&#39;;
+          const visible = isVisible(el);
+          const download = looksLikeDownload(el);
+          return isBtn &amp;&amp; visible &amp;&amp; download;
+        })
+        .map((el, idx) =&gt; {
+          const url = extractDownloadUrl(el);
+          const titleName = getRecordTitle(el);
+          const text = (el.innerText || el.textContent || el.getAttribute(&#39;aria-label&#39;) || el.getAttribute(&#39;title&#39;) || titleName || &#39;&#39;).trim().slice(0, 120);
+          const fileType = inferFileTypeFromElement(el, url);
+          const key = keyOf(el, idx, titleName, url);
+          return { el, url, text, titleName, fileType, key, idx, sourcePage: pageHint, sourceTabMarker: tabHint };
+        });
+    };
+
+    const collect = (logEnabled = true) =&gt; {
+      let roots = [];
+      const blockedFrames = [];
+
+      if (opts.rootSelector) {
+        const root = document.querySelector(opts.rootSelector);
+        if (root) roots.push(root);
+      } else {
+        roots.push(document);
+
+        if (opts.autoDetectIframe) {
+          const frames = Array.from(document.querySelectorAll(&#39;iframe&#39;));
+          for (const frame of frames) {
+            try {
+              const frameDoc = frame.contentDocument || frame.contentWindow?.document;
+              if (frameDoc) roots.push(frameDoc);
+            } catch {
+              const rawSrc = frame.getAttribute(&#39;src&#39;) || frame.src || &#39;&#39;;
+              const normalized = toAbs(rawSrc) || rawSrc || &#39;(iframe sem src)&#39;;
+              blockedFrames.push(normalized);
+            }
+          }
+        }
+      }
+
+      state.blockedFrames = Array.from(new Set(blockedFrames)).filter(Boolean);
+
+      if (!roots.length) return [];
+
+      const all = roots.flatMap(root =&gt; collectFromRoot(root));
+
+      const map = new Map();
+      for (const it of all) if (!map.has(it.key)) map.set(it.key, it);
+
+      if (opts.verbose &amp;&amp; blockedFrames.length &amp;&amp; logEnabled) {
+        console.warn(&#39;[BAIXATRON] ⚠️ Iframes com acesso bloqueado (cross-origin):&#39;, blockedFrames.length);
+        if (map.size === 0) {
+          console.warn(&#39;[BAIXATRON] 💡 Dica: abra o iframe em nova aba (dom&#237;nio do conte&#250;do) para escanear os bot&#245;es de download.&#39;);
+          console.warn(&#39;[BAIXATRON] 💡 Atalho: use __dl.openBlockedFrames() ou bot&#227;o [↗] Abrir Iframe(s).&#39;);
+        }
+      }
+
+      if (logEnabled) {
+        console.log(&#39;[BAIXATRON] 🔍 Collect: elementos brutos:&#39;, all.length, &#39;| &#250;nicos ap&#243;s dedupe:&#39;, map.size);
+      }
+      return Array.from(map.values());
+    };
+
+    const isControlDisabled = el =&gt; {
+      if (!el) return true;
+      if (el.disabled) return true;
+      const ariaDisabled = (el.getAttribute(&#39;aria-disabled&#39;) || &#39;&#39;).toLowerCase();
+      if (ariaDisabled === &#39;true&#39;) return true;
+      const clsTokens = String(el.className || &#39;&#39;)
+        .split(/\s+/)
+        .map(token =&gt; token.trim().toLowerCase())
+        .filter(Boolean);
+
+      // Em Tailwind, classes como &quot;disabled:opacity-50&quot; nao significam estado desabilitado atual.
+      return clsTokens.includes(&#39;disabled&#39;) || clsTokens.includes(&#39;is-disabled&#39;) || clsTokens.includes(&#39;btn-disabled&#39;);
+    };
+
+    const dispatchFormEvents = el =&gt; {
+      el.dispatchEvent(new Event(&#39;input&#39;, { bubbles: true }));
+      el.dispatchEvent(new Event(&#39;change&#39;, { bubbles: true }));
+    };
+
+    const parseNumberish = value =&gt; {
+      const raw = String(value || &#39;&#39;).replace(/\./g, &#39;&#39;);
+      const match = raw.match(/-?\d+/);
+      if (!match) return NaN;
+      return parseInt(match[0], 10);
+    };
+
+    const getControlContextText = el =&gt; {
+      const text = [
+        el.getAttribute(&#39;aria-label&#39;),
+        el.getAttribute(&#39;title&#39;),
+        el.id,
+        el.name,
+        el.className,
+        el.closest(&#39;label&#39;)?.textContent,
+        el.parentElement?.textContent
+      ].filter(Boolean).join(&#39; &#39;);
+      return norm(text);
+    };
+
+    const getCleanOptionNumber = opt =&gt; {
+      if (!opt) return NaN;
+
+      const valueText = String(opt.value || &#39;&#39;).trim();
+      const labelText = String(opt.textContent || &#39;&#39;).trim();
+
+      if (/^\d{1,4}$/.test(valueText)) return parseInt(valueText, 10);
+      if (/^\d{1,4}$/.test(labelText)) return parseInt(labelText, 10);
+
+      return NaN;
+    };
+
+    const looksLikeRowsPerPageSelect = select =&gt; {
+      const options = Array.from(select.options || []);
+      if (options.length &lt; 2) return false;
+
+      const contextText = getControlContextText(select);
+      const hasRowsContext = /por p[a&#225;]gina|itens por|registros por|linhas por|results per page|rows per page|page size|per page|page length|tamanho da p[a&#225;]gina/i.test(contextText);
+      if (hasRowsContext) {
+        return true;
+      }
+
+      const hasUuidLikeValue = options.some(opt =&gt; /^[a-f0-9]{8}-[a-f0-9]{4}-/i.test(String(opt.value || &#39;&#39;).trim()));
+      if (hasUuidLikeValue) return false;
+
+      const numericOptions = options
+        .map(getCleanOptionNumber)
+        .filter(n =&gt; Number.isFinite(n) &amp;&amp; n &gt; 0);
+
+      if (numericOptions.length &lt; 2) return false;
+
+      const min = Math.min(...numericOptions);
+      const max = Math.max(...numericOptions);
+      const hasLikelyPageSize = numericOptions.some(n =&gt; [10, 20, 25, 50, 100].includes(n));
+
+      // Evita confundir com seletor de p&#225;gina (1,2,3...) ou filtros diversos.
+      return min &gt;= 5 &amp;&amp; max &lt;= 500 &amp;&amp; (hasLikelyPageSize || (max &gt;= 20 &amp;&amp; max / min &gt;= 2));
+    };
+
+    const pickBestRowsPerPageOption = select =&gt; {
+      const options = Array.from(select.options || []);
+      if (options.length === 0) return null;
+
+      const allOption = options.find(opt =&gt; {
+        const valueText = (opt.value || &#39;&#39;).trim();
+        const labelText = opt.textContent || &#39;&#39;;
+        return valueText === &#39;-1&#39; || /\b(all|todos?|todas?|tudo)\b/i.test(labelText);
+      });
+      if (allOption) return allOption;
+
+      let best = null;
+      let bestNumber = -Infinity;
+
+      for (const opt of options) {
+        const numberValue = getCleanOptionNumber(opt);
+        if (!Number.isFinite(numberValue)) continue;
+        if (numberValue &gt; bestNumber) {
+          bestNumber = numberValue;
+          best = opt;
+        }
+      }
+
+      return best;
+    };
+
+    const expandRowsPerPage = async () =&gt; {
+      let changed = 0;
+
+      const selects = Array.from(document.querySelectorAll(&#39;select&#39;))
+        .filter(select =&gt; !select.closest(&#39;#__dl-panel&#39;))
+        .filter(select =&gt; isVisible(select) &amp;&amp; !isControlDisabled(select))
+        .filter(select =&gt; looksLikeRowsPerPageSelect(select));
+
+      for (const select of selects) {
+        const targetOption = pickBestRowsPerPageOption(select);
+        if (!targetOption) continue;
+
+        const nextValue = targetOption.value;
+        const currentValue = select.value;
+        if (nextValue === currentValue &amp;&amp; targetOption.selected) continue;
+
+        select.value = nextValue;
+        targetOption.selected = true;
+        dispatchFormEvents(select);
+        changed++;
+      }
+
+      if (changed &gt; 0) {
+        await wait(Math.max(250, opts.tableExpandWaitMs));
+      }
+
+      return changed;
+    };
+
+    const getCollectSignature = () =&gt; collect(false).map(it =&gt; it.key).join(&#39;|&#39;);
+
+    const getPaginationContainers = () =&gt; {
+      const containerSelectors = [
+        &#39;nav&#39;,
+        &#39;ul&#39;,
+        &#39;ol&#39;,
+        &#39;[class*=&quot;pagination&quot; i]&#39;,
+        &#39;[class*=&quot;pagin&quot; i]&#39;,
+        &#39;[class*=&quot;pager&quot; i]&#39;,
+        &#39;[aria-label*=&quot;pagin&quot; i]&#39;,
+        &#39;[aria-label*=&quot;page&quot; i]&#39;
+      ].join(&#39;,&#39;);
+
+      const directContainers = Array.from(document.querySelectorAll(containerSelectors));
+      const pageActionControls = Array.from(document.querySelectorAll(&#39;button[title], a[title], [role=&quot;button&quot;][title], button[aria-label], a[aria-label], [role=&quot;button&quot;][aria-label]&#39;))
+        .filter(el =&gt; {
+          const label = norm([el.getAttribute(&#39;title&#39;), el.getAttribute(&#39;aria-label&#39;)].filter(Boolean).join(&#39; &#39;));
+          return /(p[a&#225;]gina anterior|p[a&#225;]gina pr[o&#243;]xima|anterior|pr[o&#243;]xim[ao]?|next|prev(?:ious)?)/i.test(label);
+        })
+        .filter(el =&gt; !el.closest(&#39;#__dl-panel&#39;));
+
+      const nearControlContainers = pageActionControls
+        .map(el =&gt; el.closest(&#39;nav, section, article, div, ul, ol&#39;) || el.parentElement)
+        .filter(Boolean);
+
+      const unique = [];
+      const seen = new Set();
+      for (const el of [...directContainers, ...nearControlContainers]) {
+        if (!el || seen.has(el)) continue;
+        seen.add(el);
+        unique.push(el);
+      }
+
+      return unique
+        .filter(el =&gt; !el.closest(&#39;#__dl-panel&#39;))
+        .filter(el =&gt; isVisible(el));
+    };
+
+    const isLikelyPaginationControl = el =&gt; {
+      if (!el) return false;
+      if (!isVisible(el) || isControlDisabled(el)) return false;
+      if (looksLikeDownload(el)) return false;
+
+      const rawText = (el.innerText || el.textContent || &#39;&#39;).trim();
+      const controlText = norm([
+        rawText,
+        el.getAttribute(&#39;aria-label&#39;),
+        el.getAttribute(&#39;title&#39;),
+        el.getAttribute(&#39;rel&#39;)
+      ].filter(Boolean).join(&#39; &#39;));
+      const cls = getClassText(el);
+      const idName = norm([el.id, el.getAttribute(&#39;name&#39;)].filter(Boolean).join(&#39; &#39;));
+
+      const isNumeric = /^\d{1,4}$/.test(rawText);
+      const isDirectional = /(pr[o&#243;]xim[ao]?|next|seguinte|anterior|prev(?:ious)?|voltar|p[a&#225;]gina anterior|p[a&#225;]gina pr[o&#243;]xima|[&#171;‹←&#187;›→])/i.test(controlText);
+      const hasHint = /\b(pagin|page|pager|pagina|p[a&#225;]gina)\b/i.test(controlText) ||
+        /\b(pagin|page|pager|pagina|p[a&#225;]gina)\b/i.test(cls) ||
+        /\b(pagin|page|pager|pagina|p[a&#225;]gina)\b/i.test(idName);
+
+      return isNumeric || isDirectional || hasHint;
+    };
+
+    const getPaginationControls = container =&gt; {
+      if (!container || !container.querySelectorAll) return [];
+
+      return Array.from(container.querySelectorAll(&#39;button, a, [role=&quot;button&quot;]&#39;))
+        .filter(el =&gt; isVisible(el) &amp;&amp; !isControlDisabled(el))
+        .filter(el =&gt; !looksLikeDownload(el))
+        .filter(isLikelyPaginationControl);
+    };
+
+    const getControlText = el =&gt; norm([
+      el.innerText,
+      el.textContent,
+      el.getAttribute(&#39;aria-label&#39;),
+      el.getAttribute(&#39;title&#39;),
+      el.getAttribute(&#39;rel&#39;)
+    ].filter(Boolean).join(&#39; &#39;));
+
+    const getClassText = el =&gt; {
+      if (!el) return &#39;&#39;;
+      if (typeof el.className === &#39;string&#39;) return norm(el.className);
+      return norm(el.getAttribute(&#39;class&#39;) || &#39;&#39;);
+    };
+
+    const getTabContainers = () =&gt; {
+      const selectors = [
+        &#39;[role=&quot;tablist&quot;]&#39;,
+        &#39;.nav-tabs&#39;,
+        &#39;.nav-pills&#39;,
+        &#39;[class*=&quot;tablist&quot; i]&#39;,
+        &#39;[class*=&quot;tabs-nav&quot; i]&#39;,
+        &#39;[class*=&quot;tab-list&quot; i]&#39;
+      ].join(&#39;,&#39;);
+
+      return Array.from(document.querySelectorAll(selectors))
+        .filter(el =&gt; !el.closest(&#39;#__dl-panel&#39;))
+        .filter(el =&gt; isVisible(el));
+    };
+
+    const isLikelyTabControl = el =&gt; {
+      if (!el) return false;
+      if (!isVisible(el) || isControlDisabled(el)) return false;
+      if (el.closest(&#39;#__dl-panel&#39;)) return false;
+      if (looksLikeDownload(el)) return false;
+
+      const role = (el.getAttribute(&#39;role&#39;) || &#39;&#39;).toLowerCase();
+      const dataToggle = norm([el.getAttribute(&#39;data-bs-toggle&#39;), el.getAttribute(&#39;data-toggle&#39;)].filter(Boolean).join(&#39; &#39;));
+      const ariaControls = (el.getAttribute(&#39;aria-controls&#39;) || &#39;&#39;).trim();
+      const href = (el.getAttribute(&#39;href&#39;) || &#39;&#39;).trim();
+      const classText = getClassText(el);
+      const parent = el.parentElement;
+      const parentClassText = getClassText(parent);
+
+      const hasTabRole = role === &#39;tab&#39;;
+      const hasTabToggle = /\b(tab|pill)\b/i.test(dataToggle);
+      const hasAriaControls = Boolean(ariaControls) &amp;&amp; Boolean(document.getElementById(ariaControls));
+      const hashTarget = href.startsWith(&#39;#&#39;) &amp;&amp; href.length &gt; 1 ? document.querySelector(href) : null;
+      const classHint = /\b(tab|tabs|tab-link|tab-btn|nav-link|pill|pills)\b/.test(classText);
+      const parentHint = /\b(tab|tabs|tablist|nav-tabs|nav-pills|pill)\b/.test(parentClassText);
+
+      return hasTabRole || hasTabToggle || hasAriaControls || Boolean(hashTarget) || (classHint &amp;&amp; parentHint);
+    };
+
+    const getTabControls = container =&gt; {
+      if (!container || !container.querySelectorAll) return [];
+
+      return Array.from(container.querySelectorAll(&#39;[role=&quot;tab&quot;], button, a, [role=&quot;button&quot;]&#39;))
+        .filter(isLikelyTabControl);
+    };
+
+    const isCurrentTabControl = el =&gt; {
+      if (!el) return false;
+
+      const ariaSelected = (el.getAttribute(&#39;aria-selected&#39;) || &#39;&#39;).toLowerCase();
+      if (ariaSelected === &#39;true&#39;) return true;
+      if (ariaSelected === &#39;false&#39;) return false;
+
+      const classText = getClassText(el);
+      if (/\b(active|current|selected|is-active|tab-active|show)\b/.test(classText)) return true;
+
+      const ariaControls = (el.getAttribute(&#39;aria-controls&#39;) || &#39;&#39;).trim();
+      if (ariaControls) {
+        const panel = document.getElementById(ariaControls);
+        if (panel &amp;&amp; isVisible(panel)) return true;
+      }
+
+      const dataTarget = (el.getAttribute(&#39;data-bs-target&#39;) || el.getAttribute(&#39;data-target&#39;) || &#39;&#39;).trim();
+      if (dataTarget &amp;&amp; dataTarget.startsWith(&#39;#&#39;)) {
+        const panel = document.querySelector(dataTarget);
+        if (panel &amp;&amp; isVisible(panel)) return true;
+      }
+
+      const href = (el.getAttribute(&#39;href&#39;) || &#39;&#39;).trim();
+      if (href.startsWith(&#39;#&#39;) &amp;&amp; href.length &gt; 1) {
+        const panel = document.querySelector(href);
+        if (panel &amp;&amp; isVisible(panel)) return true;
+      }
+
+      return false;
+    };
+
+    const getTabControlMarker = el =&gt; {
+      if (!el) return &#39;&#39;;
+
+      const parent = el.closest(&#39;[role=&quot;tablist&quot;], .nav-tabs, .nav-pills, [class*=&quot;tablist&quot; i], [class*=&quot;tabs-nav&quot; i], [class*=&quot;tab-list&quot; i]&#39;);
+      const parentId = parent?.id || parent?.getAttribute(&#39;data-id&#39;) || &#39;&#39;;
+      const ariaControls = (el.getAttribute(&#39;aria-controls&#39;) || &#39;&#39;).trim();
+      const dataTarget = (el.getAttribute(&#39;data-bs-target&#39;) || el.getAttribute(&#39;data-target&#39;) || &#39;&#39;).trim();
+      const href = (el.getAttribute(&#39;href&#39;) || &#39;&#39;).trim();
+      const ownId = (el.id || el.getAttribute(&#39;data-id&#39;) || &#39;&#39;).trim();
+      const text = getControlText(el) || getClassText(el) || &#39;tab-control&#39;;
+      const pos = parent ? Array.from(parent.children).indexOf(el) : -1;
+
+      return [
+        &#39;tab&#39;,
+        parentId.slice(0, 40),
+        ownId.slice(0, 40),
+        ariaControls.slice(0, 40),
+        dataTarget.slice(0, 40),
+        href.slice(0, 60),
+        text.slice(0, 80),
+        String(pos)
+      ].join(&#39;:&#39;);
+    };
+
+    const getTabStateMarker = () =&gt; {
+      const markers = [];
+      const containers = getTabContainers();
+
+      for (const container of containers) {
+        const controls = getTabControls(container);
+        if (controls.length &lt; 2) continue;
+
+        const active = controls.find(isCurrentTabControl);
+        if (active) {
+          markers.push(getTabControlMarker(active));
+        }
+      }
+
+      return markers.join(&#39;|&#39;);
+    };
+
+    const getCurrentTabMarker = () =&gt; {
+      const containers = getTabContainers();
+      for (const container of containers) {
+        const controls = getTabControls(container);
+        if (controls.length &lt; 2) continue;
+
+        const active = controls.find(isCurrentTabControl);
+        if (active) return getTabControlMarker(active);
+      }
+
+      return &#39;&#39;;
+    };
+
+    const getAllTabControls = () =&gt; {
+      const dedupe = new Map();
+
+      const containers = getTabContainers();
+      for (const container of containers) {
+        const controls = getTabControls(container);
+        for (const control of controls) {
+          const marker = getTabControlMarker(control);
+          if (!marker || dedupe.has(marker)) continue;
+          dedupe.set(marker, control);
+        }
+      }
+
+      return Array.from(dedupe.values());
+    };
+
+    const findTabControlByMarker = marker =&gt; {
+      if (!marker) return null;
+      return getAllTabControls().find(control =&gt; getTabControlMarker(control) === marker) || null;
+    };
+
+    const goToTabMarker = async marker =&gt; {
+      if (!marker) return false;
+
+      const currentMarker = getCurrentTabMarker();
+      if (currentMarker &amp;&amp; currentMarker === marker) return true;
+
+      const control = findTabControlByMarker(marker);
+      if (!control) return false;
+
+      const beforeSig = getCollectSignature();
+      const beforeStateMarker = getViewStateMarker();
+
+      if (typeof control.click === &#39;function&#39;) {
+        control.click();
+      } else {
+        control.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+      }
+
+      const changed = await waitForCollectChange(beforeSig, opts.tableExpandWaitMs * 6, beforeStateMarker);
+      if (changed) {
+        await waitForCollectSettled(opts.tableExpandWaitMs * 6);
+      }
+
+      const afterMarker = getCurrentTabMarker();
+      return changed || (afterMarker &amp;&amp; afterMarker === marker);
+    };
+
+    const getControlPageNumber = el =&gt; {
+      const directText = (el.innerText || el.textContent || &#39;&#39;).trim();
+      if (/^\d{1,4}$/.test(directText)) {
+        return parseInt(directText, 10);
+      }
+
+      const attrText = [
+        el.getAttribute(&#39;aria-label&#39;),
+        el.getAttribute(&#39;title&#39;),
+        el.getAttribute(&#39;data-page&#39;),
+        el.getAttribute(&#39;data-pagenumber&#39;)
+      ].filter(Boolean).join(&#39; &#39;);
+
+      const match = attrText.match(/\b(\d{1,4})\b/);
+      return match ? parseInt(match[1], 10) : NaN;
+    };
+
+    const isCurrentPageControl = el =&gt; {
+      const ariaCurrent = (el.getAttribute(&#39;aria-current&#39;) || &#39;&#39;).toLowerCase();
+      if (ariaCurrent === &#39;page&#39; || ariaCurrent === &#39;true&#39;) return true;
+
+      const ownClass = getClassText(el);
+      if (/\b(active|current|selected|is-active|page-active)\b/.test(ownClass)) return true;
+
+      const ownPage = getControlPageNumber(el);
+      if (Number.isFinite(ownPage)) {
+        const highlighted = /\b(bg-gradient-to-r|text-white|scale-105)\b/.test(ownClass) &amp;&amp; !/\bbg-white\b/.test(ownClass);
+        if (highlighted) return true;
+      }
+
+      const parent = el.parentElement;
+      if (!parent) return false;
+
+      const parentAriaCurrent = (parent.getAttribute(&#39;aria-current&#39;) || &#39;&#39;).toLowerCase();
+      if (parentAriaCurrent === &#39;page&#39; || parentAriaCurrent === &#39;true&#39;) return true;
+
+      const parentClass = getClassText(parent);
+      if (/\b(active|current|selected|is-active|page-active)\b/.test(parentClass)) return true;
+
+      if (Number.isFinite(ownPage)) {
+        const parentHighlighted = /\b(bg-gradient-to-r|text-white|scale-105)\b/.test(parentClass) &amp;&amp; !/\bbg-white\b/.test(parentClass);
+        if (parentHighlighted) return true;
+      }
+
+      return false;
+    };
+
+    const getControlMarker = el =&gt; {
+      const page = getControlPageNumber(el);
+      if (Number.isFinite(page)) return `page:${page}`;
+
+      const parent = el.parentElement;
+      const pos = parent ? Array.from(parent.children).indexOf(el) : -1;
+      const text = getControlText(el) || getClassText(el) || &#39;icon-control&#39;;
+      return `ctrl:${text.slice(0, 80)}:${pos}`;
+    };
+
+    const getPaginationStateMarker = () =&gt; {
+      const containers = getPaginationContainers();
+      const markers = [];
+
+      for (const container of containers) {
+        const controls = getPaginationControls(container);
+        if (controls.length &lt; 2) continue;
+
+        const active = controls.find(isCurrentPageControl);
+        if (active) {
+          markers.push(getControlMarker(active));
+        }
+      }
+
+      return markers.join(&#39;|&#39;);
+    };
+
+    const getViewStateMarker = () =&gt; [getPaginationStateMarker(), getTabStateMarker()].filter(Boolean).join(&#39;|&#39;);
+
+    const getCurrentPageNumber = () =&gt; {
+      const containers = getPaginationContainers();
+      for (const container of containers) {
+        const controls = getPaginationControls(container);
+        if (controls.length &lt; 2) continue;
+
+        const active = controls.find(isCurrentPageControl);
+        if (!active) continue;
+
+        const page = getControlPageNumber(active);
+        if (Number.isFinite(page)) return page;
+      }
+
+      return NaN;
+    };
+
+    const findPaginationControlByPage = pageNumber =&gt; {
+      if (!Number.isFinite(pageNumber)) return null;
+
+      const containers = getPaginationContainers();
+      for (const container of containers) {
+        const controls = getPaginationControls(container);
+        const match = controls.find(control =&gt; getControlPageNumber(control) === pageNumber);
+        if (match) return match;
+      }
+
+      return null;
+    };
+
+    const goToPageNumber = async pageNumber =&gt; {
+      if (!Number.isFinite(pageNumber)) return false;
+
+      const currentPage = getCurrentPageNumber();
+      if (Number.isFinite(currentPage) &amp;&amp; currentPage === pageNumber) return true;
+
+      const control = findPaginationControlByPage(pageNumber);
+      if (!control) return false;
+
+      const beforeSig = getCollectSignature();
+      const beforeStateMarker = getViewStateMarker();
+
+      if (typeof control.click === &#39;function&#39;) {
+        control.click();
+      } else {
+        control.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+      }
+
+      const changed = await waitForCollectChange(beforeSig, opts.tableExpandWaitMs * 6, beforeStateMarker);
+      if (changed) {
+        await waitForCollectSettled(opts.tableExpandWaitMs * 6);
+      }
+
+      const afterPage = getCurrentPageNumber();
+      return Number.isFinite(afterPage) &amp;&amp; afterPage === pageNumber;
+    };
+
+    const waitForCollectChange = async (previousSignature, timeoutMs, previousStateMarker = &#39;&#39;) =&gt; {
+      const startedAt = Date.now();
+      while (Date.now() - startedAt &lt; timeoutMs) {
+        await wait(250);
+        const nextSignature = getCollectSignature();
+        if (nextSignature !== previousSignature) return true;
+
+        if (previousStateMarker) {
+          const nextStateMarker = getViewStateMarker();
+          if (nextStateMarker !== previousStateMarker) return true;
+        }
+      }
+      return false;
+    };
+
+    const waitForCollectSettled = async timeoutMs =&gt; {
+      const startedAt = Date.now();
+      let lastSignature = &#39;&#39;;
+      let stableHits = 0;
+      let lastItems = [];
+
+      while (Date.now() - startedAt &lt; timeoutMs) {
+        await wait(250);
+        const items = collect(false);
+        const signature = items.map(it =&gt; it.key).join(&#39;|&#39;);
+
+        if (signature === lastSignature) {
+          stableHits++;
+        } else {
+          stableHits = 0;
+          lastSignature = signature;
+        }
+
+        lastItems = items;
+
+        // Considera assentado quando houver itens e duas leituras seguidas iguais.
+        if (items.length &gt; 0 &amp;&amp; stableHits &gt;= 1) {
+          return items;
+        }
+      }
+
+      return lastItems;
+    };
+
+    const clickLoadMoreControls = async () =&gt; {
+      const loadMoreRegex = /mostrar mais|carregar mais|ver mais|mais resultados|mais itens|exibir mais|load more|show more|see more/i;
+      let clicks = 0;
+
+      while (clicks &lt; opts.tableExpandMaxClicks) {
+        const candidates = Array.from(document.querySelectorAll(&#39;button, a, [role=&quot;button&quot;]&#39;))
+          .filter(el =&gt; !el.closest(&#39;#__dl-panel&#39;))
+          .filter(el =&gt; isVisible(el) &amp;&amp; !isControlDisabled(el))
+          .filter(el =&gt; !looksLikeDownload(el))
+          .filter(el =&gt; {
+            const text = norm([
+              el.innerText,
+              el.textContent,
+              el.getAttribute(&#39;aria-label&#39;),
+              el.getAttribute(&#39;title&#39;)
+            ].filter(Boolean).join(&#39; &#39;));
+            return loadMoreRegex.test(text);
+          });
+
+        if (candidates.length === 0) break;
+
+        const target = candidates[0];
+        const beforeSig = getCollectSignature();
+
+        if (typeof target.click === &#39;function&#39;) {
+          target.click();
+        } else {
+          target.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+        }
+
+        clicks++;
+        const changed = await waitForCollectChange(beforeSig, opts.tableExpandWaitMs * 4);
+        if (!changed) break;
+      }
+
+      return clicks;
+    };
+
+    const folderDownloadSelector = [
+      &#39;.isFileLink&#39;,
+      &#39;a[download]&#39;,
+      &#39;a[href*=&quot;/download/&quot;]&#39;,
+      &#39;a[href$=&quot;.pdf&quot; i]&#39;,
+      &#39;a[href$=&quot;.csv&quot; i]&#39;,
+      &#39;a[href$=&quot;.doc&quot; i]&#39;,
+      &#39;a[href$=&quot;.docx&quot; i]&#39;,
+      &#39;a[href$=&quot;.xml&quot; i]&#39;,
+      &#39;a[href$=&quot;.txt&quot; i]&#39;
+    ].join(&#39;,&#39;);
+
+    const isFolderContainerLoaded = container =&gt; {
+      if (!container || !container.querySelector) return false;
+      return Boolean(container.querySelector(folderDownloadSelector));
+    };
+
+    const getFolderContainerSignature = container =&gt; {
+      if (!container || !container.querySelectorAll) return &#39;&#39;;
+
+      const totalItems = container.querySelectorAll(&#39;li&#39;).length;
+      const totalFiles = container.querySelectorAll(folderDownloadSelector).length;
+      const textSize = (container.textContent || &#39;&#39;).trim().length;
+      return `${totalItems}|${totalFiles}|${textSize}`;
+    };
+
+    const waitForFolderContainerChange = async (container, previousSignature, timeoutMs) =&gt; {
+      const startedAt = Date.now();
+
+      while (Date.now() - startedAt &lt; timeoutMs) {
+        await wait(220);
+        const nextSignature = getFolderContainerSignature(container);
+        if (nextSignature !== previousSignature) return true;
+      }
+
+      return false;
+    };
+
+    const getFolderToggleCheckbox = toggle =&gt; {
+      if (!toggle || !toggle.getAttribute) return null;
+
+      const forId = (toggle.getAttribute(&#39;for&#39;) || &#39;&#39;).trim();
+      if (forId) {
+        const linked = document.getElementById(forId);
+        if (linked &amp;&amp; linked.tagName === &#39;INPUT&#39; &amp;&amp; (linked.type || &#39;&#39;).toLowerCase() === &#39;checkbox&#39;) {
+          return linked;
+        }
+      }
+
+      const prev = toggle.previousElementSibling;
+      if (prev &amp;&amp; prev.tagName === &#39;INPUT&#39; &amp;&amp; (prev.type || &#39;&#39;).toLowerCase() === &#39;checkbox&#39;) {
+        return prev;
+      }
+
+      return null;
+    };
+
+    const getFolderExpandCandidates = attemptedMarkers =&gt; {
+      const containers = Array.from(document.querySelectorAll(&#39;.has-file-on-it&#39;))
+        .filter(container =&gt; !container.closest(&#39;#__dl-panel&#39;));
+
+      const candidates = [];
+
+      for (const container of containers) {
+        const toggle = container.previousElementSibling;
+        if (!toggle || !toggle.getAttribute) continue;
+        if (toggle.closest &amp;&amp; toggle.closest(&#39;#__dl-panel&#39;)) continue;
+
+        const tag = (toggle.tagName || &#39;&#39;).toUpperCase();
+        const role = (toggle.getAttribute(&#39;role&#39;) || &#39;&#39;).toLowerCase();
+        const isToggleLike = tag === &#39;LABEL&#39; || tag === &#39;A&#39; || tag === &#39;BUTTON&#39; || role === &#39;button&#39;;
+        if (!isToggleLike) continue;
+
+        const marker =
+          toggle.getAttribute(&#39;data-path&#39;) ||
+          toggle.getAttribute(&#39;for&#39;) ||
+          `${norm(toggle.textContent || &#39;&#39;).slice(0, 120)}|${container.childElementCount}`;
+
+        if (!marker || attemptedMarkers.has(marker)) continue;
+
+        const checkbox = getFolderToggleCheckbox(toggle);
+        const loaded = isFolderContainerLoaded(container);
+
+        // Se ja esta aberto, nao clicar para evitar colapsar novamente.
+        if (checkbox &amp;&amp; checkbox.checked) continue;
+
+        // Sem checkbox e sem arquivos novos para carregar: ignora.
+        if (!checkbox &amp;&amp; loaded) continue;
+
+        candidates.push({ marker, toggle, checkbox, container, loaded });
+      }
+
+      return candidates;
+    };
+
+    const expandFolderTrees = async () =&gt; {
+      let openedFolders = 0;
+      let ajaxClicks = 0;
+      let loadedFolders = 0;
+      const attemptedMarkers = new Set();
+
+      while (attemptedMarkers.size &lt; opts.folderExpandMaxClicks) {
+        const candidates = getFolderExpandCandidates(attemptedMarkers);
+        if (candidates.length === 0) break;
+
+        const target = candidates[0];
+        attemptedMarkers.add(target.marker);
+
+        // Caso ja tenha arquivos carregados, apenas expande visualmente sem novo request.
+        if (target.checkbox &amp;&amp; target.loaded) {
+          target.checkbox.checked = true;
+          dispatchFormEvents(target.checkbox);
+          openedFolders++;
+          await wait(Math.max(100, Math.floor(opts.folderExpandWaitMs / 2)));
+          continue;
+        }
+
+        const beforeSignature = getFolderContainerSignature(target.container);
+
+        if (typeof target.toggle.click === &#39;function&#39;) {
+          target.toggle.click();
+        } else {
+          target.toggle.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+        }
+
+        ajaxClicks++;
+
+        const changed = await waitForFolderContainerChange(target.container, beforeSignature, opts.folderExpandWaitMs * 8);
+        if (changed) loadedFolders++;
+
+        await wait(Math.max(120, opts.folderExpandWaitMs));
+      }
+
+      return {
+        attempted: attemptedMarkers.size,
+        openedFolders,
+        ajaxClicks,
+        loadedFolders
+      };
+    };
+
+    const findNextPaginationControl = (clickedMarkers = new Set()) =&gt; {
+      const nextRegex = /(pr[o&#243;]xim[ao]?|next|seguinte|avan[c&#231;]ar|pr[o&#243;]x\b|[&#187;›→])/i;
+      const prevRegex = /(anterior|prev(?:ious)?|voltar|[&#171;‹←])/i;
+      const nextClassRegex = /(next|chevron-right|angle-right|arrow-right|caret-right|icon-right|ri-arrow-right|fa-angle-right|fa-chevron-right|bi-chevron-right|pagination-next)/i;
+      const prevClassRegex = /(prev|previous|chevron-left|angle-left|arrow-left|caret-left|icon-left|ri-arrow-left|fa-angle-left|fa-chevron-left|bi-chevron-left|pagination-prev)/i;
+
+      const pickFromControls = controls =&gt; {
+        if (!controls || controls.length === 0) return null;
+
+        const activeIndex = controls.findIndex(isCurrentPageControl);
+        const currentPage = activeIndex &gt;= 0 ? getControlPageNumber(controls[activeIndex]) : NaN;
+
+        const numericControls = controls
+          .map(el =&gt; ({ el, page: getControlPageNumber(el) }))
+          .filter(entry =&gt; Number.isFinite(entry.page));
+
+        const sortedNumeric = numericControls
+          .slice()
+          .sort((a, b) =&gt; a.page - b.page);
+
+        if (Number.isFinite(currentPage)) {
+          const nextNumeric = sortedNumeric
+            .filter(entry =&gt; entry.page &gt; currentPage)
+            .map(entry =&gt; entry.el)
+            .find(el =&gt; !clickedMarkers.has(getControlMarker(el)));
+
+          if (nextNumeric) return nextNumeric;
+        } else if (sortedNumeric.length &gt; 0) {
+          // Se n&#227;o identificou p&#225;gina ativa, evita clicar na menor (geralmente p&#225;gina 1).
+          const guessNext = sortedNumeric
+            .filter(entry =&gt; entry.page &gt; 1)
+            .map(entry =&gt; entry.el)
+            .find(el =&gt; !clickedMarkers.has(getControlMarker(el)));
+
+          if (guessNext) return guessNext;
+
+          if (sortedNumeric.length &gt; 1) {
+            const second = sortedNumeric[1].el;
+            if (!clickedMarkers.has(getControlMarker(second))) return second;
+          }
+        }
+
+        if (activeIndex &gt;= 0) {
+          for (let i = activeIndex + 1; i &lt; controls.length; i++) {
+            const candidate = controls[i];
+            if (isCurrentPageControl(candidate)) continue;
+
+            const text = getControlText(candidate);
+            const classText = getClassText(candidate);
+            if (prevRegex.test(text) || prevClassRegex.test(classText)) continue;
+            if (clickedMarkers.has(getControlMarker(candidate))) continue;
+
+            return candidate;
+          }
+        }
+
+        const nextByLabel = controls.find(candidate =&gt; {
+          const text = getControlText(candidate);
+          const classText = getClassText(candidate);
+          const rel = (candidate.getAttribute(&#39;rel&#39;) || &#39;&#39;).toLowerCase();
+
+          if (prevRegex.test(text) || prevClassRegex.test(classText)) return false;
+
+          const looksLikeNext = nextRegex.test(text) || nextClassRegex.test(classText) || rel === &#39;next&#39;;
+          if (!looksLikeNext) return false;
+
+          return !clickedMarkers.has(getControlMarker(candidate));
+        });
+
+        if (nextByLabel) return nextByLabel;
+
+        const anyNumeric = numericControls
+          .map(entry =&gt; entry.el)
+          .find(el =&gt; !isCurrentPageControl(el) &amp;&amp; !clickedMarkers.has(getControlMarker(el)));
+
+        return anyNumeric || null;
+      };
+
+      const containers = getPaginationContainers();
+      for (const container of containers) {
+        const controls = getPaginationControls(container);
+        if (controls.length &lt; 2) continue;
+
+        const picked = pickFromControls(controls);
+        if (picked) return picked;
+      }
+
+      const controls = Array.from(document.querySelectorAll(&#39;button, a, [role=&quot;button&quot;]&#39;))
+        .filter(el =&gt; !el.closest(&#39;#__dl-panel&#39;))
+        .filter(el =&gt; isVisible(el) &amp;&amp; !isControlDisabled(el))
+        .filter(el =&gt; !looksLikeDownload(el))
+        .filter(isLikelyPaginationControl);
+      return pickFromControls(controls);
+    };
+
+    const collectThroughPagination = async () =&gt; {
+      const allItems = new Map();
+      const clickedMarkers = new Set();
+
+      const addCurrentPageItems = (items = null) =&gt; {
+        const currentPage = getCurrentPageNumber();
+        const currentTabMarker = getCurrentTabMarker();
+        const source = items || collect(false);
+        for (const item of source) {
+          const enriched = {
+            ...item,
+            sourcePage: Number.isFinite(item.sourcePage)
+              ? item.sourcePage
+              : (Number.isFinite(currentPage) ? currentPage : NaN),
+            sourceTabMarker: item.sourceTabMarker || currentTabMarker || &#39;&#39;
+          };
+
+          if (!allItems.has(item.key)) {
+            allItems.set(item.key, enriched);
+          }
+        }
+      };
+
+      addCurrentPageItems();
+
+      let movedPages = 0;
+      for (let i = 0; i &lt; opts.tableSweepMaxPages; i++) {
+        let pageAdvanced = false;
+
+        // Tenta candidatos alternativos de pagina&#231;&#227;o caso o primeiro n&#227;o mude a lista.
+        for (let attempt = 0; attempt &lt; 5; attempt++) {
+          const nextControl = findNextPaginationControl(clickedMarkers);
+          if (!nextControl) break;
+
+          const beforeSig = getCollectSignature();
+          const beforeStateMarker = getViewStateMarker();
+          const marker = getControlMarker(nextControl);
+          const controlLabel = (nextControl.innerText || nextControl.textContent || nextControl.getAttribute(&#39;aria-label&#39;) || nextControl.getAttribute(&#39;title&#39;) || &#39;&#39;).trim();
+
+          if (opts.verbose) {
+            console.log(&#39;[BAIXATRON] 🔄 Tentando paginacao:&#39;, controlLabel || &#39;(sem texto)&#39;, &#39;| marker:&#39;, marker);
+          }
+
+          if (typeof nextControl.click === &#39;function&#39;) {
+            nextControl.click();
+          } else {
+            nextControl.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+          }
+          clickedMarkers.add(marker);
+
+          const changed = await waitForCollectChange(beforeSig, opts.tableExpandWaitMs * 6, beforeStateMarker);
+          if (!changed) {
+            if (opts.verbose) {
+              console.warn(&#39;[BAIXATRON] ⚠️ Clique de paginacao sem mudanca detectada:&#39;, controlLabel || &#39;(sem texto)&#39;, &#39;| marker:&#39;, marker);
+            }
+            continue;
+          }
+
+          movedPages++;
+          const settledItems = await waitForCollectSettled(opts.tableExpandWaitMs * 6);
+          addCurrentPageItems(settledItems);
+          pageAdvanced = true;
+          break;
+        }
+
+        if (!pageAdvanced) break;
+      }
+
+      return {
+        items: Array.from(allItems.values()),
+        movedPages
+      };
+    };
+
+    const findNextTabControl = (clickedMarkers = new Set()) =&gt; {
+      const pickFromControls = controls =&gt; {
+        if (!controls || controls.length &lt; 2) return null;
+
+        const activeIndex = controls.findIndex(isCurrentTabControl);
+        if (activeIndex &gt;= 0) {
+          for (let i = activeIndex + 1; i &lt; controls.length; i++) {
+            const candidate = controls[i];
+            const marker = getTabControlMarker(candidate);
+            if (!marker || clickedMarkers.has(marker)) continue;
+            if (isCurrentTabControl(candidate)) continue;
+            return candidate;
+          }
+        }
+
+        const anyInactive = controls.find(candidate =&gt; {
+          const marker = getTabControlMarker(candidate);
+          if (!marker || clickedMarkers.has(marker)) return false;
+          return !isCurrentTabControl(candidate);
+        });
+
+        return anyInactive || null;
+      };
+
+      const containers = getTabContainers();
+      for (const container of containers) {
+        const controls = getTabControls(container);
+        const picked = pickFromControls(controls);
+        if (picked) return picked;
+      }
+
+      return pickFromControls(getAllTabControls());
+    };
+
+    const collectCurrentViewDeep = async () =&gt; {
+      const loadMoreClicks = await clickLoadMoreControls();
+      const pagedResult = await collectThroughPagination();
+      const items = pagedResult.items.length ? pagedResult.items : collect(false);
+
+      return {
+        items,
+        loadMoreClicks,
+        movedPages: pagedResult.movedPages
+      };
+    };
+
+    const collectThroughTabsAndPagination = async () =&gt; {
+      const allItems = new Map();
+      const clickedTabMarkers = new Set();
+
+      let switchedTabs = 0;
+      let loadMoreClicks = 0;
+      let movedPages = 0;
+
+      const addItems = items =&gt; {
+        for (const item of items || []) {
+          if (!allItems.has(item.key)) {
+            allItems.set(item.key, item);
+          }
+        }
+      };
+
+      const collectCurrentTabView = async () =&gt; {
+        const deep = await collectCurrentViewDeep();
+        addItems(deep.items);
+        loadMoreClicks += deep.loadMoreClicks;
+        movedPages += deep.movedPages;
+      };
+
+      await collectCurrentTabView();
+
+      if (!opts.tableSweepTabs) {
+        return {
+          items: Array.from(allItems.values()),
+          switchedTabs,
+          loadMoreClicks,
+          movedPages
+        };
+      }
+
+      for (let i = 0; i &lt; opts.tableSweepMaxTabs; i++) {
+        const nextTab = findNextTabControl(clickedTabMarkers);
+        if (!nextTab) break;
+
+        const marker = getTabControlMarker(nextTab);
+        if (!marker) break;
+        clickedTabMarkers.add(marker);
+
+        if (isCurrentTabControl(nextTab)) continue;
+
+        const beforeSig = getCollectSignature();
+        const beforeStateMarker = getViewStateMarker();
+
+        if (typeof nextTab.click === &#39;function&#39;) {
+          nextTab.click();
+        } else {
+          nextTab.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+        }
+
+        const changed = await waitForCollectChange(beforeSig, opts.tableExpandWaitMs * 6, beforeStateMarker);
+        if (!changed) continue;
+
+        switchedTabs++;
+        await waitForCollectSettled(opts.tableExpandWaitMs * 6);
+        await collectCurrentTabView();
+      }
+
+      return {
+        items: Array.from(allItems.values()),
+        switchedTabs,
+        loadMoreClicks,
+        movedPages
+      };
+    };
+
+    const fillQueueFromItems = items =&gt; {
+      state.queue = [];
+      state.queuedKeys.clear();
+      state.selectedKeys.clear();
+
+      let added = 0;
+      let skipped = 0;
+
+      for (const it of items) {
+        if (opts.dedupe &amp;&amp; state.doneKeys.has(it.key)) {
+          skipped++;
+          continue;
+        }
+
+        if (!state.itemIdByKey.has(it.key)) {
+          state.itemIdByKey.set(it.key, state.nextItemId++);
+        }
+        it.itemId = state.itemIdByKey.get(it.key);
+
+        state.queue.push(it);
+        state.queuedKeys.add(it.key);
+        state.selectedKeys.add(it.key);
+        added++;
+      }
+
+      updateUI();
+      return { added, skipped };
+    };
+
+    const applyQueueNameFilter = (mode, rawInput = null) =&gt; {
+      if (mode !== &#39;keep&#39; &amp;&amp; mode !== &#39;remove&#39;) {
+        alert(&#39;[BAIXATRON] Modo de filtro invalido. Use keep ou remove.&#39;);
+        return null;
+      }
+
+      if (state.running) {
+        alert(&#39;[BAIXATRON] Pause os downloads antes de aplicar filtros por nome.&#39;);
+        return null;
+      }
+
+      if (state.queue.length === 0) {
+        alert(&#39;[BAIXATRON] A fila esta vazia. Use [⊙] Escanear primeiro.&#39;);
+        return null;
+      }
+
+      const actionLabel = mode === &#39;keep&#39; ? &#39;manter&#39; : &#39;remover&#39;;
+      const raw = typeof rawInput === &#39;string&#39;
+        ? rawInput
+        : prompt(
+          `[BAIXATRON] Digite os nomes/trechos para ${actionLabel} da checklist.\n` +
+          &#39;Separe por quebra de linha, virgula, ponto e virgula ou barra vertical.&#39;
+        );
+
+      if (raw === null) return null;
+
+      const criteria = parseFilterCriteria(raw);
+      const terms = criteria.terms;
+      if (!terms.length) {
+        alert(&#39;[BAIXATRON] Nenhum nome informado.&#39;);
+        return null;
+      }
+
+      const totalBefore = state.queue.length;
+      const nextQueue = [];
+      let matched = 0;
+
+      for (const it of state.queue) {
+        const haystack = normLoose([it.titleName, it.text].filter(Boolean).join(&#39; &#39;));
+        const itemId = Number(it.itemId);
+        const idMatch = Number.isFinite(itemId) &amp;&amp; criteria.ids.has(itemId);
+        const idRangeMatch = Number.isFinite(itemId) &amp;&amp; criteria.idRanges.some(([start, end]) =&gt; itemId &gt;= start &amp;&amp; itemId &lt;= end);
+        const textMatch = criteria.textTokens.some(token =&gt; haystack.includes(token));
+        const isMatch = idMatch || idRangeMatch || textMatch;
+        if (isMatch) matched++;
+
+        const shouldKeep = mode === &#39;keep&#39; ? isMatch : !isMatch;
+        if (shouldKeep) {
+          nextQueue.push(it);
+        } else {
+          state.selectedKeys.delete(it.key);
+        }
+      }
+
+      state.queue = nextQueue;
+      state.queuedKeys.clear();
+      for (const it of state.queue) {
+        state.queuedKeys.add(it.key);
+      }
+
+      const queueKeys = new Set(state.queue.map(it =&gt; it.key));
+      state.selectedKeys.forEach(key =&gt; {
+        if (!queueKeys.has(key)) state.selectedKeys.delete(key);
+      });
+
+      const totalAfter = nextQueue.length;
+      const removedCount = Math.max(0, totalBefore - totalAfter);
+
+      updateUI();
+
+      console.log(
+        &#39;[BAIXATRON] 🧪 Filtro por nome aplicado | modo:&#39;, mode,
+        &#39;| termos:&#39;, terms.length,
+        &#39;| correspondencias:&#39;, matched,
+        &#39;| removidos da fila:&#39;, removedCount,
+        &#39;| restantes:&#39;, totalAfter
+      );
+
+      alert(
+        `[BAIXATRON] Filtro aplicado (${mode === &#39;keep&#39; ? &#39;manter&#39; : &#39;remover&#39;}).\n` +
+        `Termos: ${terms.length}\n` +
+        `IDs no filtro: ${criteria.ids.size}\n` +
+        `Faixas de ID: ${criteria.idRanges.length}\n` +
+        `Correspondencias: ${matched}\n` +
+        `Removidos da checklist: ${removedCount}\n` +
+        `Restantes: ${totalAfter}`
+      );
+
+      return {
+        mode,
+        termsCount: terms.length,
+        matched,
+        removedCount,
+        remaining: totalAfter
+      };
+    };
+
+    const applyQueueTypeFilter = (mode, rawInput = null) =&gt; {
+      if (mode !== &#39;keep&#39; &amp;&amp; mode !== &#39;remove&#39;) {
+        alert(&#39;[BAIXATRON] Modo de filtro de tipo invalido. Use keep ou remove.&#39;);
+        return null;
+      }
+
+      if (state.running) {
+        alert(&#39;[BAIXATRON] Pause os downloads antes de aplicar filtros por tipo.&#39;);
+        return null;
+      }
+
+      if (state.queue.length === 0) {
+        alert(&#39;[BAIXATRON] A fila esta vazia. Use [⊙] Escanear primeiro.&#39;);
+        return null;
+      }
+
+      const actionLabel = mode === &#39;keep&#39; ? &#39;manter&#39; : &#39;remover&#39;;
+      const raw = typeof rawInput === &#39;string&#39;
+        ? rawInput
+        : prompt(
+          `[BAIXATRON] Digite os tipos para ${actionLabel} da checklist.\n` +
+          &#39;Exemplos: pdf, csv, doc, xml, txt, xls, zip.&#39;
+        );
+
+      if (raw === null) return null;
+
+      const types = parseTypeFilterTerms(raw);
+      if (!types.length) {
+        alert(&#39;[BAIXATRON] Nenhum tipo valido informado. Exemplos: pdf, csv, doc, xml, txt.&#39;);
+        return null;
+      }
+
+      const totalBefore = state.queue.length;
+      const nextQueue = [];
+      let matched = 0;
+
+      for (const it of state.queue) {
+        const itemType = normalizeFileTypeToken(it.fileType) || inferFileTypeFromUrl(it.url) || inferFileTypeFromElement(it.el, it.url);
+        it.fileType = itemType;
+
+        const isMatch = Boolean(itemType) &amp;&amp; types.includes(itemType);
+        if (isMatch) matched++;
+
+        const shouldKeep = mode === &#39;keep&#39; ? isMatch : !isMatch;
+        if (shouldKeep) {
+          nextQueue.push(it);
+        } else {
+          state.selectedKeys.delete(it.key);
+        }
+      }
+
+      state.queue = nextQueue;
+      state.queuedKeys.clear();
+      for (const it of state.queue) {
+        state.queuedKeys.add(it.key);
+      }
+
+      const queueKeys = new Set(state.queue.map(it =&gt; it.key));
+      state.selectedKeys.forEach(key =&gt; {
+        if (!queueKeys.has(key)) state.selectedKeys.delete(key);
+      });
+
+      const totalAfter = nextQueue.length;
+      const removedCount = Math.max(0, totalBefore - totalAfter);
+
+      updateUI();
+
+      console.log(
+        &#39;[BAIXATRON] 🧪 Filtro por tipo aplicado | modo:&#39;, mode,
+        &#39;| tipos:&#39;, types.join(&#39;, &#39;),
+        &#39;| correspondencias:&#39;, matched,
+        &#39;| removidos da fila:&#39;, removedCount,
+        &#39;| restantes:&#39;, totalAfter
+      );
+
+      alert(
+        `[BAIXATRON] Filtro por tipo aplicado (${mode === &#39;keep&#39; ? &#39;manter&#39; : &#39;remover&#39;}).\n` +
+        `Tipos: ${types.join(&#39;, &#39;)}\n` +
+        `Correspondencias: ${matched}\n` +
+        `Removidos da checklist: ${removedCount}\n` +
+        `Restantes: ${totalAfter}`
+      );
+
+      return {
+        mode,
+        types,
+        matched,
+        removedCount,
+        remaining: totalAfter
+      };
+    };
+
+    const expandTable = async () =&gt; {
+      if (state.running || state.expandingTable) return [];
+
+      state.expandingTable = true;
+      updateUI();
+
+      try {
+        console.log(&#39;[BAIXATRON] 🧩 Tentando expandir tabela, abas e pagina&#231;&#227;o...&#39;);
+        const baselineItems = collect(false);
+
+        const changedSelects = await expandRowsPerPage();
+        const folderResult = opts.folderSweepEnabled
+          ? await expandFolderTrees()
+          : { attempted: 0, openedFolders: 0, ajaxClicks: 0, loadedFolders: 0 };
+        const sweepResult = await collectThroughTabsAndPagination();
+
+        let finalItems = sweepResult.items.length ? sweepResult.items : collect(false);
+        if (finalItems.length === 0 &amp;&amp; baselineItems.length &gt; 0) {
+          console.warn(&#39;[BAIXATRON] ⚠️ Expans&#227;o zerou a coleta. Mantendo itens da coleta inicial para evitar perda de fila.&#39;);
+          finalItems = baselineItems;
+        }
+        const stats = fillQueueFromItems(finalItems);
+
+        console.log(
+          &#39;[BAIXATRON] ✅ Expans&#227;o finalizada | itens:&#39;, finalItems.length,
+          &#39;| selects alterados:&#39;, changedSelects,
+          &#39;| pastas processadas:&#39;, folderResult.attempted,
+          &#39;| pastas abertas:&#39;, folderResult.openedFolders,
+          &#39;| cliques AJAX em pastas:&#39;, folderResult.ajaxClicks,
+          &#39;| pastas carregadas:&#39;, folderResult.loadedFolders,
+          &#39;| abas percorridas:&#39;, sweepResult.switchedTabs,
+          &#39;| cliques em &quot;mais&quot;:&#39;, sweepResult.loadMoreClicks,
+          &#39;| p&#225;ginas percorridas:&#39;, sweepResult.movedPages,
+          &#39;| adicionados:&#39;, stats.added,
+          &#39;| pulados:&#39;, stats.skipped
+        );
+
+        if (finalItems.length === 0 &amp;&amp; state.blockedFrames.length &gt; 0) {
+          console.warn(&#39;[BAIXATRON] ⚠️ Nenhum item acess&#237;vel nesta aba por causa de iframe cross-origin.&#39;);
+          console.warn(&#39;[BAIXATRON] 💡 Abra o conte&#250;do com __dl.openBlockedFrames() para escanear no dom&#237;nio correto.&#39;);
+        }
+
+        return finalItems;
+      } catch (err) {
+        console.error(&#39;[BAIXATRON] ❌ Falha ao expandir tabela:&#39;, err);
+        return [];
+      } finally {
+        state.expandingTable = false;
+        updateUI();
+      }
+    };
+
+    // ============================================
+    // SCAN: Lista todos os downloads
+    // ============================================
+    const scan = async () =&gt; {
+      let folderResult = { attempted: 0, openedFolders: 0, ajaxClicks: 0, loadedFolders: 0 };
+
+      if (opts.folderSweepEnabled) {
+        folderResult = await expandFolderTrees();
+        if (folderResult.attempted &gt; 0) {
+          console.log(
+            &#39;[BAIXATRON] 🗂️ Pastas processadas no scan:&#39;, folderResult.attempted,
+            &#39;| abertas:&#39;, folderResult.openedFolders,
+            &#39;| cliques AJAX:&#39;, folderResult.ajaxClicks,
+            &#39;| carregadas:&#39;, folderResult.loadedFolders
+          );
+        }
+      }
+
+      const items = collect();
+      console.log(&#39;[BAIXATRON] 📊 Coleta: encontrados&#39;, items.length, &#39;bot&#245;es &#250;nicos&#39;);
+
+      const { added, skipped } = fillQueueFromItems(items);
+
+      console.log(&#39;[BAIXATRON] ✅ Adicionados:&#39;, added, &#39;| ⏭️ Pulados:&#39;, skipped, &#39;| 📝 Total hist&#243;rico:&#39;, state.doneKeys.size);
+      if (items.length === 0 &amp;&amp; state.blockedFrames.length &gt; 0) {
+        console.warn(&#39;[BAIXATRON] 💡 Esta p&#225;gina usa iframe cross-origin. Use __dl.openBlockedFrames() ou o bot&#227;o [↗] Abrir Iframe(s).&#39;);
+      }
+      return items;
+    };
+
+    // ============================================
+    // CLICK &amp; DOWNLOAD
+    // ============================================
+    const wait = ms =&gt; new Promise(r =&gt; setTimeout(r, ms));
+
+    const resolveLiveElementForItem = it =&gt; {
+      if (it?.el?.isConnected) return it.el;
+
+      const fresh = collect(false).find(candidate =&gt; {
+        if (candidate.key !== it.key) return false;
+
+        const sameTitle = norm(candidate.titleName || candidate.text) === norm(it.titleName || it.text);
+        if (sameTitle) return true;
+
+        return true;
+      });
+      return fresh?.el || null;
+    };
+
+    const ensureItemPageVisible = async it =&gt; {
+      const targetTabMarker = it?.sourceTabMarker;
+      if (targetTabMarker) {
+        const movedTab = await goToTabMarker(targetTabMarker);
+        if (!movedTab &amp;&amp; opts.verbose) {
+          console.warn(&#39;[BAIXATRON] ⚠️ N&#227;o foi poss&#237;vel navegar para a aba do item:&#39;, it?.text || it?.titleName);
+        }
+      }
+
+      const targetPage = it?.sourcePage;
+      if (!Number.isFinite(targetPage)) return;
+
+      const currentPage = getCurrentPageNumber();
+      if (Number.isFinite(currentPage) &amp;&amp; currentPage === targetPage) return;
+
+      const moved = await goToPageNumber(targetPage);
+      if (!moved &amp;&amp; opts.verbose) {
+        console.warn(&#39;[BAIXATRON] ⚠️ N&#227;o foi poss&#237;vel navegar para a p&#225;gina do item:&#39;, it?.text || it?.titleName, &#39;| p&#225;gina esperada:&#39;, targetPage);
+      }
+    };
+
+    const safeClick = async it =&gt; {
+      await ensureItemPageVisible(it);
+
+      const el = resolveLiveElementForItem(it) || it.el;
+      const url = toAbs(it.url);
+      const titleFallback = (it.titleName || it.text || &#39;download&#39;).trim();
+      
+      try {
+        if (el &amp;&amp; typeof el.scrollIntoView === &#39;function&#39;) {
+          el.scrollIntoView({ block: &#39;center&#39; });
+        }
+      } catch {}
+      
+      await wait(100);
+
+      // Em bot&#245;es com handler JS (sem href), dispare o clique diretamente.
+      if (!url) {
+        const liveEl = resolveLiveElementForItem(it) || el;
+        if (!liveEl || !liveEl.isConnected) {
+          throw new Error(&#39;Elemento sem URL n&#227;o est&#225; no DOM atual (poss&#237;vel item de outra p&#225;gina).&#39;);
+        }
+
+        if (typeof liveEl.click === &#39;function&#39;) {
+          liveEl.click();
+        } else {
+          liveEl.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+        }
+        return;
+      }
+      
+      // Download direto via Fetch + Blob (melhor compatibilidade, sem abrir abas)
+      try {
+        // Fazer fetch do arquivo
+        const response = await fetch(url, { credentials: &#39;include&#39;, redirect: &#39;follow&#39; });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const contentType = (response.headers.get(&#39;content-type&#39;) || &#39;&#39;).toLowerCase();
+        if (/text\/html|application\/json|text\/plain/.test(contentType)) {
+          throw new Error(`Resposta n&#227;o-bin&#225;ria (${contentType || &#39;sem content-type&#39;})`);
+        }
+        
+        // Receber como octet-stream para for&#231;ar download (n&#227;o abrir PDF)
+        const blob = await response.blob();
+        if (await blobLooksLikeHtml(blob)) {
+          throw new Error(&#39;Resposta HTML recebida em vez de arquivo bin&#225;rio&#39;);
+        }
+
+        const downloadBlob = new Blob([blob], { type: &#39;application/octet-stream&#39; });
+        const blobUrl = URL.createObjectURL(downloadBlob);
+        
+        // Extrair nome por header/URL e, se faltar, usar titulo da linha.
+        let fileName = fileNameFromContentDisposition(response.headers.get(&#39;content-disposition&#39;));
+        if (!fileName) fileName = fileNameFromUrl(response.url || url);
+        if (!fileName) fileName = fileNameFromUrl(url);
+
+        fileName = resolveDownloadFileName(it, fileName, titleFallback, el);
+        
+        // Criar elemento &lt;a&gt; com blob URL
+        const a = document.createElement(&#39;a&#39;);
+        a.href = blobUrl;
+        a.download = fileName;
+        a.style.display = &#39;none&#39;; // Garantir que n&#227;o seja vis&#237;vel
+        
+        // Adicionar ao DOM e clicar
+        document.body.appendChild(a);
+        a.click();
+        
+        // Limpar
+        await wait(100);
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        
+      } catch (e) {
+        console.warn(&#39;[BAIXATRON] ⚠️ Erro no Fetch, tentando fallback:&#39;, e.message);
+
+        // Fallback 1: prioriza clique no elemento original para fluxos JS (ex.: wpdm-download)
+        try {
+          const liveEl = resolveLiveElementForItem(it) || el;
+          if (!liveEl || !liveEl.isConnected) throw e;
+
+          if (typeof liveEl.click === &#39;function&#39;) {
+            liveEl.click();
+          } else {
+            liveEl.dispatchEvent(new MouseEvent(&#39;click&#39;, { bubbles: true, cancelable: true, view: window }));
+          }
+          return;
+        } catch (e1) {
+          // segue para fallback por URL
+        }
+        
+        // Fallback 2: tentar com URL direto (se mesmo dom&#237;nio)
+        try {
+          const a = document.createElement(&#39;a&#39;);
+          a.href = url;
+          
+          let fileName = fileNameFromUrl(url);
+
+          fileName = resolveDownloadFileName(it, fileName, titleFallback, el);
+          
+          a.download = fileName;
+          a.style.display = &#39;none&#39;;
+          document.body.appendChild(a);
+          a.click();
+          
+          await wait(100);
+          document.body.removeChild(a);
+          
+        } catch (e2) {
+          // Fallback 3: abrir URL (&#250;ltimo recurso)
+          if (url) {
+            try { 
+              window.open(url, &#39;_blank&#39;); 
+            } catch (e3) {
+              throw e;
+            }
+          } else {
+            throw e;
+          }
+        }
+      }
+    };
+
+    const processLoop = async () =&gt; {
+      if (!state.running) return;
+
+      while (runningSet.size &lt; opts.concurrency &amp;&amp; state.queue.length &gt; 0) {
+        const next = pullNext();
+        if (!next) break;
+        runItem(next);
+      }
+
+      if (!state.running) return;
+
+      if (state.queue.length === 0 &amp;&amp; runningSet.size === 0) {
+        state.running = false;
+        updateUI();
+        return;
+      }
+
+      clearTimeout(state.timer);
+      state.timer = setTimeout(processLoop, opts.delayMs);
+    };
+
+    const pullNext = () =&gt; {
+      const originalLength = state.queue.length;
+      const skipped = [];
+      
+      for (let i = 0; i &lt; originalLength &amp;&amp; state.processed.length &lt; opts.maxClicks; i++) {
+        const candidate = state.queue.shift();
+        if (!candidate) break;
+        
+        if (state.selectedKeys.has(candidate.key)) {
+          // Recoloca items pulados na fila
+          state.queue.unshift(...skipped);
+          return candidate;
+        }
+        skipped.push(candidate);
+      }
+      
+      // Recoloca todos os items pulados
+      state.queue.unshift(...skipped);
+      return null;
+    };
+
+    const waitForCompletion = async () =&gt; {
+      if (!opts.waitForDownload) return;
+      console.log(&#39;[BAIXATRON] ⏳ Aguardando download completar...&#39;);
+      await wait(opts.waitForDownloadTimeout);
+      console.log(&#39;[BAIXATRON] ⏱️ Timeout atingido, prosseguindo...&#39;);
+    };
+
+    const runItem = async it =&gt; {
+      runningSet.add(it.key);
+      const itemStartTime = Date.now();
+      updateUI();
+      console.log(&#39;[BAIXATRON] 🎯 Iniciando:&#39;, it.text?.slice(0, 60));
+      try {
+        await safeClick(it);
+        console.log(&#39;[BAIXATRON] 🖱️ Click executado, aguardando...&#39;);
+        await waitForCompletion();
+        const itemDuration = Date.now() - itemStartTime;
+        it.duration = itemDuration;
+        state.doneKeys.add(it.key);
+        state.processed.push(it);
+        console.log(&#39;[BAIXATRON] ✅ Download conclu&#237;do:&#39;, it.text?.slice(0, 50));
+      } catch (err) {
+        it.retries = (it.retries || 0) + 1;
+        console.warn(`[BAIXATRON] ⚠️ Erro (tentativa ${it.retries}/${opts.maxRetries}):`, it.text?.slice(0, 50), &#39;-&#39;, err.message);
+        if (it.retries &lt;= opts.maxRetries) {
+          console.log(&#39;[BAIXATRON] 🔄 Recolocando na fila para retry...&#39;);
+          state.queue.push(it);
+        } else {
+          console.error(&#39;[BAIXATRON] ❌ Item descartado ap&#243;s max retries:&#39;, it.text?.slice(0, 50));
+          state.errors.push({ key: it.key, text: it.text, err: String(err) });
+        }
+      } finally {
+        runningSet.delete(it.key);
+        console.log(&#39;[BAIXATRON] ⏱️ Aguardando&#39;, opts.delayMs + &#39;ms...&#39;);
+        await wait(opts.delayMs);
+        updateUI();
+      }
+    };
+
+    // ============================================
+    // API P&#218;BLICA
+    // ============================================
+    const start = async () =&gt; {
+      if (state.running) return;
+      if (!state.queue.length) await scan();
+      
+      if (state.queue.length === 0) {
+        alert(&#39;[BAIXATRON] Nenhum arquivo na fila. Execute scan() primeiro.&#39;);
+        return;
+      }
+
+      state.running = true;
+      state.startedAt = new Date();
+      updateUI();
+      processLoop();
+    };
+
+    const stop = () =&gt; {
+      state.running = false;
+      clearTimeout(state.timer);
+      updateUI();
+    };
+
+    const reset = () =&gt; {
+      state.queue = [];
+      state.processed = [];
+      state.errors = [];
+      state.expandingTable = false;
+      state.doneKeys.clear();
+      state.queuedKeys.clear();
+      state.selectedKeys.clear();
+      state.itemIdByKey.clear();
+      state.nextItemId = 1;
+      state.running = false;
+      clearTimeout(state.timer);
+      updateUI();
+    };
+
+    const clearHistory = () =&gt; {
+      state.doneKeys.clear();
+      state.processed = [];
+      state.errors = [];
+      console.log(&#39;[BAIXATRON] 🗑️ Hist&#243;rico limpo! Escaneando novamente...&#39;);
+      updateUI();
+      // Escanear automaticamente ap&#243;s limpar hist&#243;rico
+      setTimeout(() =&gt; {
+        scan();
+      }, 100);
+    };
+
+    const setOptions = newOpts =&gt; { 
+      Object.assign(opts, newOpts || {});
+    };
+
+    const selectAll = () =&gt; {
+      state.queue.forEach(it =&gt; state.selectedKeys.add(it.key));
+      updateUI();
+    };
+
+    const deselectAll = () =&gt; {
+      state.selectedKeys.clear();
+      updateUI();
+    };
+
+    const toggleSelect = (key) =&gt; {
+      if (state.selectedKeys.has(key)) {
+        state.selectedKeys.delete(key);
+      } else {
+        state.selectedKeys.add(key);
+      }
+      updateUI();
+    };
+
+    const toggleTheme = () =&gt; {
+      const panel = document.getElementById(&#39;__dl-panel&#39;);
+      if (!panel) return;
+      
+      const isLightMode = panel.classList.contains(&#39;light-mode&#39;);
+      if (isLightMode) {
+        panel.classList.remove(&#39;light-mode&#39;);
+        localStorage.setItem(&#39;__dl-theme&#39;, &#39;dark&#39;);
+        document.getElementById(&#39;__dl-theme-toggle&#39;).textContent = &#39;🌙&#39;;
+      } else {
+        panel.classList.add(&#39;light-mode&#39;);
+        localStorage.setItem(&#39;__dl-theme&#39;, &#39;light&#39;);
+        document.getElementById(&#39;__dl-theme-toggle&#39;).textContent = &#39;☀️&#39;;
+      }
+
+      syncItemsModalTheme();
+    };
+
+    const openBlockedFrames = () =&gt; {
+      const frames = (state.blockedFrames || []).filter(src =&gt; src &amp;&amp; src !== &#39;(iframe sem src)&#39;);
+      if (!frames.length) {
+        console.warn(&#39;[BAIXATRON] Nenhum iframe bloqueado com URL dispon&#237;vel para abrir.&#39;);
+        return [];
+      }
+
+      const opened = [];
+      for (const src of frames) {
+        try {
+          const abs = toAbs(src) || src;
+          const win = window.open(abs, &#39;_blank&#39;, &#39;noopener,noreferrer&#39;);
+          if (win) opened.push(abs);
+        } catch (err) {
+          console.warn(&#39;[BAIXATRON] Falha ao abrir iframe:&#39;, src, err?.message || err);
+        }
+      }
+
+      if (opened.length &gt; 0) {
+        console.log(&#39;[BAIXATRON] ↗ Iframe(s) aberto(s):&#39;, opened.length);
+      } else {
+        console.warn(&#39;[BAIXATRON] O navegador bloqueou a abertura autom&#225;tica. Permita pop-ups e tente novamente.&#39;);
+      }
+
+      return opened;
+    };
+
+    const getEstimatedTime = () =&gt; {
+      if (!state.running || state.processed.length === 0) return null;
+      
+      // Calcular tempo m&#233;dio por item
+      const processedWithTime = state.processed.filter(it =&gt; it.duration);
+      if (processedWithTime.length === 0) return null;
+      
+      const totalDuration = processedWithTime.reduce((sum, it) =&gt; sum + it.duration, 0);
+      const avgDuration = totalDuration / processedWithTime.length;
+      
+      // Itens restantes (fila + ativos)
+      const remaining = state.queue.length + runningSet.size;
+      const estimatedMs = remaining * avgDuration;
+      
+      return Math.ceil(estimatedMs / 1000); // retorna em segundos
+    };
+
+    const formatTime = (seconds) =&gt; {
+      if (!seconds || seconds &lt;= 0) return &#39;--:--&#39;;
+      
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      if (hrs &gt; 0) {
+        return `${hrs}:${String(mins).padStart(2, &#39;0&#39;)}:${String(secs).padStart(2, &#39;0&#39;)}`;
+      }
+      return `${mins}:${String(secs).padStart(2, &#39;0&#39;)}`;
+    };
+
+    window.__dl = { 
+      start, stop, reset, scan, clearHistory,
+      expandTable,
+      applyQueueNameFilter,
+      applyQueueTypeFilter,
+      openBlockedFrames,
+      selectAll, deselectAll, toggleSelect,
+      setOptions, opts, state,
+      toggleTheme
+    };
+
+    // ============================================
+    // PAINEL VISUAL - HTML/CSS
+    // ============================================
+    const CSS = `
+      * {
+        box-sizing: border-box;
+      }
+
+      #__dl-panel {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 450px;
+        max-height: 85vh;
+        background: #1a1a1a;
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif;
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideIn 0.3s ease;
+        color: #ffffff;
+      }
+
+      @keyframes slideIn {
+        from { transform: translateX(500px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      #__dl-header {
+        background: #2a2a2a;
+        color: #ffffff;
+        padding: 14px 16px;
+        font-weight: 600;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #333333;
+        cursor: move;
+        user-select: none;
+      }
+
+      #__dl-close {
+        background: transparent;
+        border: none;
+        color: #888888;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 20px;
+        transition: all 0.2s;
+      }
+
+      #__dl-close:hover {
+        color: #ffffff;
+        background: #333333;
+      }
+
+      #__dl-theme-toggle {
+        background: transparent;
+        border: none;
+        color: #888888;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 16px;
+        transition: all 0.2s;
+        margin-right: 4px;
+      }
+
+      #__dl-theme-toggle:hover {
+        color: #ffffff;
+        background: #333333;
+      }
+
+      /* LIGHT MODE */
+      #__dl-panel.light-mode {
+        background: #f5f5f5;
+        color: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode #__dl-header {
+        background: #ffffff;
+        color: #1a1a1a;
+        border-bottom-color: #ddd;
+      }
+
+      #__dl-panel.light-mode #__dl-close,
+      #__dl-panel.light-mode #__dl-theme-toggle {
+        color: #666666;
+      }
+
+      #__dl-panel.light-mode #__dl-close:hover,
+      #__dl-panel.light-mode #__dl-theme-toggle:hover {
+        color: #1a1a1a;
+        background: #e8e8e8;
+      }
+
+      #__dl-panel.light-mode #__dl-stats {
+        background: #ffffff;
+        border-bottom-color: #ddd;
+      }
+
+      #__dl-panel.light-mode .stat-label {
+        color: #666666;
+      }
+
+      #__dl-panel.light-mode .stat-value {
+        color: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode #__dl-progress {
+        border-bottom-color: #ddd;
+      }
+
+      #__dl-panel.light-mode .progress-bar {
+        background: #ddd;
+      }
+
+      #__dl-panel.light-mode .progress-fill {
+        background: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode #__dl-controls {
+        border-bottom-color: #ddd;
+      }
+
+      #__dl-panel.light-mode .btn {
+        border-color: #ddd;
+        background: #ffffff;
+        color: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode .btn:hover:not(:disabled) {
+        border-color: #999;
+        background: #f0f0f0;
+      }
+
+      #__dl-panel.light-mode .btn-primary {
+        background: #1a1a1a;
+        color: #ffffff;
+        border-color: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode .btn-primary:hover:not(:disabled) {
+        background: #333333;
+        border-color: #333333;
+      }
+
+      #__dl-panel.light-mode #__dl-list {
+        background: #f5f5f5;
+      }
+
+      #__dl-panel.light-mode .download-item {
+        background: #ffffff;
+        border-color: #ddd;
+        color: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode .download-item:hover {
+        background: #f9f9f9;
+        border-color: #999;
+      }
+
+      #__dl-panel.light-mode .download-item.done {
+        background: #f0f8f0;
+        border-color: #4CAF50;
+      }
+
+      #__dl-panel.light-mode .download-item.processing {
+        background: #fff9f0;
+        border-color: #ff9800;
+      }
+
+      #__dl-panel.light-mode .download-checkbox {
+        accent-color: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode .download-name {
+        color: #333333;
+      }
+
+      #__dl-panel.light-mode .download-icon {
+        color: #666666;
+      }
+
+      #__dl-panel.light-mode .download-type {
+        background: #e9ecef;
+        border-color: #ced4da;
+        color: #495057;
+      }
+
+      #__dl-panel.light-mode .speed-control {
+        border-top-color: #ddd;
+      }
+
+      #__dl-panel.light-mode .speed-label {
+        color: #666666;
+      }
+
+      #__dl-panel.light-mode input[type=&quot;range&quot;] {
+        background: #ddd;
+      }
+
+      #__dl-panel.light-mode input[type=&quot;range&quot;]::-webkit-slider-thumb {
+        background: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode input[type=&quot;range&quot;]::-moz-range-thumb {
+        background: #1a1a1a;
+      }
+
+      #__dl-panel.light-mode #__dl-list::-webkit-scrollbar-track {
+        background: #f5f5f5;
+      }
+
+      #__dl-panel.light-mode #__dl-list::-webkit-scrollbar-thumb {
+        background: #bbb;
+      }
+
+      #__dl-panel.light-mode #__dl-list::-webkit-scrollbar-thumb:hover {
+        background: #999;
+      }
+
+      #__dl-panel.light-mode #__dl-warning {
+        background: #fff3cd !important;
+        color: #856404 !important;
+        border-left-color: #ffc107 !important;
+      }
+
+      #__dl-warning {
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      #__dl-warning:hover {
+        opacity: 0.8;
+      }
+
+      #__dl-warning.hidden {
+        display: none !important;
+      }
+
+      #__dl-stats {
+        background: #242424;
+        padding: 12px;
+        font-size: 11px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        border-bottom: 1px solid #333333;
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .stat-label {
+        color: #888888;
+        font-weight: 500;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-value {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      #__dl-progress {
+        padding: 12px;
+        border-bottom: 1px solid #333333;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #333333;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: #ffffff;
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 4px;
+      }
+
+      #__dl-progress-text {
+        font-size: 9px;
+        color: #000000;
+        font-weight: 600;
+        display: none;
+      }
+
+      #__dl-controls {
+        padding: 12px;
+        display: flex;
+        gap: 6px;
+        border-bottom: 1px solid #333333;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex: 1 1 120px;
+        min-width: 120px;
+        max-width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #333333;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #2a2a2a;
+        color: #ffffff;
+        white-space: normal;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .btn:hover:not(:disabled) {
+        border-color: #555555;
+        background: #333333;
+      }
+
+      .btn-primary {
+        background: #ffffff;
+        color: #000000;
+        border-color: #ffffff;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #f0f0f0;
+        border-color: #f0f0f0;
+      }
+
+      .btn-danger {
+        background: #dc3545;
+        color: #ffffff;
+        border-color: #dc3545;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        background: #c82333;
+        border-color: #c82333;
+      }
+
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      #__dl-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px;
+      }
+
+      .download-item {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+        background: #242424;
+        border: 1px solid #333333;
+        transition: all 0.2s;
+        gap: 8px;
+      }
+
+      .download-item:hover {
+        background: #2a2a2a;
+        border-color: #444444;
+      }
+
+      .download-item.done {
+        background: #1a3a1a;
+        border-color: #4CAF50;
+      }
+
+      .download-item.processing {
+        background: #3a2a1a;
+        border-color: #ff9800;
+      }
+
+      .download-checkbox {
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+        accent-color: #ffffff;
+      }
+
+      .download-name {
+        flex: 1;
+        font-size: 11px;
+        color: #cccccc;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .download-item.done .download-name {
+        color: #4CAF50;
+      }
+
+      .download-item.processing .download-name {
+        color: #ff9800;
+      }
+
+      .download-icon {
+        font-size: 11px;
+        color: #888888;
+        min-width: 12px;
+        text-align: center;
+      }
+
+      .download-type {
+        min-width: 40px;
+        text-align: center;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 10px;
+        background: #1f2937;
+        border: 1px solid #374151;
+        color: #d1d5db;
+      }
+
+      .download-item.done .download-icon {
+        color: #4CAF50;
+      }
+
+      .download-item.processing .download-icon {
+        color: #ff9800;
+      }
+
+      .speed-control {
+        padding: 12px;
+        border-top: 1px solid #333333;
+        font-size: 11px;
+      }
+
+      .speed-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        color: #888888;
+        font-weight: 500;
+      }
+
+      input[type=&quot;range&quot;] {
+        width: 100%;
+        height: 4px;
+        border-radius: 2px;
+        background: #333333;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      input[type=&quot;range&quot;]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ffffff;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      input[type=&quot;range&quot;]::-webkit-slider-thumb:hover {
+        width: 14px;
+        height: 14px;
+      }
+
+      input[type=&quot;range&quot;]::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ffffff;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+
+      input[type=&quot;range&quot;]::-moz-range-thumb:hover {
+        width: 14px;
+        height: 14px;
+      }
+
+      #__dl-list::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      #__dl-list::-webkit-scrollbar-track {
+        background: #1a1a1a;
+      }
+
+      #__dl-list::-webkit-scrollbar-thumb {
+        background: #444444;
+        border-radius: 3px;
+      }
+
+      #__dl-list::-webkit-scrollbar-thumb:hover {
+        background: #555555;
+      }
+
+      #__dl-list-summary {
+        padding: 10px 12px;
+        border-bottom: 1px solid #333333;
+        color: #aaaaaa;
+        font-size: 11px;
+      }
+
+      #__dl-panel.light-mode #__dl-list-summary {
+        border-bottom-color: #ddd;
+        color: #666666;
+        background: #fafafa;
+      }
+
+      #__dl-items-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 1000000;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+
+      #__dl-items-modal.hidden {
+        display: none;
+      }
+
+      #__dl-items-modal .modal-card {
+        width: min(920px, 100%);
+        max-height: 88vh;
+        background: #1a1a1a;
+        color: #ffffff;
+        border: 1px solid #333333;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #__dl-items-modal .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid #333333;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      #__dl-items-modal .modal-body {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 0;
+      }
+
+      #__dl-filter-input {
+        width: 100%;
+        min-height: 70px;
+        resize: vertical;
+        border-radius: 6px;
+        border: 1px solid #3a3a3a;
+        background: #101010;
+        color: #f0f0f0;
+        padding: 8px;
+        font-size: 12px;
+      }
+
+      #__dl-filter-help {
+        color: #999999;
+        font-size: 10px;
+      }
+
+      #__dl-modal-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      #__dl-modal-summary {
+        font-size: 11px;
+        color: #bbbbbb;
+      }
+
+      #__dl-modal-list {
+        min-height: 160px;
+        max-height: 46vh;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      #__dl-modal-list .download-item {
+        margin-bottom: 6px;
+      }
+
+      .download-id {
+        min-width: 62px;
+        font-size: 10px;
+        color: #9ec5fe;
+        font-weight: 600;
+      }
+
+      #__dl-items-modal.light-mode .modal-card {
+        background: #ffffff;
+        color: #1a1a1a;
+        border-color: #dddddd;
+      }
+
+      #__dl-items-modal.light-mode .modal-header {
+        border-bottom-color: #dddddd;
+      }
+
+      #__dl-items-modal.light-mode #__dl-filter-input {
+        background: #ffffff;
+        color: #1a1a1a;
+        border-color: #cccccc;
+      }
+
+      #__dl-items-modal.light-mode #__dl-filter-help,
+      #__dl-items-modal.light-mode #__dl-modal-summary {
+        color: #666666;
+      }
+
+      #__dl-items-modal.light-mode .download-id {
+        color: #0d6efd;
+      }
+
+      @media (max-width: 600px) {
+        #__dl-panel {
+          width: calc(100% - 20px);
+          right: 10px;
+          left: 10px;
+          max-height: 80vh;
+        }
+
+        #__dl-controls {
+          padding: 8px;
+          gap: 4px;
+        }
+
+        .btn {
+          flex: 1 1 48%;
+          min-width: 0;
+          padding: 8px 10px;
+          font-size: 10px;
+        }
+
+        #__dl-items-modal {
+          padding: 8px;
+        }
+
+        #__dl-items-modal .modal-card {
+          max-height: 92vh;
+        }
+
+        #__dl-modal-list {
+          max-height: 52vh;
+        }
+      }
+    `;
+
+    const syncItemsModalTheme = () =&gt; {
+      const panel = document.getElementById(&#39;__dl-panel&#39;);
+      const modal = document.getElementById(&#39;__dl-items-modal&#39;);
+      if (!panel || !modal) return;
+      modal.classList.toggle(&#39;light-mode&#39;, panel.classList.contains(&#39;light-mode&#39;));
+    };
+
+    const renderItemsModalList = () =&gt; {
+      const listEl = document.getElementById(&#39;__dl-modal-list&#39;);
+      const summaryEl = document.getElementById(&#39;__dl-modal-summary&#39;);
+      if (!listEl || !summaryEl) return;
+
+      summaryEl.textContent = `Itens na fila: ${state.queue.length} | Selecionados: ${state.selectedKeys.size}`;
+      listEl.innerHTML = &#39;&#39;;
+
+      if (state.queue.length === 0) {
+        const empty = document.createElement(&#39;div&#39;);
+        empty.style.padding = &#39;12px&#39;;
+        empty.style.fontSize = &#39;12px&#39;;
+        empty.style.opacity = &#39;0.8&#39;;
+        empty.textContent = &#39;Nenhum item na fila. Execute [⊙] Escanear para carregar downloads.&#39;;
+        listEl.appendChild(empty);
+        return;
+      }
+
+      state.queue.forEach((it, idx) =&gt; {
+        const isSelected = state.selectedKeys.has(it.key);
+        const isProcessing = state.running &amp;&amp; idx === 0;
+        const isDone = state.doneKeys.has(it.key);
+        const displayId = String(it.itemId || (idx + 1)).padStart(4, &#39;0&#39;);
+        const itemType = normalizeFileTypeToken(it.fileType) || inferFileTypeFromUrl(it.url) || inferFileTypeFromElement(it.el, it.url) || &#39;n/a&#39;;
+        it.fileType = itemType;
+
+        const item = document.createElement(&#39;div&#39;);
+        item.className = &#39;download-item&#39;;
+        if (isDone) item.classList.add(&#39;done&#39;);
+        if (isProcessing) item.classList.add(&#39;processing&#39;);
+
+        item.innerHTML = `
+          &lt;input type=&quot;checkbox&quot; class=&quot;download-checkbox&quot; ${isSelected ? &#39;checked&#39; : &#39;&#39;}&gt;
+          &lt;span class=&quot;download-id&quot;&gt;ID ${displayId}&lt;/span&gt;
+          &lt;span class=&quot;download-type&quot;&gt;${itemType}&lt;/span&gt;
+          &lt;span class=&quot;download-name&quot; title=&quot;${it.text || &#39;&#39;}&quot;&gt;${it.text || &#39;(sem nome)&#39;}&lt;/span&gt;
+          &lt;span class=&quot;download-icon&quot;&gt;${isDone ? &#39;[✓]&#39; : isProcessing ? &#39;[~]&#39; : &#39;[ ]&#39;}&lt;/span&gt;
+        `;
+
+        const checkbox = item.querySelector(&#39;.download-checkbox&#39;);
+        if (checkbox) {
+          checkbox.onchange = () =&gt; toggleSelect(it.key);
+        }
+
+        listEl.appendChild(item);
+      });
+    };
+
+    const closeItemsModal = () =&gt; {
+      const modal = document.getElementById(&#39;__dl-items-modal&#39;);
+      if (!modal) return;
+      modal.classList.add(&#39;hidden&#39;);
+    };
+
+    const openItemsModal = () =&gt; {
+      const modal = document.getElementById(&#39;__dl-items-modal&#39;);
+      if (!modal) return;
+      syncItemsModalTheme();
+      renderItemsModalList();
+      modal.classList.remove(&#39;hidden&#39;);
+    };
+
+    const createItemsModal = () =&gt; {
+      const existing = document.getElementById(&#39;__dl-items-modal&#39;);
+      if (existing) existing.remove();
+
+      const modal = document.createElement(&#39;div&#39;);
+      modal.id = &#39;__dl-items-modal&#39;;
+      modal.className = &#39;hidden&#39;;
+      modal.innerHTML = `
+        &lt;div class=&quot;modal-card&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-label=&quot;Itens e filtros do Baixatron&quot;&gt;
+          &lt;div class=&quot;modal-header&quot;&gt;
+            &lt;span&gt;📋 Itens da Fila e Filtros&lt;/span&gt;
+            &lt;button class=&quot;btn&quot; id=&quot;btn-modal-close&quot; style=&quot;flex:0 0 auto; min-width:40px; padding:6px 10px;&quot;&gt;✕&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;modal-body&quot;&gt;
+            &lt;textarea id=&quot;__dl-filter-input&quot; placeholder=&quot;Digite nomes, IDs, faixas de ID ou tipos (ex.: pdf, csv, xml)...&quot;&gt;&lt;/textarea&gt;
+            &lt;div id=&quot;__dl-filter-help&quot;&gt;Separadores aceitos: quebra de linha, virgula, ponto e virgula e barra vertical. Para nome/ID: use [Manter/Remover Nomes]. Para tipo: use [Manter/Remover Tipos] com pdf,csv,doc,xml,txt etc.&lt;/div&gt;
+            &lt;div id=&quot;__dl-modal-actions&quot;&gt;
+              &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-keep&quot;&gt;[✓] Manter Nomes&lt;/button&gt;
+              &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-remove&quot;&gt;[✂] Remover Nomes&lt;/button&gt;
+              &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-keep-type&quot;&gt;[✓] Manter Tipos&lt;/button&gt;
+              &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-remove-type&quot;&gt;[✂] Remover Tipos&lt;/button&gt;
+              &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-select-all&quot;&gt;[+] Selecionar Todos&lt;/button&gt;
+              &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-deselect-all&quot;&gt;[-] Desmarcar Todos&lt;/button&gt;
+              &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-clear-filter&quot;&gt;[⌫] Limpar Campo&lt;/button&gt;
+            &lt;/div&gt;
+            &lt;div id=&quot;__dl-modal-summary&quot;&gt;&lt;/div&gt;
+            &lt;div id=&quot;__dl-modal-list&quot;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      `;
+
+      document.body.appendChild(modal);
+      syncItemsModalTheme();
+
+      const filterInput = modal.querySelector(&#39;#__dl-filter-input&#39;);
+
+      modal.querySelector(&#39;#btn-modal-close&#39;).onclick = () =&gt; closeItemsModal();
+      modal.querySelector(&#39;#btn-modal-clear-filter&#39;).onclick = () =&gt; {
+        if (filterInput) filterInput.value = &#39;&#39;;
+      };
+      modal.querySelector(&#39;#btn-modal-select-all&#39;).onclick = () =&gt; selectAll();
+      modal.querySelector(&#39;#btn-modal-deselect-all&#39;).onclick = () =&gt; deselectAll();
+      modal.querySelector(&#39;#btn-modal-keep&#39;).onclick = () =&gt; {
+        applyQueueNameFilter(&#39;keep&#39;, filterInput?.value || &#39;&#39;);
+      };
+      modal.querySelector(&#39;#btn-modal-remove&#39;).onclick = () =&gt; {
+        applyQueueNameFilter(&#39;remove&#39;, filterInput?.value || &#39;&#39;);
+      };
+      modal.querySelector(&#39;#btn-modal-keep-type&#39;).onclick = () =&gt; {
+        applyQueueTypeFilter(&#39;keep&#39;, filterInput?.value || &#39;&#39;);
+      };
+      modal.querySelector(&#39;#btn-modal-remove-type&#39;).onclick = () =&gt; {
+        applyQueueTypeFilter(&#39;remove&#39;, filterInput?.value || &#39;&#39;);
+      };
+
+      modal.addEventListener(&#39;click&#39;, e =&gt; {
+        if (e.target === modal) {
+          closeItemsModal();
+        }
+      });
+    };
+
+    window.__dl.openItemsModal = openItemsModal;
+
+    // ============================================
+    // RENDERIZAR PAINEL
+    // ============================================
+    const createPanel = () =&gt; {
+      const existing = document.getElementById(&#39;__dl-panel&#39;);
+      if (existing) existing.remove();
+
+      const panel = document.createElement(&#39;div&#39;);
+      panel.id = &#39;__dl-panel&#39;;
+      panel.innerHTML = `
+        &lt;div id=&quot;__dl-header&quot;&gt;
+          &lt;span&gt;👾 BAIXATRON 📡&lt;/span&gt;
+          &lt;div style=&quot;display: flex; gap: 4px;&quot;&gt;
+            &lt;button id=&quot;__dl-theme-toggle&quot; title=&quot;Alternar tema&quot;&gt;🌙&lt;/button&gt;
+            &lt;button id=&quot;__dl-close&quot;&gt;✕&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-warning&quot; style=&quot;background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 0; font-size: 11px; color: #856404; display: flex; gap: 8px; align-items: flex-start;&quot;&gt;
+          &lt;span style=&quot;font-size: 16px; flex-shrink: 0;&quot;&gt;⚠️&lt;/span&gt;
+          &lt;div style=&quot;flex: 1;&quot;&gt;
+            &lt;strong&gt;Aviso de Seguran&#231;a:&lt;/strong&gt;
+            &lt;p style=&quot;margin: 4px 0 0 0;&quot;&gt;&lt;strong&gt;O navegador pode pedir confirma&#231;&#227;o para downloads.&lt;/strong&gt; Op&#231;&#245;es:&lt;/p&gt;
+            &lt;ul style=&quot;margin: 4px 0 0 0; padding-left: 20px;&quot;&gt;
+              &lt;li&gt;Se aparecer caixa: marque &lt;strong&gt;&quot;Sempre fazer isso&quot;&lt;/strong&gt; (nem todos navegadores mostram)&lt;/li&gt;
+              &lt;li&gt;Sen&#227;o: confirme cada download ou configure prefer&#234;ncias do navegador&lt;/li&gt;
+              &lt;li&gt;Aumente o delay entre downloads se necess&#225;rio&lt;/li&gt;
+            &lt;/ul&gt;
+            &lt;p style=&quot;margin: 4px 0 0 0; font-size: 10px; opacity: 0.8;&quot;&gt;Clique aqui para fechar este aviso.&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-stats&quot;&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Fila&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-queue&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Ativos&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-active&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Processados&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-processed&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Selecionados&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-selected&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Erros&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-errors&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-progress&quot;&gt;
+          &lt;div style=&quot;display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;&quot;&gt;
+            &lt;span style=&quot;font-size: 11px; font-weight: 600;&quot; id=&quot;progress-percent&quot;&gt;0%&lt;/span&gt;
+            &lt;span style=&quot;font-size: 11px; color: #888;&quot; id=&quot;progress-time&quot;&gt;--:--&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;progress-bar&quot;&gt;
+            &lt;div class=&quot;progress-fill&quot; id=&quot;__dl-progress-fill&quot; style=&quot;width: 0%&quot;&gt;
+              &lt;span id=&quot;__dl-progress-text&quot;&gt;&lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-controls&quot;&gt;
+          &lt;button class=&quot;btn btn-primary&quot; id=&quot;btn-scan&quot;&gt;[⊙] Escanear&lt;/button&gt;
+          &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-expand-table&quot;&gt;[⇵] Tabela+P&#225;ginas&lt;/button&gt;
+          &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-open-iframes&quot;&gt;[↗] Abrir Iframe(s)&lt;/button&gt;
+          &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-open-items-modal&quot;&gt;[📋] Itens e Filtros&lt;/button&gt;
+          &lt;button class=&quot;btn btn-primary&quot; id=&quot;btn-start&quot;&gt;[▶] Iniciar&lt;/button&gt;
+          &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-stop&quot; disabled&gt;[⏸] Pausar&lt;/button&gt;
+          &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-select-all&quot;&gt;[+] Todos&lt;/button&gt;
+          &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-deselect-all&quot;&gt;[-] Nenhum&lt;/button&gt;
+          &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-clear-history&quot;&gt;[🗑️] Limpar Hist&#243;rico&lt;/button&gt;
+          &lt;button class=&quot;btn btn-danger&quot; id=&quot;btn-reset&quot;&gt;[↻] Reset Total&lt;/button&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-list-summary&quot;&gt;Use [📋] Itens e Filtros para ver a lista com IDs e aplicar filtros.&lt;/div&gt;
+
+        &lt;div class=&quot;speed-control&quot;&gt;
+          &lt;div class=&quot;speed-label&quot;&gt;
+            &lt;span&gt;Velocidade&lt;/span&gt;
+            &lt;span id=&quot;speed-value&quot;&gt;800ms&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;input type=&quot;range&quot; id=&quot;speed-slider&quot; min=&quot;200&quot; max=&quot;3000&quot; step=&quot;100&quot; value=&quot;800&quot;&gt;
+        &lt;/div&gt;
+      `;
+
+      const style = document.createElement(&#39;style&#39;);
+      style.textContent = CSS;
+      document.head.appendChild(style);
+
+      document.body.appendChild(panel);
+
+      document.getElementById(&#39;__dl-close&#39;).onclick = () =&gt; {
+        panel.remove();
+        const modal = document.getElementById(&#39;__dl-items-modal&#39;);
+        if (modal) modal.remove();
+      };
+      document.getElementById(&#39;__dl-theme-toggle&#39;).onclick = () =&gt; toggleTheme();
+      document.getElementById(&#39;__dl-warning&#39;).onclick = () =&gt; {
+        document.getElementById(&#39;__dl-warning&#39;).classList.add(&#39;hidden&#39;);
+        localStorage.setItem(&#39;__dl-warning-closed&#39;, &#39;true&#39;);
+      };
+      document.getElementById(&#39;btn-scan&#39;).onclick = () =&gt; { scan(); };
+      document.getElementById(&#39;btn-expand-table&#39;).onclick = () =&gt; { expandTable(); };
+      document.getElementById(&#39;btn-open-iframes&#39;).onclick = () =&gt; { openBlockedFrames(); };
+      document.getElementById(&#39;btn-open-items-modal&#39;).onclick = () =&gt; openItemsModal();
+      document.getElementById(&#39;btn-start&#39;).onclick = () =&gt; start();
+      document.getElementById(&#39;btn-stop&#39;).onclick = () =&gt; stop();
+      document.getElementById(&#39;btn-select-all&#39;).onclick = () =&gt; selectAll();
+      document.getElementById(&#39;btn-deselect-all&#39;).onclick = () =&gt; deselectAll();
+      document.getElementById(&#39;btn-clear-history&#39;).onclick = () =&gt; { 
+        if (confirm(&#39;Limpar hist&#243;rico de downloads? Isso permitir&#225; escanear novamente todos os arquivos.&#39;)) clearHistory(); 
+      };
+      document.getElementById(&#39;btn-reset&#39;).onclick = () =&gt; { 
+        if (confirm(&#39;Resetar TUDO (fila + hist&#243;rico)?&#39;)) reset(); 
+      };
+      
+      document.getElementById(&#39;speed-slider&#39;).onchange = (e) =&gt; {
+        const value = parseInt(e.target.value);
+        opts.delayMs = value;
+        document.getElementById(&#39;speed-value&#39;).textContent = value + &#39;ms&#39;;
+      };
+
+      enableDrag(panel, document.getElementById(&#39;__dl-header&#39;));
+      
+      // Verificar se aviso foi fechado antes
+      if (localStorage.getItem(&#39;__dl-warning-closed&#39;) === &#39;true&#39;) {
+        document.getElementById(&#39;__dl-warning&#39;).classList.add(&#39;hidden&#39;);
+      }
+      
+      // Aplicar tema salvo
+      const savedTheme = localStorage.getItem(&#39;__dl-theme&#39;) || &#39;dark&#39;;
+      if (savedTheme === &#39;light&#39;) {
+        panel.classList.add(&#39;light-mode&#39;);
+        document.getElementById(&#39;__dl-theme-toggle&#39;).textContent = &#39;☀️&#39;;
+      } else {
+        document.getElementById(&#39;__dl-theme-toggle&#39;).textContent = &#39;🌙&#39;;
+      }
+
+      createItemsModal();
+
+      updateUI();
+    };
+
+    // ============================================
+    // ARRASTAR PAINEL
+    // ============================================
+    const enableDrag = (panel, handle) =&gt; {
+      if (!panel || !handle) return;
+
+      const dragState = { active: false, offsetX: 0, offsetY: 0 };
+
+      const onMove = e =&gt; {
+        if (!dragState.active) return;
+        const x = e.clientX - dragState.offsetX;
+        const y = e.clientY - dragState.offsetY;
+        panel.style.right = &#39;&#39;;
+        panel.style.left = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, x)) + &#39;px&#39;;
+        panel.style.top = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, y)) + &#39;px&#39;;
+      };
+
+      const onUp = () =&gt; {
+        dragState.active = false;
+        document.removeEventListener(&#39;mousemove&#39;, onMove);
+        document.removeEventListener(&#39;mouseup&#39;, onUp);
+      };
+
+      handle.addEventListener(&#39;mousedown&#39;, e =&gt; {
+        dragState.active = true;
+        dragState.offsetX = e.clientX - panel.getBoundingClientRect().left;
+        dragState.offsetY = e.clientY - panel.getBoundingClientRect().top;
+        document.addEventListener(&#39;mousemove&#39;, onMove);
+        document.addEventListener(&#39;mouseup&#39;, onUp);
+      });
+    };
+
+    // ============================================
+    // ATUALIZAR PAINEL
+    // ============================================
+    const updateUI = () =&gt; {
+      const panel = document.getElementById(&#39;__dl-panel&#39;);
+      if (!panel) return;
+
+      document.getElementById(&#39;stat-queue&#39;).textContent = state.queue.length;
+      document.getElementById(&#39;stat-active&#39;).textContent = runningSet.size;
+      document.getElementById(&#39;stat-processed&#39;).textContent = state.processed.length;
+      document.getElementById(&#39;stat-selected&#39;).textContent = state.selectedKeys.size;
+      document.getElementById(&#39;stat-errors&#39;).textContent = state.errors.length;
+
+      const total = state.processed.length + state.queue.length + runningSet.size;
+      const percent = total &gt; 0 ? Math.round((state.processed.length / total) * 100) : 0;
+      const progressFill = document.getElementById(&#39;__dl-progress-fill&#39;);
+      progressFill.style.width = percent + &#39;%&#39;;
+      document.getElementById(&#39;__dl-progress-text&#39;).textContent = percent + &#39;%&#39;;
+      
+      // Atualizar porcentagem e tempo estimado
+      const percentEl = document.getElementById(&#39;progress-percent&#39;);
+      const timeEl = document.getElementById(&#39;progress-time&#39;);
+      if (percentEl) percentEl.textContent = percent + &#39;%&#39;;
+      if (timeEl) {
+        const estimatedSeconds = getEstimatedTime();
+        if (estimatedSeconds &amp;&amp; state.running) {
+          timeEl.textContent = &#39;⏱️ &#39; + formatTime(estimatedSeconds);
+        } else if (state.running) {
+          timeEl.textContent = &#39;⏱️ calculando...&#39;;
+        } else {
+          timeEl.textContent = &#39;--:--&#39;;
+        }
+      }
+
+      document.getElementById(&#39;btn-start&#39;).disabled = state.running || state.queue.length === 0;
+      document.getElementById(&#39;btn-stop&#39;).disabled = !state.running;
+      document.getElementById(&#39;btn-scan&#39;).disabled = state.running;
+
+      const modalBtn = document.getElementById(&#39;btn-open-items-modal&#39;);
+      if (modalBtn) modalBtn.disabled = false;
+
+      const expandBtn = document.getElementById(&#39;btn-expand-table&#39;);
+      if (expandBtn) {
+        expandBtn.disabled = state.running || state.expandingTable;
+        expandBtn.textContent = state.expandingTable ? &#39;[...] Expandindo...&#39; : &#39;[⇵] Tabela+P&#225;ginas&#39;;
+      }
+
+      const openIframesBtn = document.getElementById(&#39;btn-open-iframes&#39;);
+      if (openIframesBtn) {
+        const totalBlocked = state.blockedFrames.filter(src =&gt; src &amp;&amp; src !== &#39;(iframe sem src)&#39;).length;
+        openIframesBtn.disabled = totalBlocked === 0;
+        openIframesBtn.textContent = totalBlocked &gt; 0 ? `[↗] Abrir Iframe(s) (${totalBlocked})` : &#39;[↗] Abrir Iframe(s)&#39;;
+      }
+
+      const listSummary = document.getElementById(&#39;__dl-list-summary&#39;);
+      if (listSummary) {
+        listSummary.textContent = `Fila atual: ${state.queue.length} item(ns) | Selecionados: ${state.selectedKeys.size}. Abra [📋] Itens e Filtros para gerenciar.`;
+      }
+
+      renderItemsModalList();
+    };
+
+    // ============================================
+    // INICIALIZA&#199;&#195;O
+    // ============================================
+    console.clear();
+    console.log(&#39;%c👾 BAIXATRON v3.1 ATIVADO 📡&#39;, &#39;color: #00ff00; font-size: 14px; font-weight: bold&#39;);
+    console.log(&#39;%cO alien invasor de downloads est&#225; pronto!&#39;, &#39;color: #666; font-size: 12px&#39;);
+    console.log(&#39;%cComandos dispon&#237;veis: __dl.scan(), __dl.expandTable(), __dl.applyQueueNameFilter(), __dl.applyQueueTypeFilter(), __dl.openBlockedFrames(), __dl.start(), __dl.stop(), __dl.reset()&#39;, &#39;color: #666; font-size: 11px&#39;);
+
+    if (document.readyState === &#39;loading&#39;) {
+      document.addEventListener(&#39;DOMContentLoaded&#39;, createPanel);
+    } else {
+      createPanel();
+    }
+
+  })();
+</textarea>
+  <script src="../assets/script-shell.js"></script>
+  <script src="../assets/script-js-page.js"></script>
+</body>
+</html>

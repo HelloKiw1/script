@@ -5,7 +5,10 @@
     { id: 'extractron', label: 'Extractron', icon: 'file-search', href: 'extractron/extractron.html' },
     { id: 'sizetron', label: 'Sizetron', icon: 'compress', href: 'sizetron/sizetron.html' },
     { id: 'imagetron', label: 'Imagetron', icon: 'image', href: 'imagetron/imagetron.html' },
-    { id: 'banner', label: 'Banner', icon: 'layout', href: 'Banner/banner-composer.html' }
+    { id: 'banner', label: 'Banner', icon: 'layout', href: 'Banner/banner-composer.html' },
+    { id: 'baixatron', label: 'Baixatron', icon: 'download', href: 'baixatron/baixatron.html' },
+    { id: 'marcelo', label: 'Marcelo', icon: 'form', href: 'formtron/marcelo.html' },
+    { id: 'noticias-js', label: 'Noticias JS', icon: 'news', href: 'extractron/extractron_noticias.html' }
   ];
 
   const storage = {
@@ -32,10 +35,13 @@
     const path = window.location.pathname.replace(/\\/g, '/').toLowerCase();
     if (path.endsWith('/index.html') || /\/script\/?$/.test(path)) return 'home';
     if (path.includes('/atricon/')) return 'atricon';
+    if (path.includes('/extractron/extractron_noticias')) return 'noticias-js';
     if (path.includes('/extractron/')) return 'extractron';
     if (path.includes('/sizetron/')) return 'sizetron';
     if (path.includes('/imagetron/')) return 'imagetron';
     if (path.includes('/banner/')) return 'banner';
+    if (path.includes('/baixatron/')) return 'baixatron';
+    if (path.includes('/formtron/marcelo')) return 'marcelo';
     return '';
   }
 
@@ -67,8 +73,20 @@
     save(storage.theme, theme);
     save('atricon-theme', theme);
 
+    updateThemeControls(theme);
+
     const label = document.querySelector('[data-shell-theme-label]');
     if (label) label.textContent = theme === 'dark' ? 'Modo claro' : 'Modo escuro';
+  }
+
+  function updateThemeControls(theme) {
+    const button = document.querySelector('[data-shell-theme]');
+    if (!button) return;
+
+    const nextModeLabel = theme === 'dark' ? 'modo claro' : 'modo escuro';
+    button.innerHTML = theme === 'dark' ? themeIconSvg('moon') : themeIconSvg('sun');
+    button.setAttribute('title', `Alternar para ${nextModeLabel}`);
+    button.setAttribute('aria-label', `Alternar para ${nextModeLabel}`);
   }
 
   function setThemeStylesheet(theme) {
@@ -111,9 +129,20 @@
       'file-search': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="11" cy="14" r="3"/><path d="m13.2 16.2 2.3 2.3"/>',
       compress: '<path d="M8 3v5H3"/><path d="M16 3v5h5"/><path d="M3 16h5v5"/><path d="M21 16h-5v5"/><path d="M8 8 3 3"/><path d="m16 8 5-5"/><path d="m8 16-5 5"/><path d="m16 16 5 5"/>',
       image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="10" r="2"/><path d="m21 16-5-5L5 19"/>',
-      layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M9 20V9"/>'
+      layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M9 20V9"/>',
+      download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+      form: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>',
+      news: '<path d="M4 5h13a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z"/><path d="M8 9h7"/><path d="M8 13h8"/><path d="M8 17h5"/>'
     };
     return `<svg class="script-shell-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.home}</svg>`;
+  }
+
+  function themeIconSvg(name) {
+    const icons = {
+      sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+      moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3c0 5 3.79 8.79 8.79 8.79"/>'
+    };
+    return `<svg class="script-shell-theme-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.sun}</svg>`;
   }
 
   function buildShell() {
@@ -128,7 +157,7 @@
       <div class="script-shell-rail">
         <button class="script-shell-toggle" type="button" data-shell-toggle aria-expanded="false" title="Abrir menu">></button>
         <div class="script-shell-mark">Script</div>
-        <button class="script-shell-theme" type="button" data-shell-theme title="Alternar tema">T</button>
+        <button class="script-shell-theme" type="button" data-shell-theme aria-label="Alternar tema" title="Alternar tema"></button>
       </div>
       <div class="script-shell-panel">
         <div class="script-shell-title">

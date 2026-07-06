@@ -182,3 +182,25 @@ html[data-script-theme="dark"] body.script-shell-ready :where(
 ) {
   background: var(--color-primary) !important;
 }
+
+html[data-script-theme="dark"] body.script-shell-ready .metrics-drawer-panel {
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--color-neutral) 44%, transparent), transparent 120px),
+    color-mix(in oklch, var(--color-base-100) 90%, black 10%) !important;
+  border-color: color-mix(in oklch, var(--color-base-content) 14%, transparent) !important;
+  box-shadow: 0 14px 34px rgb(0 0 0 / .34) !important;
+}
+
+html[data-script-theme="dark"] body.script-shell-ready .metrics-drawer-toggle {
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--color-primary) 84%, white 6%), var(--color-primary)) !important;
+  border-color: color-mix(in oklch, var(--color-primary) 70%, white 8%) !important;
+  color: var(--color-primary-content) !important;
+}
+
+html[data-script-theme="dark"] body.script-shell-ready .metrics-drawer .metric {
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--color-neutral) 32%, transparent), transparent),
+    color-mix(in oklch, var(--color-base-100) 88%, black 12%) !important;
+  box-shadow: 0 8px 18px rgb(0 0 0 / .24) !important;
+}

@@ -1,0 +1,3311 @@
+﻿<!doctype html>
+<html lang="pt-BR" data-theme="halloween">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extractron Noticias - Script Tools</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicons/script-tools.svg">
+  <link rel="stylesheet" href="../assets/script-shell.css">
+  <link rel="stylesheet" href="../assets/script-js-page.css">
+</head>
+<body class="js-page">
+  <main class="js-page-shell">
+    <section class="js-hero">
+      <div>
+        <div class="js-eyebrow">Extracao .js</div>
+        <h1>Extractron Noticias</h1>
+        <p>Coletor de noticias com fila de processamento, detalhes, imagens e exportacao estruturada.</p>
+      </div>
+      <div class="js-actions">
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+        <a class="js-button secondary" href="extractron_noticias.js" download>Baixar extractron_noticias.js</a>
+      </div>
+    </section>
+
+    <nav class="js-tabs" aria-label="Abas do script">
+      <button class="js-tab is-active" type="button" data-js-tab="help" aria-selected="true">Como usar</button>
+      <button class="js-tab" type="button" data-js-tab="code" aria-selected="false">Codigo .js</button>
+    </nav>
+
+    <section class="js-panel" data-js-panel="help">
+      <div class="js-panel-head">
+        <div>
+          <div class="js-eyebrow">Uso no navegador</div>
+          <h2>Colar pelo inspecionar</h2>
+          <p>Use este metodo quando quiser rodar o script apenas na pagina aberta, sem instalar extensao.</p>
+        </div>
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+      </div>
+
+      <div class="step-grid">
+        <article class="step-card">
+          <span>Passo 1</span>
+          <strong>Abra a pagina alvo</strong>
+          <p>Entre no sistema ou site onde o script deve atuar. Aguarde a pagina carregar completamente.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 2</span>
+          <strong>Abra o inspecionar</strong>
+          <p>Pressione F12 ou Ctrl + Shift + I e escolha a aba Console.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 3</span>
+          <strong>Liberar colagem</strong>
+          <p>Se Chrome ou Edge bloquear a colagem, digite allow pasting no Console, pressione Enter, e depois cole o codigo.</p>
+        </article>
+        <article class="step-card">
+          <span>Passo 4</span>
+          <strong>Execute o codigo</strong>
+          <p>Cole o .js copiado, pressione Enter e use o painel que o script abrir na propria pagina.</p>
+        </article>
+      </div>
+
+      <div class="notice">Execute apenas em paginas onde voce tem permissao para automatizar acoes. Antes de iniciar um lote grande, rode um teste pequeno e confira o resultado.</div>
+      <div class="copy-status" data-copy-status></div>
+    </section>
+
+    <section class="js-panel" data-js-panel="code" hidden>
+      <div class="js-panel-head">
+        <div>
+          <div class="js-eyebrow">Noticias</div>
+          <h2>extractron_noticias.js</h2>
+          <p>Codigo completo pronto para copiar e colar no Console do navegador.</p>
+        </div>
+        <button class="js-button" type="button" data-copy-js>Copiar .js</button>
+      </div>
+      <div class="code-wrap" tabindex="0"><pre><code id="codeView"></code></pre></div>
+      <div class="copy-status" data-copy-status></div>
+    </section>
+  </main>
+
+  <textarea id="scriptSource" hidden readonly>// ==UserScript==
+// @name         EXTRACTRON Noticias - Baixatron Style
+// @namespace    https://github.com/HelloKiw1
+// @version      2.0.0
+// @description  Extrai noticias (titulo, data, texto e imagens) em fluxo de fila estilo Baixatron.
+// @author       HelloKiw1
+// @match        *://*/*
+// @grant        none
+// @run-at       document-idle
+// ==/UserScript==
+
+(() =&gt; {
+  const SOURCE_TAG = &#39;extractron-noticias&#39;;
+
+  if (window.__extractronNoticias &amp;&amp; typeof window.__extractronNoticias.destroy === &#39;function&#39;) {
+    window.__extractronNoticias.destroy();
+  }
+
+  const opts = {
+    urlInicial: &#39;&#39;,
+    corsProxy: &#39;&#39;,
+    paginaInicial: 1,
+    maxPaginas: 5,
+    delayMs: 800,
+    selectorCustom: &#39;&#39;,
+    detalharNoticias: true,
+    concurrency: 1,
+    maxRetries: 1,
+    autoDetectApi: true,
+    dedupe: true,
+    verbose: true
+  };
+
+  const state = {
+    queue: [],
+    processed: [],
+    noticias: [],
+    falhas: [],
+    errors: [],
+    blockedFrames: [],
+    running: false,
+    scanning: false,
+    cancelRequested: false,
+    timer: null,
+    startedAt: null,
+    progressPercent: 0,
+    statusText: &#39;Aguardando acao...&#39;,
+    apiEndpoint: &#39;&#39;,
+    paginasVisitadas: 0,
+    linksEncontrados: 0,
+    doneKeys: new Set(),
+    queuedKeys: new Set(),
+    selectedKeys: new Set(),
+    itemIdByKey: new Map(),
+    nextItemId: 1
+  };
+
+  const runningSet = new Set();
+
+  let styleEl = null;
+  let panelEl = null;
+  let modalEl = null;
+  let isMinimized = false;
+
+  const ui = {
+    header: null,
+    content: null,
+    close: null,
+    min: null,
+    theme: null,
+    warning: null,
+    proxy: null,
+    pageStart: null,
+    pageMax: null,
+    selector: null,
+    detail: null,
+    speed: null,
+    speedValue: null,
+    status: null,
+    progressFill: null,
+    progressPercent: null,
+    progressTime: null,
+    statQueue: null,
+    statActive: null,
+    statProcessed: null,
+    statSelected: null,
+    statErrors: null,
+    scan: null,
+    openIframes: null,
+    openItems: null,
+    start: null,
+    stop: null,
+    selectAll: null,
+    deselectAll: null,
+    clearHistory: null,
+    reset: null,
+    downloadOk: null,
+    downloadImages: null,
+    downloadFail: null,
+    summary: null,
+    iframeHint: null
+  };
+
+  const FILE_TYPE_ALIAS = {
+    pdf: &#39;pdf&#39;,
+    csv: &#39;csv&#39;,
+    doc: &#39;doc&#39;,
+    docx: &#39;docx&#39;,
+    word: &#39;doc&#39;,
+    xls: &#39;xls&#39;,
+    xlsx: &#39;xlsx&#39;,
+    excel: &#39;xls&#39;,
+    xml: &#39;xml&#39;,
+    txt: &#39;txt&#39;,
+    text: &#39;txt&#39;,
+    html: &#39;html&#39;,
+    htm: &#39;html&#39;,
+    json: &#39;json&#39;,
+    noticia: &#39;news&#39;,
+    noticias: &#39;news&#39;,
+    news: &#39;news&#39;
+  };
+
+  function sanitizeSpaces(value) {
+    return String(value || &#39;&#39;).replace(/\s+/g, &#39; &#39;).trim();
+  }
+
+  function normalizeLoose(value) {
+    const base = sanitizeSpaces(value).toLowerCase();
+    if (!base) return &#39;&#39;;
+    try {
+      return base.normalize(&#39;NFD&#39;).replace(/[\u0300-\u036f]/g, &#39;&#39;);
+    } catch {
+      return base;
+    }
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) =&gt; setTimeout(resolve, ms));
+  }
+
+  function toAbsoluteUrl(value, baseUrl) {
+    const raw = sanitizeSpaces(value);
+    if (!raw || raw === &#39;#&#39; || /^javascript:/i.test(raw)) return &#39;&#39;;
+
+    // Many CMS image fields come as &quot;uploads/...&quot; (without leading slash).
+    // Resolve these against site root to avoid &quot;/noticias/uploads/...&quot; artifacts.
+    if (/^(uploads|cms\/uploads)\//i.test(raw)) {
+      try {
+        const base = new URL(baseUrl || window.location.href);
+        return base.origin + &#39;/&#39; + raw.replace(/^\/+/, &#39;&#39;);
+      } catch {
+        // fallback to generic URL resolution below
+      }
+    }
+
+    try {
+      return new URL(raw, baseUrl).href;
+    } catch {
+      return &#39;&#39;;
+    }
+  }
+
+  function asPositiveInt(value, fallback) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n &lt; 1) return fallback;
+    return Math.floor(n);
+  }
+
+  function asNonNegativeInt(value, fallback) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n &lt; 0) return fallback;
+    return Math.floor(n);
+  }
+
+  function likelyNewsLink(url) {
+    try {
+      const parsed = new URL(url);
+      const path = parsed.pathname.toLowerCase();
+      if (!path.includes(&#39;/noticias&#39;)) return false;
+      if (path === &#39;/noticias&#39; || path === &#39;/noticias/&#39;) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function normalizeFileTypeToken(raw) {
+    const cleaned = normalizeLoose(raw || &#39;&#39;)
+      .replace(/^\.+/, &#39;&#39;)
+      .replace(/[^a-z0-9]+/g, &#39;&#39;);
+    if (!cleaned) return &#39;&#39;;
+    return FILE_TYPE_ALIAS[cleaned] || &#39;&#39;;
+  }
+
+  function inferNewsTypeFromUrl(url) {
+    const src = sanitizeSpaces(url);
+    const extMatch = src.match(/\.([a-z0-9]{2,8})(?:[?#]|$)/i);
+    if (!extMatch) return &#39;news&#39;;
+    return normalizeFileTypeToken(extMatch[1]) || &#39;news&#39;;
+  }
+
+  function parseNameFilterTerms(raw) {
+    return String(raw || &#39;&#39;)
+      .split(/[\n,;|]+/)
+      .map((term) =&gt; sanitizeSpaces(term))
+      .filter(Boolean);
+  }
+
+  function parseTypeFilterTerms(raw) {
+    const terms = parseNameFilterTerms(raw);
+    const tokens = new Set();
+    const knownRegex = /\b(pdf|csv|docx?|xlsx?|xls|xml|txt|html?|json|news|noticia|noticias)\b/g;
+
+    for (const term of terms) {
+      const loose = normalizeLoose(term).replace(/^\s*(tipo|type)\s*[:#=\-]?\s*/i, &#39;&#39;).trim();
+      const direct = normalizeFileTypeToken(loose);
+      if (direct) {
+        tokens.add(direct);
+        continue;
+      }
+
+      knownRegex.lastIndex = 0;
+      let match = null;
+      while ((match = knownRegex.exec(loose)) !== null) {
+        const normalized = normalizeFileTypeToken(match[1]);
+        if (normalized) tokens.add(normalized);
+      }
+    }
+
+    return Array.from(tokens);
+  }
+
+  function parseFilterRules(raw) {
+    const terms = parseNameFilterTerms(raw);
+    const textTerms = [];
+    const exactIds = new Set();
+    const ranges = [];
+
+    for (const term of terms) {
+      const idMatch = term.match(/^id\s*:?\s*(\d+)$/i) || term.match(/^(\d+)$/);
+      if (idMatch) {
+        exactIds.add(Number(idMatch[1]));
+        continue;
+      }
+
+      const rangeMatch = term.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (rangeMatch) {
+        const a = Number(rangeMatch[1]);
+        const b = Number(rangeMatch[2]);
+        if (Number.isFinite(a) &amp;&amp; Number.isFinite(b)) {
+          ranges.push([Math.min(a, b), Math.max(a, b)]);
+          continue;
+        }
+      }
+
+      textTerms.push(normalizeLoose(term));
+    }
+
+    return { textTerms, exactIds, ranges };
+  }
+
+  function applyCorsProxy(url, proxyRaw) {
+    const proxy = sanitizeSpaces(proxyRaw);
+    if (!proxy) return url;
+    if (proxy.includes(&#39;{url}&#39;)) return proxy.replace(&#39;{url}&#39;, encodeURIComponent(url));
+    const sep = proxy.includes(&#39;?&#39;) ? &#39;&amp;&#39; : &#39;?&#39;;
+    return proxy + sep + &#39;url=&#39; + encodeURIComponent(url);
+  }
+
+  async function fetchDocument(url, proxyRaw) {
+    const attempts = [
+      { requested: url, viaProxy: false },
+      { requested: applyCorsProxy(url, proxyRaw), viaProxy: true }
+    ];
+
+    const seen = new Set();
+    let lastError = null;
+
+    for (const attempt of attempts) {
+      if (!attempt.requested || seen.has(attempt.requested)) continue;
+      seen.add(attempt.requested);
+      try {
+        const res = await fetch(attempt.requested, {
+          method: &#39;GET&#39;,
+          credentials: &#39;omit&#39;,
+          cache: &#39;no-store&#39;
+        });
+        if (!res.ok) throw new Error(&#39;HTTP &#39; + res.status + &#39; em &#39; + attempt.requested);
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, &#39;text/html&#39;);
+        return { doc, sourceUrl: attempt.requested, finalUrl: url, viaProxy: attempt.viaProxy };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw new Error(&#39;Falha ao buscar pagina: &#39; + (lastError ? lastError.message : url));
+  }
+
+  function inferListingUrlFromLocation() {
+    const currentHref = sanitizeSpaces(window.location.href);
+    if (!currentHref) return &#39;&#39;;
+
+    try {
+      const parsed = new URL(currentHref);
+      if (/\/noticias(\/|$)/i.test(parsed.pathname)) {
+        return parsed.origin + &#39;/noticias&#39;;
+      }
+    } catch {
+      // noop
+    }
+
+    const newsAnchor = document.querySelector(&#39;a[href*=&quot;/noticias&quot;]&#39;);
+    if (newsAnchor) {
+      const found = toAbsoluteUrl(newsAnchor.getAttribute(&#39;href&#39;) || newsAnchor.href || &#39;&#39;, currentHref);
+      if (found) return found;
+    }
+
+    return currentHref;
+  }
+
+  function deepGet(source, path) {
+    if (!source || !path) return undefined;
+    const parts = String(path).split(&#39;.&#39;);
+    let current = source;
+
+    for (const part of parts) {
+      if (current == null) return undefined;
+
+      if (Array.isArray(current)) {
+        const index = Number(part);
+        if (Number.isFinite(index)) {
+          current = current[index];
+        } else {
+          current = current[0];
+          if (current == null) return undefined;
+          current = current[part];
+        }
+      } else {
+        current = current[part];
+      }
+    }
+
+    return current;
+  }
+
+  function deepGetStrict(source, path) {
+    if (!source || !path) return undefined;
+    const parts = String(path).split(&#39;.&#39;);
+    let current = source;
+
+    for (const part of parts) {
+      if (current == null) return undefined;
+
+      if (Array.isArray(current)) {
+        const index = Number(part);
+        if (!Number.isFinite(index)) return undefined;
+        current = current[index];
+      } else {
+        current = current[part];
+      }
+    }
+
+    return current;
+  }
+
+  function pickFirstPath(source, paths) {
+    for (const path of paths) {
+      const value = deepGet(source, path);
+      if (value == null) continue;
+      if (typeof value === &#39;string&#39; &amp;&amp; !sanitizeSpaces(value)) continue;
+      return value;
+    }
+    return undefined;
+  }
+
+  function pickFirstPathStrict(source, paths) {
+    for (const path of paths) {
+      const value = deepGetStrict(source, path);
+      if (value == null) continue;
+      if (typeof value === &#39;string&#39; &amp;&amp; !sanitizeSpaces(value)) continue;
+      return value;
+    }
+    return undefined;
+  }
+
+  function stripHtmlTags(value) {
+    const raw = String(value || &#39;&#39;);
+    if (!raw) return &#39;&#39;;
+    return raw
+      .replace(/&lt;style[\s\S]*?&lt;\/style&gt;/gi, &#39; &#39;)
+      .replace(/&lt;script[\s\S]*?&lt;\/script&gt;/gi, &#39; &#39;)
+      .replace(/&lt;br\s*\/?&gt;/gi, &#39;\n&#39;)
+      .replace(/&lt;\/p&gt;/gi, &#39;\n\n&#39;)
+      .replace(/&lt;[^&gt;]+&gt;/g, &#39; &#39;)
+      .replace(/&amp;nbsp;/gi, &#39; &#39;)
+      .replace(/&amp;amp;/gi, &#39;&amp;&#39;)
+      .replace(/&amp;quot;/gi, &#39;&quot;&#39;)
+      .replace(/&amp;#39;/gi, &quot;&#39;&quot;)
+      .replace(/\r/g, &#39;\n&#39;)
+      .replace(/[ \t]*\n[ \t]*/g, &#39;\n&#39;)
+      .replace(/[ \t]{2,}/g, &#39; &#39;)
+      .trim();
+  }
+
+  function splitParagraphText(raw) {
+    const source = String(raw || &#39;&#39;)
+      .replace(/\r/g, &#39;\n&#39;)
+      .replace(/\u00a0/g, &#39; &#39;)
+      .trim();
+
+    if (!source) return [];
+
+    const chunks = source
+      .split(/\n\s*\n+/)
+      .map((part) =&gt; sanitizeSpaces(part.replace(/\s*\n\s*/g, &#39; &#39;)))
+      .filter((part) =&gt; part.length &gt;= 2);
+
+    if (chunks.length) return chunks;
+
+    const compact = sanitizeSpaces(source);
+    return compact ? [compact] : [];
+  }
+
+  function uniqueParagraphs(paragraphs) {
+    const out = [];
+    const seen = new Set();
+
+    (Array.isArray(paragraphs) ? paragraphs : []).forEach((item) =&gt; {
+      const text = sanitizeSpaces(item || &#39;&#39;);
+      if (!text) return;
+      const key = normalizeLoose(text);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(text);
+    });
+
+    return out;
+  }
+
+  function contentToParagraphs(value, depth = 0) {
+    if (value == null || depth &gt; 6) return [];
+
+    if (typeof value === &#39;string&#39;) {
+      return splitParagraphText(stripHtmlTags(value));
+    }
+
+    if (typeof value === &#39;number&#39; || typeof value === &#39;boolean&#39;) {
+      return [String(value)];
+    }
+
+    if (Array.isArray(value)) {
+      const merged = [];
+      value.forEach((item) =&gt; {
+        const parts = contentToParagraphs(item, depth + 1);
+        if (parts.length) merged.push(...parts);
+      });
+      return uniqueParagraphs(merged);
+    }
+
+    if (typeof value === &#39;object&#39;) {
+      const nodeType = normalizeLoose(value.type || value.nodeType || &#39;&#39;);
+
+      if ((nodeType === &#39;text&#39; || nodeType === &#39;span&#39;) &amp;&amp; typeof value.text === &#39;string&#39;) {
+        return splitParagraphText(stripHtmlTags(value.text));
+      }
+
+      if (nodeType === &#39;paragraph&#39;) {
+        const children = Array.isArray(value.children) ? value.children : [];
+        const line = sanitizeSpaces(children.map((child) =&gt; contentToText(child, depth + 1)).join(&#39; &#39;));
+        if (line) return [line];
+      }
+
+      const preferred = [
+        &#39;rendered&#39;, &#39;html&#39;, &#39;text&#39;, &#39;value&#39;, &#39;content&#39;, &#39;conteudo&#39;, &#39;body&#39;, &#39;raw&#39;, &#39;excerpt&#39;, &#39;description&#39;
+      ];
+
+      for (const key of preferred) {
+        if (value[key] == null) continue;
+        const got = contentToParagraphs(value[key], depth + 1);
+        if (got.length) return got;
+      }
+
+      const merged = [];
+      Object.values(value).forEach((child) =&gt; {
+        const parts = contentToParagraphs(child, depth + 1);
+        if (parts.length) merged.push(...parts);
+      });
+      return uniqueParagraphs(merged);
+    }
+
+    return [];
+  }
+
+  function contentToText(value, depth = 0) {
+    return contentToParagraphs(value, depth).join(&#39;\n\n&#39;);
+  }
+
+  function toIsoDate(rawValue) {
+    const raw = sanitizeSpaces(rawValue || &#39;&#39;);
+    if (!raw) return null;
+
+    const iso = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+    if (iso) return iso[1] + &#39;-&#39; + iso[2] + &#39;-&#39; + iso[3];
+
+    const br = raw.match(/\b(\d{2})\/(\d{2})\/(\d{4})\b/);
+    if (br) return br[3] + &#39;-&#39; + br[2] + &#39;-&#39; + br[1];
+
+    return null;
+  }
+
+  function normalizeNewsDate(rawValue) {
+    if (Array.isArray(rawValue)) return null;
+
+    let value = rawValue;
+    if (value &amp;&amp; typeof value === &#39;object&#39;) {
+      value = pickFirstPathStrict(value, [&#39;data&#39;, &#39;date&#39;, &#39;publishedAt&#39;, &#39;createdAt&#39;, &#39;value&#39;]);
+    }
+
+    const raw = sanitizeSpaces(value || &#39;&#39;);
+    if (!raw) return null;
+
+    const directIso = toIsoDate(raw);
+    if (directIso) return directIso;
+
+    const fromText = extractDateFromText(raw);
+    if (fromText) {
+      const isoFromText = toIsoDate(fromText);
+      return isoFromText || fromText;
+    }
+
+    return raw;
+  }
+
+  function slugify(value) {
+    const normalized = normalizeLoose(value || &#39;&#39;)
+      .replace(/[^a-z0-9]+/g, &#39;-&#39;)
+      .replace(/^-+|-+$/g, &#39;&#39;)
+      .slice(0, 120);
+    return normalized || &#39;noticia&#39;;
+  }
+
+  function looksLikeImageUrl(url) {
+    return /\.(jpg|jpeg|png|webp|gif|svg|avif)(?:\?|#|$)/i.test(String(url || &#39;&#39;));
+  }
+
+  function scoreMainImageUrl(url) {
+    const raw = sanitizeSpaces(url || &#39;&#39;);
+    if (!raw) return -99999;
+
+    let score = 0;
+    const loose = normalizeLoose(raw);
+
+    if (/(logo|favicon|avatar|sprite|icon)/i.test(loose)) score -= 2000;
+    if (looksLikeImageUrl(raw)) score += 120;
+    if (/\d{3,4}x\d{3,4}/i.test(raw)) score += 40;
+
+    try {
+      const parsed = new URL(raw, window.location.href);
+      const path = parsed.pathname.toLowerCase();
+
+      if (parsed.origin === window.location.origin) score += 180;
+      if (/^\/uploads\//.test(path)) score += 900;
+      if (/^\/cms\/uploads\//.test(path)) score += 700;
+      if (/\/uploads\//.test(path)) score += 250;
+
+      // Strong penalty for malformed detail-relative image URLs.
+      if (/\/noticias\/uploads\//.test(path)) score -= 1200;
+    } catch {
+      // noop
+    }
+
+    return score;
+  }
+
+  function pickMainImageUrl(value) {
+    const unique = [];
+    const seen = new Set();
+
+    const list = Array.isArray(value) ? value : [value];
+    list.forEach((item) =&gt; {
+      const raw = sanitizeSpaces(item || &#39;&#39;);
+      if (!raw) return;
+      const abs = toAbsoluteUrl(raw, window.location.href);
+      if (!abs || seen.has(abs)) return;
+      seen.add(abs);
+      unique.push(abs);
+    });
+
+    if (!unique.length) return &#39;&#39;;
+
+    unique.sort((a, b) =&gt; scoreMainImageUrl(b) - scoreMainImageUrl(a));
+    return unique[0] || &#39;&#39;;
+  }
+
+  function isLikelySlugToken(value) {
+    const slug = sanitizeSpaces(value || &#39;&#39;);
+    if (!slug) return false;
+    if (/^https?:\/\//i.test(slug)) return false;
+    if (slug.startsWith(&#39;/&#39;)) return false;
+    if (slug.includes(&#39;/&#39;)) return false;
+    if (/\s/.test(slug)) return false;
+    if (/\.[a-z0-9]{2,6}(?:[?#]|$)/i.test(slug)) return false;
+    return /^[a-z0-9-_.]+$/i.test(slug);
+  }
+
+  function isLikelyNewsDetailUrl(url) {
+    const raw = sanitizeSpaces(url || &#39;&#39;);
+    if (!raw) return false;
+    if (/^api:\/\//i.test(raw)) return false;
+    if (looksLikeImageUrl(raw)) return false;
+
+    try {
+      const parsed = new URL(raw, window.location.href);
+      const path = parsed.pathname.toLowerCase();
+      if (/\/(uploads|media|assets)\//.test(path)) return false;
+      if (/\.(pdf|docx?|xlsx?|xls|csv|zip|rar)(?:$|\?)/i.test(path)) return false;
+      if (/\/noticias(\/|$)/i.test(path)) return true;
+      return !/\.[a-z0-9]{2,6}(?:$|\?)/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  function isLikelyNewsRawItem(rawItem) {
+    if (!rawItem || typeof rawItem !== &#39;object&#39; || Array.isArray(rawItem)) return false;
+
+    const directTitle = pickFirstPathStrict(rawItem, [
+      &#39;titulo&#39;, &#39;title&#39;, &#39;headline&#39;,
+      &#39;attributes.titulo&#39;, &#39;attributes.title&#39;, &#39;attributes.headline&#39;
+    ]);
+    const title = sanitizeSpaces(contentToText(directTitle));
+    if (!title || title.length &lt; 8) return false;
+
+    const contentCandidate = pickFirstPathStrict(rawItem, [
+      &#39;conteudo&#39;, &#39;content&#39;, &#39;texto&#39;, &#39;text&#39;, &#39;body&#39;,
+      &#39;attributes.conteudo&#39;, &#39;attributes.content&#39;, &#39;attributes.texto&#39;,
+      &#39;content.rendered&#39;, &#39;excerpt.rendered&#39;
+    ]);
+
+    const dateCandidate = pickFirstPathStrict(rawItem, [
+      &#39;data&#39;, &#39;date&#39;, &#39;publishedAt&#39;, &#39;createdAt&#39;,
+      &#39;attributes.data&#39;, &#39;attributes.date&#39;, &#39;attributes.publishedAt&#39;
+    ]);
+
+    const hasContent = Boolean(contentToParagraphs(contentCandidate).length);
+    const hasDate = Boolean(normalizeNewsDate(dateCandidate));
+    const hasSlug = Boolean(pickFirstPathStrict(rawItem, [&#39;slug&#39;, &#39;attributes.slug&#39;, &#39;documentId&#39;, &#39;attributes.documentId&#39;]));
+
+    return hasContent || hasDate || hasSlug;
+  }
+
+  function isLikelyApiEndpoint(url) {
+    return /\/api\/|\/wp-json\/|graphql|_next\/data|\.json(?:\?|$)/i.test(String(url || &#39;&#39;));
+  }
+
+  function sanitizeApiEndpoint(raw, baseUrl) {
+    const candidate = sanitizeSpaces(raw || &#39;&#39;);
+    if (!candidate) return &#39;&#39;;
+    if (/^data:|^javascript:/i.test(candidate)) return &#39;&#39;;
+
+    try {
+      return new URL(candidate, baseUrl).href;
+    } catch {
+      return &#39;&#39;;
+    }
+  }
+
+  function discoverApiCandidates(baseUrl) {
+    const out = new Set();
+
+    const push = (raw) =&gt; {
+      const endpoint = sanitizeApiEndpoint(raw, baseUrl);
+      if (!endpoint) return;
+      if (!isLikelyApiEndpoint(endpoint)) return;
+      out.add(endpoint);
+    };
+
+    const seedEndpoints = [
+      &#39;/cms/api/noticias?pagination[page]=1&amp;pagination[pageSize]=20&amp;populate[autor][populate]=*&amp;populate[galeria_imagens][populate]=*&amp;sort=data:desc&#39;,
+      &#39;/cms/api/noticias?pagination[page]=1&amp;pagination[pageSize]=20&amp;sort=data:desc&#39;,
+      &#39;/cms/api/noticias?pagination[page]=1&amp;pagination[pageSize]=50&#39;,
+      &#39;/cms/api/noticias&#39;,
+      &#39;/api/noticias&#39;,
+      &#39;/api/noticias?page=1&#39;,
+      &#39;/api/noticias?limit=100&#39;,
+      &#39;/api/news&#39;,
+      &#39;/api/posts&#39;,
+      &#39;/api/public/noticias&#39;,
+      &#39;/api/public/news&#39;,
+      &#39;/wp-json/wp/v2/posts?per_page=100&#39;,
+      &#39;/wp-json/wp/v2/noticias?per_page=100&#39;
+    ];
+    seedEndpoints.forEach(push);
+
+    if (window.performance &amp;&amp; typeof window.performance.getEntriesByType === &#39;function&#39;) {
+      const resources = window.performance.getEntriesByType(&#39;resource&#39;) || [];
+      resources.forEach((entry) =&gt; {
+        const name = entry &amp;&amp; typeof entry.name === &#39;string&#39; ? entry.name : &#39;&#39;;
+        if (isLikelyApiEndpoint(name)) push(name);
+      });
+    }
+
+    const scripts = Array.from(document.querySelectorAll(&#39;script&#39;));
+    const apiRegex = /(https?:\/\/[^&quot;&#39;\s)]+|\/(?:api|wp-json|_next\/data)[^&quot;&#39;\s)]+|\/(?:graphql)[^&quot;&#39;\s)]*)/gi;
+
+    scripts.forEach((script) =&gt; {
+      const src = sanitizeSpaces(script.getAttribute(&#39;src&#39;) || &#39;&#39;);
+      if (src &amp;&amp; isLikelyApiEndpoint(src)) push(src);
+
+      const text = String(script.textContent || &#39;&#39;);
+      if (!text) return;
+      const sample = text.slice(0, 120000);
+      apiRegex.lastIndex = 0;
+
+      let match = null;
+      while ((match = apiRegex.exec(sample)) !== null) {
+        push(match[1]);
+      }
+    });
+
+    if (window.__NEXT_DATA__ &amp;&amp; window.__NEXT_DATA__.buildId) {
+      try {
+        const base = new URL(baseUrl);
+        const routePath = base.pathname.replace(/\/+$/, &#39;&#39;) || &#39;/&#39;;
+        const pagePath = routePath === &#39;/&#39; ? &#39;/index&#39; : routePath;
+        push(&#39;/_next/data/&#39; + window.__NEXT_DATA__.buildId + pagePath + &#39;.json&#39;);
+      } catch {
+        // noop
+      }
+    }
+
+    return Array.from(out);
+  }
+
+  function extractImageUrlsFromValue(node, baseUrl, maxItems = 10) {
+    const out = [];
+    const seen = new Set();
+    const queue = [node];
+    let guard = 0;
+
+    const maybePush = (raw) =&gt; {
+      const abs = toAbsoluteUrl(raw, baseUrl);
+      if (!abs) return;
+      if (seen.has(abs)) return;
+      if (!/\.(jpg|jpeg|png|webp|gif|svg|avif)(?:\?|#|$)/i.test(abs)) return;
+      if (/(logo|favicon|avatar|sprite|icon)/i.test(abs)) return;
+      seen.add(abs);
+      out.push(abs);
+    };
+
+    while (queue.length &amp;&amp; guard &lt; 2500 &amp;&amp; out.length &lt; maxItems) {
+      guard += 1;
+      const current = queue.shift();
+      if (current == null) continue;
+
+      if (typeof current === &#39;string&#39;) {
+        maybePush(current);
+        continue;
+      }
+
+      if (Array.isArray(current)) {
+        current.forEach((item) =&gt; queue.push(item));
+        continue;
+      }
+
+      if (typeof current === &#39;object&#39;) {
+        Object.entries(current).forEach(([key, value]) =&gt; {
+          if (typeof value === &#39;string&#39; &amp;&amp; /(img|image|foto|capa|thumb|banner|cover|url)/i.test(key)) {
+            maybePush(value);
+          }
+          if (value &amp;&amp; typeof value === &#39;object&#39;) queue.push(value);
+        });
+      }
+    }
+
+    return out;
+  }
+
+  function normalizeApiNewsItem(rawItem, baseUrl) {
+    if (!rawItem || typeof rawItem !== &#39;object&#39;) return null;
+    if (!isLikelyNewsRawItem(rawItem)) return null;
+
+    const titleRaw = pickFirstPathStrict(rawItem, [
+      &#39;titulo&#39;, &#39;title&#39;, &#39;headline&#39;,
+      &#39;attributes.titulo&#39;, &#39;attributes.title&#39;,
+      &#39;title.rendered&#39;
+    ]);
+    const title = sanitizeSpaces(contentToText(titleRaw));
+    if (!title) return null;
+
+    const dateRaw = pickFirstPathStrict(rawItem, [
+      &#39;data&#39;, &#39;date&#39;, &#39;publishedAt&#39;, &#39;createdAt&#39;,
+      &#39;attributes.data&#39;, &#39;attributes.date&#39;, &#39;attributes.publishedAt&#39;
+    ]);
+
+    const contentRaw = pickFirstPathStrict(rawItem, [
+      &#39;conteudo&#39;, &#39;content&#39;, &#39;texto&#39;, &#39;text&#39;, &#39;body&#39;,
+      &#39;description&#39;, &#39;excerpt&#39;, &#39;resumo&#39;,
+      &#39;attributes.conteudo&#39;, &#39;attributes.content&#39;, &#39;attributes.texto&#39;,
+      &#39;content.rendered&#39;, &#39;excerpt.rendered&#39;
+    ]);
+
+    const linkRaw = pickFirstPathStrict(rawItem, [
+      &#39;link&#39;, &#39;url&#39;, &#39;href&#39;, &#39;permalink&#39;, &#39;slug&#39;,
+      &#39;attributes.link&#39;, &#39;attributes.url&#39;, &#39;attributes.href&#39;, &#39;attributes.slug&#39;,
+      &#39;links.publico&#39;, &#39;links.public&#39;
+    ]);
+
+    const slugRaw = pickFirstPathStrict(rawItem, [
+      &#39;slug&#39;,
+      &#39;attributes.slug&#39;,
+      &#39;documentId&#39;,
+      &#39;attributes.documentId&#39;
+    ]);
+
+    const mainImageRaw = pickFirstPath(rawItem, [
+      &#39;imagem&#39;, &#39;image&#39;, &#39;thumbnail&#39;, &#39;featuredImage&#39;, &#39;cover&#39;,
+      &#39;attributes.imagem&#39;, &#39;attributes.image&#39;, &#39;attributes.thumbnail&#39;,
+      &#39;data.imagem&#39;, &#39;data.image&#39;,
+      &#39;imagem.url&#39;, &#39;image.url&#39;, &#39;thumbnail.url&#39;, &#39;featuredImage.url&#39;,
+      &#39;yoast_head_json.og_image.0.url&#39;
+    ]);
+
+    let linkNoticia = toAbsoluteUrl(linkRaw, baseUrl);
+    if (linkNoticia &amp;&amp; looksLikeImageUrl(linkNoticia)) {
+      linkNoticia = &#39;&#39;;
+    }
+
+    if (!linkNoticia &amp;&amp; typeof slugRaw === &#39;string&#39;) {
+      const slug = sanitizeSpaces(slugRaw).replace(/^\/+/, &#39;&#39;);
+      if (isLikelySlugToken(slug)) {
+        linkNoticia = toAbsoluteUrl(&#39;/noticias/&#39; + slug, baseUrl);
+      }
+    }
+
+    if (!linkNoticia &amp;&amp; typeof linkRaw === &#39;string&#39;) {
+      const slug = sanitizeSpaces(linkRaw).replace(/^\/+/, &#39;&#39;);
+      if (isLikelySlugToken(slug)) {
+        linkNoticia = toAbsoluteUrl(&#39;/noticias/&#39; + slug, baseUrl);
+      }
+    }
+    if (!linkNoticia) {
+      linkNoticia = &#39;api://noticia/&#39; + slugify(title + &#39;-&#39; + normalizeNewsDate(dateRaw));
+    }
+
+    const contentParagraphs = contentToParagraphs(contentRaw);
+    const contentText = contentParagraphs.join(&#39;\n\n&#39;);
+    const images = extractImageUrlsFromValue(rawItem, baseUrl, 10);
+    const mainImage = toAbsoluteUrl(mainImageRaw, baseUrl);
+    if (mainImage &amp;&amp; !images.includes(mainImage)) images.unshift(mainImage);
+    const bestImage = pickMainImageUrl(images);
+
+    const date = normalizeNewsDate(dateRaw);
+
+    if (!contentText &amp;&amp; !images.length &amp;&amp; !date) return null;
+
+    return {
+      titulo_noticia: title,
+      data_publicacao: date || null,
+      texto_noticia: contentText || null,
+      paragrafos_noticia: contentParagraphs,
+      link_imagens: bestImage ? [bestImage] : [],
+      link_noticia: linkNoticia
+    };
+  }
+
+  function buildNewsSignature(item) {
+    return [
+      sanitizeSpaces(item &amp;&amp; item.link_noticia ? item.link_noticia : &#39;&#39;),
+      normalizeLoose(item &amp;&amp; item.titulo_noticia ? item.titulo_noticia : &#39;&#39;),
+      sanitizeSpaces(item &amp;&amp; item.data_publicacao ? item.data_publicacao : &#39;&#39;)
+    ].join(&#39;|&#39;);
+  }
+
+  function mergeUniqueNewsItems(currentItems, incomingItems) {
+    const out = Array.isArray(currentItems) ? currentItems.slice() : [];
+    const seen = new Set(out.map((item) =&gt; buildNewsSignature(item)));
+
+    (Array.isArray(incomingItems) ? incomingItems : []).forEach((item) =&gt; {
+      const signature = buildNewsSignature(item);
+      if (!signature || seen.has(signature)) return;
+      seen.add(signature);
+      out.push(item);
+    });
+
+    return out;
+  }
+
+  function extractNewsItemsFromUnknownJson(payload, baseUrl) {
+    const out = [];
+    const signatures = new Set();
+
+    const pushItem = (rawItem) =&gt; {
+      const normalized = normalizeApiNewsItem(rawItem, baseUrl);
+      if (!normalized) return;
+
+      const signature = (normalized.link_noticia || &#39;&#39;) + &#39;|&#39; + normalizeLoose(normalized.titulo_noticia || &#39;&#39;);
+      if (signatures.has(signature)) return;
+      signatures.add(signature);
+      out.push(normalized);
+    };
+
+    const primaryArrays = [];
+    const metaPagination = deepGet(payload, &#39;meta.pagination&#39;);
+    if (Array.isArray(deepGet(payload, &#39;data&#39;)) &amp;&amp; metaPagination) {
+      primaryArrays.push(deepGet(payload, &#39;data&#39;));
+    }
+
+    const candidatePaths = [
+      &#39;data&#39;, &#39;items&#39;, &#39;noticias&#39;, &#39;news&#39;, &#39;posts&#39;, &#39;results&#39;, &#39;result.items&#39;
+    ];
+
+    candidatePaths.forEach((path) =&gt; {
+      const value = deepGet(payload, path);
+      if (Array.isArray(value)) primaryArrays.push(value);
+    });
+
+    if (primaryArrays.length) {
+      primaryArrays.forEach((arr) =&gt; {
+        arr.forEach((item) =&gt; {
+          if (item &amp;&amp; typeof item === &#39;object&#39;) pushItem(item);
+        });
+      });
+      return out;
+    }
+
+    const queue = [payload];
+    let guard = 0;
+
+    while (queue.length &amp;&amp; guard &lt; 2000) {
+      guard += 1;
+      const current = queue.shift();
+      if (!current || typeof current !== &#39;object&#39;) continue;
+
+      if (Array.isArray(current)) {
+        current.forEach((item) =&gt; {
+          if (item &amp;&amp; typeof item === &#39;object&#39;) {
+            if (isLikelyNewsRawItem(item)) pushItem(item);
+            queue.push(item);
+          }
+        });
+        continue;
+      }
+
+      Object.values(current).forEach((value) =&gt; {
+        if (value &amp;&amp; typeof value === &#39;object&#39;) queue.push(value);
+      });
+    }
+
+    return out;
+  }
+
+  async function tryFetchJson(endpoint) {
+    try {
+      const res = await fetch(endpoint, {
+        method: &#39;GET&#39;,
+        credentials: &#39;omit&#39;,
+        cache: &#39;no-store&#39;
+      });
+      if (!res.ok) return null;
+
+      const contentType = (res.headers.get(&#39;content-type&#39;) || &#39;&#39;).toLowerCase();
+      const text = await res.text();
+      if (!text) return null;
+
+      let clean = text.trim();
+      clean = clean.replace(/^\)\]\}&#39;,?\s*/, &#39;&#39;);
+
+      if (!contentType.includes(&#39;json&#39;) &amp;&amp; !/^[\[{]/.test(clean)) return null;
+      return JSON.parse(clean);
+    } catch {
+      return null;
+    }
+  }
+
+  function extractApiPagination(payload) {
+    const candidates = [
+      deepGet(payload, &#39;meta.pagination&#39;),
+      deepGet(payload, &#39;pagination&#39;),
+      deepGet(payload, &#39;data.meta.pagination&#39;),
+      deepGet(payload, &#39;meta&#39;)
+    ];
+
+    for (const current of candidates) {
+      if (!current || typeof current !== &#39;object&#39;) continue;
+      const page = Number(current.page);
+      const pageSize = Number(current.pageSize || current.perPage || current.limit);
+      const pageCount = Number(current.pageCount || current.pages || current.totalPages);
+      const total = Number(current.total || current.totalCount || current.count);
+
+      if (Number.isFinite(page) || Number.isFinite(pageCount) || Number.isFinite(total)) {
+        return {
+          page: Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1,
+          pageSize: Number.isFinite(pageSize) ? Math.max(1, Math.floor(pageSize)) : 20,
+          pageCount: Number.isFinite(pageCount) ? Math.max(1, Math.floor(pageCount)) : null,
+          total: Number.isFinite(total) ? Math.max(0, Math.floor(total)) : null
+        };
+      }
+    }
+
+    return { page: 1, pageSize: 20, pageCount: null, total: null };
+  }
+
+  function buildApiPageEndpoint(endpoint, page, pageSize) {
+    try {
+      const parsed = new URL(endpoint);
+      const keys = Array.from(parsed.searchParams.keys()).map((key) =&gt; key.toLowerCase());
+      const hasStrapiPagination = keys.some((key) =&gt; key.startsWith(&#39;pagination[&#39;));
+      const hasCmsPath = /\/cms\/api\//i.test(parsed.pathname);
+
+      if (hasStrapiPagination || hasCmsPath) {
+        parsed.searchParams.set(&#39;pagination[page]&#39;, String(page));
+        if (!parsed.searchParams.has(&#39;pagination[pageSize]&#39;)) {
+          parsed.searchParams.set(&#39;pagination[pageSize]&#39;, String(pageSize || 20));
+        }
+        return parsed.href;
+      }
+
+      if (parsed.searchParams.has(&#39;pagina&#39;)) {
+        parsed.searchParams.set(&#39;pagina&#39;, String(page));
+      } else {
+        parsed.searchParams.set(&#39;page&#39;, String(page));
+      }
+
+      if (!parsed.searchParams.has(&#39;pageSize&#39;) &amp;&amp; !parsed.searchParams.has(&#39;per_page&#39;) &amp;&amp; !parsed.searchParams.has(&#39;limit&#39;)) {
+        parsed.searchParams.set(&#39;pageSize&#39;, String(pageSize || 20));
+      }
+
+      return parsed.href;
+    } catch {
+      return endpoint;
+    }
+  }
+
+  async function collectApiPages(endpoint, firstPayload, baseUrl, firstItems) {
+    let merged = mergeUniqueNewsItems([], firstItems);
+    const pagination = extractApiPagination(firstPayload);
+    const maxPagesAllowed = Math.max(1, asPositiveInt(opts.maxPaginas, 1));
+
+    let totalPages = pagination.pageCount;
+    if (!Number.isFinite(totalPages) &amp;&amp; Number.isFinite(pagination.total) &amp;&amp; Number.isFinite(pagination.pageSize) &amp;&amp; pagination.pageSize &gt; 0) {
+      totalPages = Math.ceil(pagination.total / pagination.pageSize);
+    }
+
+    totalPages = Number.isFinite(totalPages) ? Math.max(1, Math.floor(totalPages)) : 1;
+    totalPages = Math.min(totalPages, maxPagesAllowed);
+
+    if (totalPages &lt;= 1) return merged;
+
+    for (let page = 2; page &lt;= totalPages; page++) {
+      if (state.cancelRequested) break;
+      const endpointPage = buildApiPageEndpoint(endpoint, page, pagination.pageSize || 20);
+      const payload = await tryFetchJson(endpointPage);
+      if (!payload) break;
+
+      const items = extractNewsItemsFromUnknownJson(payload, baseUrl);
+      if (!items.length) break;
+      merged = mergeUniqueNewsItems(merged, items);
+
+      if (opts.delayMs &gt; 0) await sleep(Math.min(opts.delayMs, 500));
+    }
+
+    return merged;
+  }
+
+  async function scanFromDetectedApi(baseUrl) {
+    if (!opts.autoDetectApi) return { endpoint: &#39;&#39;, items: [] };
+
+    const endpoints = discoverApiCandidates(baseUrl);
+    if (!endpoints.length) return { endpoint: &#39;&#39;, items: [] };
+
+    let best = { endpoint: &#39;&#39;, items: [], payload: null };
+
+    for (const endpoint of endpoints.slice(0, 14)) {
+      if (state.cancelRequested) break;
+      const endpointPage = buildApiPageEndpoint(endpoint, 1, 20);
+      const payload = await tryFetchJson(endpointPage);
+      if (!payload) continue;
+
+      const items = extractNewsItemsFromUnknownJson(payload, baseUrl);
+      if (items.length &gt; best.items.length) {
+        best = { endpoint, items, payload };
+      }
+
+      if (best.items.length &gt;= 20) break;
+    }
+
+    if (!best.items.length) return { endpoint: &#39;&#39;, items: [] };
+
+    const items = await collectApiPages(best.endpoint, best.payload, baseUrl, best.items);
+    return { endpoint: best.endpoint, items };
+  }
+
+  function apiItemsToQueueLinks(items, originPage) {
+    return items.map((item, index) =&gt; {
+      const safeLink = sanitizeSpaces(item.link_noticia || &#39;&#39;);
+      const fallbackLink = safeLink || (&#39;api://noticia/&#39; + slugify((item.titulo_noticia || &#39;item&#39;) + &#39;-&#39; + (index + 1)));
+      return {
+        link_noticia: fallbackLink,
+        titulo_previo: item.titulo_noticia || null,
+        data_previa: item.data_publicacao || null,
+        imagem_previa: item.link_imagens &amp;&amp; item.link_imagens.length ? item.link_imagens[0] : null,
+        origem_pagina: originPage,
+        api_noticia: item
+      };
+    });
+  }
+
+  function extractDateFromText(text) {
+    const source = sanitizeSpaces(text);
+    if (!source) return null;
+
+    const numeric = source.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);
+    if (numeric) {
+      const d = numeric[1].padStart(2, &#39;0&#39;);
+      const m = numeric[2].padStart(2, &#39;0&#39;);
+      return d + &#39;/&#39; + m + &#39;/&#39; + numeric[3];
+    }
+
+    const extenso = source.match(/\b(\d{1,2})\s+de\s+([a-zA-Z&#231;&#227;&#245;&#225;&#233;&#237;&#243;&#250;&#226;&#234;&#244;&#224;]+)\s+de\s+(\d{4})\b/i);
+    if (extenso) {
+      const months = {
+        janeiro: &#39;01&#39;, fevereiro: &#39;02&#39;, marco: &#39;03&#39;, &#39;marcoo&#39;: &#39;03&#39;, &#39;marco &#39;: &#39;03&#39;, &#39;marco.&#39;: &#39;03&#39;, &#39;mar&#231;o&#39;: &#39;03&#39;, abril: &#39;04&#39;, maio: &#39;05&#39;, junho: &#39;06&#39;,
+        julho: &#39;07&#39;, agosto: &#39;08&#39;, setembro: &#39;09&#39;, outubro: &#39;10&#39;, novembro: &#39;11&#39;, dezembro: &#39;12&#39;
+      };
+      const key = extenso[2].toLowerCase();
+      const month = months[key] || months[normalizeLoose(key)];
+      if (month) return extenso[1].padStart(2, &#39;0&#39;) + &#39;/&#39; + month + &#39;/&#39; + extenso[3];
+    }
+
+    return null;
+  }
+
+  function collectCardLinks(doc, pageUrl, selectorCustom) {
+    const selectors = [];
+    const custom = sanitizeSpaces(selectorCustom);
+    if (custom) selectors.push(custom);
+
+    selectors.push(
+      &#39;a[href*=&quot;/noticias/&quot;]&#39;,
+      &#39;main a[href]&#39;,
+      &#39;article a[href]&#39;,
+      &#39;.grid a[href]&#39;,
+      &#39;.card a[href]&#39;
+    );
+
+    const map = new Map();
+
+    for (const selector of selectors) {
+      let anchors = [];
+      try {
+        anchors = Array.from(doc.querySelectorAll(selector));
+      } catch {
+        continue;
+      }
+
+      for (const anchor of anchors) {
+        const href = toAbsoluteUrl(anchor.getAttribute(&#39;href&#39;) || anchor.href || &#39;&#39;, pageUrl);
+        if (!href || !likelyNewsLink(href)) continue;
+
+        const card = anchor.closest(&#39;article, .card, li, .item&#39;) || anchor.closest(&#39;a&#39;) || anchor;
+        const titleEl = card.querySelector(&#39;h1, h2, h3, h4&#39;) || anchor.querySelector(&#39;h1, h2, h3, h4&#39;);
+        const title = sanitizeSpaces((titleEl &amp;&amp; titleEl.textContent) || anchor.getAttribute(&#39;title&#39;) || anchor.textContent);
+        const date = extractDateFromText(card.textContent || &#39;&#39;);
+
+        const imageEl = card.querySelector(&#39;img&#39;) || anchor.querySelector(&#39;img&#39;);
+        const previewImage = imageEl
+          ? toAbsoluteUrl(
+              imageEl.getAttribute(&#39;src&#39;) || imageEl.getAttribute(&#39;data-src&#39;) || imageEl.getAttribute(&#39;data-lazy-src&#39;) || &#39;&#39;,
+              pageUrl
+            )
+          : &#39;&#39;;
+
+        const key = href.split(&#39;#&#39;)[0];
+        if (!map.has(key)) {
+          map.set(key, {
+            link_noticia: href,
+            titulo_previo: title || null,
+            data_previa: date || null,
+            imagem_previa: previewImage || null,
+            origem_pagina: pageUrl
+          });
+        }
+      }
+    }
+
+    return Array.from(map.values());
+  }
+
+  function detectBlockedFramesAndSources(doc, pageUrl) {
+    const iframes = Array.from(doc.querySelectorAll(&#39;iframe&#39;));
+    const out = [];
+    for (const iframe of iframes) {
+      const src = toAbsoluteUrl(iframe.getAttribute(&#39;src&#39;) || iframe.src || &#39;&#39;, pageUrl);
+      if (src) out.push(src);
+    }
+    return out;
+  }
+
+  function parseTotalPages(doc) {
+    const text = sanitizeSpaces(doc.body ? doc.body.textContent : &#39;&#39;);
+    const match = text.match(/pagina\s+(\d+)\s+de\s+(\d+)/i);
+    if (!match) return null;
+    const current = Number(match[1]);
+    const total = Number(match[2]);
+    if (!Number.isFinite(current) || !Number.isFinite(total)) return null;
+    return { current, total };
+  }
+
+  function findNextPageUrl(doc, currentUrl, expectedNextPage) {
+    const anchors = Array.from(doc.querySelectorAll(&#39;a[href], button[data-href]&#39;));
+    for (const anchor of anchors) {
+      const href = toAbsoluteUrl(anchor.getAttribute(&#39;href&#39;) || anchor.getAttribute(&#39;data-href&#39;) || &#39;&#39;, currentUrl);
+      if (!href) continue;
+
+      const label = sanitizeSpaces((anchor.textContent || &#39;&#39;) + &#39; &#39; + (anchor.getAttribute(&#39;aria-label&#39;) || &#39;&#39;));
+      const rel = (anchor.getAttribute(&#39;rel&#39;) || &#39;&#39;).toLowerCase();
+
+      if (rel === &#39;next&#39;) return href;
+      if (/proximo|pr[o&#243;]ximo|next|seguinte|avancar|avan[c&#231;]ar/i.test(label)) return href;
+      if (label === String(expectedNextPage)) return href;
+    }
+
+    try {
+      const parsed = new URL(currentUrl);
+
+      const withPage = new URL(parsed.href);
+      withPage.searchParams.set(&#39;page&#39;, String(expectedNextPage));
+      if (withPage.href !== currentUrl) return withPage.href;
+
+      const withPagina = new URL(parsed.href);
+      withPagina.searchParams.set(&#39;pagina&#39;, String(expectedNextPage));
+      if (withPagina.href !== currentUrl) return withPagina.href;
+
+      const pathPage = new URL(parsed.href);
+      pathPage.pathname = parsed.pathname.replace(/\/+$/, &#39;&#39;) + &#39;/page/&#39; + expectedNextPage;
+      if (pathPage.href !== currentUrl) return pathPage.href;
+
+      const pathPagina = new URL(parsed.href);
+      pathPagina.pathname = parsed.pathname.replace(/\/+$/, &#39;&#39;) + &#39;/pagina/&#39; + expectedNextPage;
+      if (pathPagina.href !== currentUrl) return pathPagina.href;
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
+  function buildStartPageUrl(baseUrl, pageNumber) {
+    if (pageNumber &lt;= 1) return baseUrl;
+    try {
+      const parsed = new URL(baseUrl);
+      if (parsed.searchParams.has(&#39;page&#39;) || !parsed.searchParams.has(&#39;pagina&#39;)) {
+        parsed.searchParams.set(&#39;page&#39;, String(pageNumber));
+      } else {
+        parsed.searchParams.set(&#39;pagina&#39;, String(pageNumber));
+      }
+      return parsed.href;
+    } catch {
+      return baseUrl;
+    }
+  }
+
+  function pickArticleRoot(doc, titleElement) {
+    if (titleElement) {
+      const byTitle = titleElement.closest(&#39;article, main, section, [class*=&quot;content&quot;], [class*=&quot;post&quot;], [class*=&quot;news&quot;], [class*=&quot;noticia&quot;]&#39;);
+      if (byTitle) return byTitle;
+    }
+    return doc.querySelector(&#39;article&#39;) || doc.querySelector(&#39;main&#39;) || doc.body || doc;
+  }
+
+  function extractNewsFromDetail(doc, fallback) {
+    const titleEl = doc.querySelector(&#39;h1&#39;) || doc.querySelector(&#39;main h2&#39;) || null;
+    const titleMeta = doc.querySelector(&#39;meta[property=&quot;og:title&quot;]&#39;);
+    const title = sanitizeSpaces(
+      (titleEl &amp;&amp; titleEl.textContent) ||
+      (titleMeta &amp;&amp; titleMeta.getAttribute(&#39;content&#39;)) ||
+      fallback.titulo_previo ||
+      doc.title || &#39;&#39;
+    ) || null;
+
+    const timeEl = doc.querySelector(&#39;time[datetime]&#39;) || doc.querySelector(&#39;time&#39;) || doc.querySelector(&#39;[class*=&quot;date&quot; i], [class*=&quot;data&quot; i]&#39;);
+    let date = null;
+    if (timeEl) date = sanitizeSpaces(timeEl.getAttribute(&#39;datetime&#39;) || timeEl.textContent);
+    date = normalizeNewsDate(date || fallback.data_previa || extractDateFromText(doc.body ? doc.body.textContent : &#39;&#39;));
+
+    const root = pickArticleRoot(doc, titleEl);
+    const paragraphs = [];
+    const seen = new Set();
+
+    const pEls = Array.from(root.querySelectorAll(&#39;p&#39;));
+    for (const pEl of pEls) {
+      const value = sanitizeSpaces(pEl.textContent || &#39;&#39;);
+      if (!value || value.length &lt; 3) continue;
+      if (seen.has(value)) continue;
+      seen.add(value);
+      paragraphs.push(value);
+    }
+
+    let texto = paragraphs.join(&#39;\n\n&#39;);
+    if (!texto) {
+      const desc = doc.querySelector(&#39;meta[name=&quot;description&quot;], meta[property=&quot;og:description&quot;]&#39;);
+      texto = sanitizeSpaces(desc ? desc.getAttribute(&#39;content&#39;) : &#39;&#39;) || null;
+    }
+
+    const images = [];
+    const imgSeen = new Set();
+    const imgEls = Array.from(root.querySelectorAll(&#39;img&#39;));
+    for (const imgEl of imgEls) {
+      const rawSrc = imgEl.getAttribute(&#39;src&#39;) || imgEl.getAttribute(&#39;data-src&#39;) || &#39;&#39;;
+      const src = toAbsoluteUrl(rawSrc, fallback.link_noticia);
+      if (!src) continue;
+      if (/(logo|favicon|avatar|sprite|icon)/i.test(src.toLowerCase())) continue;
+      if (imgSeen.has(src)) continue;
+      imgSeen.add(src);
+      images.push(src);
+    }
+
+    const ogImage = doc.querySelector(&#39;meta[property=&quot;og:image&quot;]&#39;);
+    if (ogImage) {
+      const src = toAbsoluteUrl(ogImage.getAttribute(&#39;content&#39;) || &#39;&#39;, fallback.link_noticia);
+      if (src &amp;&amp; !imgSeen.has(src)) {
+        imgSeen.add(src);
+        images.unshift(src);
+      }
+    }
+
+    if (fallback.imagem_previa &amp;&amp; !imgSeen.has(fallback.imagem_previa)) {
+      images.push(fallback.imagem_previa);
+    }
+
+    const bestImage = pickMainImageUrl(images);
+
+    return {
+      titulo_noticia: title,
+      data_publicacao: date || null,
+      texto_noticia: texto || null,
+      paragrafos_noticia: uniqueParagraphs(paragraphs),
+      link_imagens: bestImage ? [bestImage] : [],
+      link_noticia: fallback.link_noticia
+    };
+  }
+
+  function buildFastNews(item) {
+    return {
+      titulo_noticia: item.titulo_previo || null,
+      data_publicacao: item.data_previa || null,
+      texto_noticia: null,
+      paragrafos_noticia: [],
+      link_imagens: item.imagem_previa ? [item.imagem_previa] : [],
+      link_noticia: item.link_noticia
+    };
+  }
+
+  function normalizeRequiredImageList(value) {
+    const main = pickMainImageUrl(value);
+    return main ? [main] : [];
+  }
+
+  function normalizeRequiredParagraphs(item) {
+    const initial = Array.isArray(item &amp;&amp; item.paragrafos_noticia) ? item.paragrafos_noticia : [];
+    let merged = uniqueParagraphs(initial);
+
+    if (!merged.length) {
+      const rawText = item &amp;&amp; item.texto_noticia ? String(item.texto_noticia) : &#39;&#39;;
+      merged = uniqueParagraphs(splitParagraphText(rawText));
+    }
+
+    return merged;
+  }
+
+  function toNumberedParagraphObject(paragraphs) {
+    const out = {};
+    (Array.isArray(paragraphs) ? paragraphs : []).forEach((paragraph, index) =&gt; {
+      out[String(index + 1)] = paragraph;
+    });
+    return out;
+  }
+
+  function toRequiredNoticiasPayload(items) {
+    const out = [];
+
+    (Array.isArray(items) ? items : []).forEach((item) =&gt; {
+      const titulo = sanitizeSpaces(item &amp;&amp; item.titulo_noticia ? item.titulo_noticia : &#39;&#39;);
+      const conteudo = toNumberedParagraphObject(normalizeRequiredParagraphs(item));
+      const dataPublicacao = sanitizeSpaces(item &amp;&amp; item.data_publicacao ? item.data_publicacao : &#39;&#39;);
+      const imagens = normalizeRequiredImageList(item &amp;&amp; item.link_imagens ? item.link_imagens : []);
+
+      if (!titulo &amp;&amp; !Object.keys(conteudo).length &amp;&amp; !dataPublicacao &amp;&amp; !imagens.length) return;
+
+      out.push({
+        &#39;id:&#39;: String(out.length + 1),
+        titulo,
+        conteudo,
+        &#39;data de Publica&#231;&#227;o&#39;: dataPublicacao,
+        urlDasImagens: imagens
+      });
+    });
+
+    return out;
+  }
+
+  function baixarJson(filename, payload) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: &#39;application/json&#39; });
+    const a = document.createElement(&#39;a&#39;);
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function sanitizeFilename(value) {
+    const raw = String(value || &#39;&#39;);
+    if (!raw) return &#39;&#39;;
+    try {
+      return raw
+        .normalize(&#39;NFD&#39;)
+        .replace(/[\u0300-\u036f]/g, &#39;&#39;)
+        .replace(/[^a-zA-Z0-9_-]+/g, &#39;_&#39;)
+        .replace(/_+/g, &#39;_&#39;)
+        .replace(/^_+|_+$/g, &#39;&#39;)
+        .slice(0, 64);
+    } catch {
+      return raw
+        .replace(/[^a-zA-Z0-9_-]+/g, &#39;_&#39;)
+        .replace(/_+/g, &#39;_&#39;)
+        .replace(/^_+|_+$/g, &#39;&#39;)
+        .slice(0, 64);
+    }
+  }
+
+  function inferImageExtension(url, contentType) {
+    const mime = String(contentType || &#39;&#39;).toLowerCase();
+    if (mime.includes(&#39;image/jpeg&#39;)) return &#39;jpg&#39;;
+    if (mime.includes(&#39;image/png&#39;)) return &#39;png&#39;;
+    if (mime.includes(&#39;image/webp&#39;)) return &#39;webp&#39;;
+    if (mime.includes(&#39;image/gif&#39;)) return &#39;gif&#39;;
+    if (mime.includes(&#39;image/svg+xml&#39;)) return &#39;svg&#39;;
+    if (mime.includes(&#39;image/avif&#39;)) return &#39;avif&#39;;
+
+    const src = sanitizeSpaces(url || &#39;&#39;);
+    const extMatch = src.match(/\.([a-zA-Z0-9]{2,5})(?:[?#]|$)/);
+    if (extMatch) return extMatch[1].toLowerCase();
+    return &#39;jpg&#39;;
+  }
+
+  function buildImageDownloadName(noticia, index, imageUrl, contentType) {
+    const title = sanitizeSpaces(noticia &amp;&amp; noticia.titulo_noticia ? noticia.titulo_noticia : &#39;noticia&#39;);
+    const titleStart = title.slice(0, 42);
+    const safeTitle = sanitizeFilename(titleStart) || &#39;noticia&#39;;
+    const order = String(index + 1).padStart(3, &#39;0&#39;);
+    const extension = inferImageExtension(imageUrl, contentType);
+    return order + &#39;_&#39; + safeTitle + &#39;.&#39; + extension;
+  }
+
+  function triggerDownloadFromBlob(blob, filename) {
+    const a = document.createElement(&#39;a&#39;);
+    const objectUrl = URL.createObjectURL(blob);
+    a.href = objectUrl;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(objectUrl);
+  }
+
+  async function baixarImagensNoticias() {
+    const payload = toRequiredNoticiasPayload(state.noticias);
+    if (!payload.length) {
+      alert(&#39;[EXTRACTRON] Nao ha noticias para baixar imagens.&#39;);
+      return { total: 0, baixadas: 0, falhas: 0 };
+    }
+
+    let baixadas = 0;
+    let falhas = 0;
+    setStatus(&#39;Baixando imagens das noticias...&#39;);
+    updateUI();
+
+    for (let i = 0; i &lt; payload.length; i++) {
+      const item = payload[i];
+      const imageUrl = Array.isArray(item.urlDasImagens) &amp;&amp; item.urlDasImagens.length ? item.urlDasImagens[0] : &#39;&#39;;
+      if (!imageUrl) continue;
+
+      const originalNews = state.noticias.find((news) =&gt; sanitizeSpaces(news &amp;&amp; news.titulo_noticia) === sanitizeSpaces(item.titulo)) || null;
+
+      try {
+        const response = await fetch(imageUrl, {
+          method: &#39;GET&#39;,
+          credentials: &#39;omit&#39;,
+          cache: &#39;no-store&#39;
+        });
+
+        if (!response.ok) throw new Error(&#39;HTTP &#39; + response.status);
+
+        const filename = buildImageDownloadName(originalNews || { titulo_noticia: item.titulo }, i, imageUrl, response.headers.get(&#39;content-type&#39;));
+        const blob = await response.blob();
+        triggerDownloadFromBlob(blob, filename);
+        baixadas += 1;
+      } catch (error) {
+        falhas += 1;
+        state.falhas.push({ link_noticia: imageUrl, erro: &#39;Falha ao baixar imagem: &#39; + error.message });
+      }
+
+      if (opts.delayMs &gt; 0) await sleep(Math.min(opts.delayMs, 250));
+    }
+
+    setStatus(&#39;Imagens baixadas: &#39; + baixadas + &#39; | Falhas: &#39; + falhas + &#39;.&#39;);
+    updateUI();
+    return { total: payload.length, baixadas, falhas };
+  }
+
+  function setStatus(text) {
+    state.statusText = sanitizeSpaces(text) || &#39;Pronto.&#39;;
+    if (ui.status) ui.status.textContent = state.statusText;
+  }
+
+  function getEstimatedTime() {
+    if (!state.running || state.processed.length === 0) return null;
+    const withDuration = state.processed.filter((it) =&gt; Number.isFinite(it.duration) &amp;&amp; it.duration &gt; 0);
+    if (!withDuration.length) return null;
+
+    const totalDuration = withDuration.reduce((sum, it) =&gt; sum + it.duration, 0);
+    const avgDuration = totalDuration / withDuration.length;
+    const pending = state.queue.reduce((acc, it) =&gt; acc + (state.selectedKeys.has(it.key) ? 1 : 0), 0) + runningSet.size;
+    if (pending &lt;= 0) return 0;
+    return Math.ceil((pending * avgDuration) / 1000);
+  }
+
+  function formatTime(seconds) {
+    if (!Number.isFinite(seconds) || seconds &lt;= 0) return &#39;--:--&#39;;
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs &gt; 0) return hrs + &#39;:&#39; + String(mins).padStart(2, &#39;0&#39;) + &#39;:&#39; + String(secs).padStart(2, &#39;0&#39;);
+    return mins + &#39;:&#39; + String(secs).padStart(2, &#39;0&#39;);
+  }
+
+  function getSelectedQueueCount() {
+    return state.queue.reduce((acc, it) =&gt; acc + (state.selectedKeys.has(it.key) ? 1 : 0), 0);
+  }
+
+  function getProgressPercent() {
+    if (state.running) {
+      const total = state.processed.length + state.falhas.length + state.queue.length + runningSet.size;
+      const done = state.processed.length + state.falhas.length;
+      return total &gt; 0 ? Math.max(0, Math.min(100, Math.round((done / total) * 100))) : 0;
+    }
+    return Math.max(0, Math.min(100, Math.round(state.progressPercent)));
+  }
+
+  function setProgress(value) {
+    state.progressPercent = Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function ensureItemId(item) {
+    if (!item) return 0;
+    if (Number.isFinite(item.itemId) &amp;&amp; item.itemId &gt; 0) return item.itemId;
+    const key = item.key;
+    if (key &amp;&amp; state.itemIdByKey.has(key)) {
+      item.itemId = state.itemIdByKey.get(key);
+      return item.itemId;
+    }
+
+    const id = state.nextItemId++;
+    item.itemId = id;
+    if (key) state.itemIdByKey.set(key, id);
+    return id;
+  }
+
+  function createQueueItem(linkData) {
+    const link = sanitizeSpaces(linkData.link_noticia || &#39;&#39;);
+    let key = link ? String(link).split(&#39;#&#39;)[0] : &#39;&#39;;
+    if (!key) {
+      key = &#39;api://&#39; + slugify((linkData.titulo_previo || &#39;noticia&#39;) + &#39;-&#39; + (linkData.data_previa || &#39;sem-data&#39;));
+    }
+
+    const title = sanitizeSpaces(linkData.titulo_previo || &#39;&#39;);
+    let fallbackText = title;
+    if (!fallbackText) {
+      try {
+        if (!link || !/^https?:/i.test(link)) throw new Error(&#39;Sem URL HTTP para fallback.&#39;);
+        const parsed = new URL(link);
+        fallbackText = sanitizeSpaces(parsed.pathname.split(&#39;/&#39;).filter(Boolean).pop() || parsed.hostname);
+      } catch {
+        fallbackText = link || &#39;noticia&#39;;
+      }
+    }
+
+    const item = {
+      key,
+      text: fallbackText,
+      titleName: title,
+      link_noticia: link,
+      titulo_previo: linkData.titulo_previo || null,
+      data_previa: linkData.data_previa || null,
+      imagem_previa: linkData.imagem_previa || null,
+      origem_pagina: linkData.origem_pagina || null,
+      api_noticia: linkData.api_noticia || null,
+      fileType: inferNewsTypeFromUrl(link),
+      retries: 0,
+      duration: null,
+      itemId: null
+    };
+
+    ensureItemId(item);
+    return item;
+  }
+
+  function fillQueueFromLinks(links) {
+    let added = 0;
+    let skipped = 0;
+
+    for (const linkData of links) {
+      const item = createQueueItem(linkData);
+      if (!item.key) {
+        skipped += 1;
+        continue;
+      }
+
+      if (opts.dedupe &amp;&amp; (state.doneKeys.has(item.key) || state.queuedKeys.has(item.key))) {
+        skipped += 1;
+        continue;
+      }
+
+      state.queue.push(item);
+      state.queuedKeys.add(item.key);
+      state.selectedKeys.add(item.key);
+      added += 1;
+    }
+
+    return { added, skipped };
+  }
+
+  function pullNext() {
+    if (!state.queue.length) return null;
+    const skipped = [];
+    const initialLength = state.queue.length;
+
+    for (let i = 0; i &lt; initialLength; i++) {
+      const candidate = state.queue.shift();
+      if (!candidate) break;
+
+      if (state.selectedKeys.has(candidate.key)) {
+        state.selectedKeys.delete(candidate.key);
+        state.queuedKeys.delete(candidate.key);
+        return candidate;
+      }
+
+      skipped.push(candidate);
+    }
+
+    if (skipped.length) state.queue.unshift(...skipped);
+    return null;
+  }
+
+  async function collectLinksFromPageAndIframes(pageUrl) {
+    const pageResponse = await fetchDocument(pageUrl, opts.corsProxy);
+    const links = collectCardLinks(pageResponse.doc, pageUrl, opts.selectorCustom);
+    const iframeSources = detectBlockedFramesAndSources(pageResponse.doc, pageUrl);
+
+    for (const src of iframeSources) {
+      if (state.cancelRequested) break;
+      try {
+        const iframeResponse = await fetchDocument(src, opts.corsProxy);
+        const iframeLinks = collectCardLinks(iframeResponse.doc, src, opts.selectorCustom);
+        iframeLinks.forEach((it) =&gt; links.push(it));
+      } catch {
+        state.blockedFrames.push(src);
+      }
+    }
+
+    const dedupe = new Map();
+    for (const link of links) {
+      if (!dedupe.has(link.link_noticia)) dedupe.set(link.link_noticia, link);
+    }
+
+    const pageInfo = parseTotalPages(pageResponse.doc);
+    return {
+      links: Array.from(dedupe.values()),
+      nextPageHint: pageInfo,
+      nextPageUrl: findNextPageUrl(pageResponse.doc, pageUrl, pageInfo ? pageInfo.current + 1 : 2)
+    };
+  }
+
+  async function scan() {
+    if (state.running || state.scanning) {
+      console.warn(&#39;[EXTRACTRON] Ja existe uma execucao em andamento.&#39;);
+      return { links: [], added: 0, skipped: 0 };
+    }
+
+    syncOptsFromUI();
+
+    const autoUrl = inferListingUrlFromLocation();
+    if (autoUrl) opts.urlInicial = autoUrl;
+
+    if (!opts.urlInicial) {
+      alert(&#39;Nao foi possivel detectar a URL de noticias automaticamente. Abra a pagina de noticias e tente novamente.&#39;);
+      return { links: [], added: 0, skipped: 0 };
+    }
+
+    state.cancelRequested = false;
+    state.scanning = true;
+    state.progressPercent = 0;
+    state.paginasVisitadas = 0;
+    state.linksEncontrados = 0;
+    state.blockedFrames = [];
+    setStatus(&#39;Escaneando paginas de noticias...&#39;);
+    updateUI();
+
+    const linksMap = new Map();
+    const visitedUrls = new Set();
+    let currentUrl = buildStartPageUrl(opts.urlInicial, opts.paginaInicial);
+    let expectedPage = opts.paginaInicial;
+
+    try {
+      setStatus(&#39;Procurando API de noticias automaticamente...&#39;);
+      updateUI();
+
+      const autoApiResult = await scanFromDetectedApi(currentUrl || opts.urlInicial);
+      if (autoApiResult.items.length) {
+        const linksFromApi = apiItemsToQueueLinks(autoApiResult.items, opts.urlInicial);
+        const result = fillQueueFromLinks(linksFromApi);
+
+        state.apiEndpoint = autoApiResult.endpoint;
+        state.linksEncontrados = autoApiResult.items.length;
+        setProgress(100);
+        setStatus(&#39;API detectada: &#39; + autoApiResult.endpoint + &#39; | Itens: &#39; + autoApiResult.items.length + &#39;.&#39;);
+        updateUI();
+
+        if (opts.verbose) {
+          console.log(&#39;[EXTRACTRON] API detectada automaticamente:&#39;, autoApiResult.endpoint);
+          console.log(&#39;[EXTRACTRON] Itens coletados via API:&#39;, autoApiResult.items.length);
+        }
+
+        return {
+          links: linksFromApi,
+          added: result.added,
+          skipped: result.skipped,
+          viaApi: true,
+          endpoint: autoApiResult.endpoint
+        };
+      }
+
+      state.apiEndpoint = &#39;&#39;;
+
+      for (let p = 0; p &lt; opts.maxPaginas; p++) {
+        if (state.cancelRequested) break;
+        if (!currentUrl || visitedUrls.has(currentUrl)) break;
+
+        visitedUrls.add(currentUrl);
+        state.paginasVisitadas += 1;
+
+        const listProgress = Math.min(55, Math.round(((p + 1) / opts.maxPaginas) * 55));
+        setProgress(listProgress);
+        setStatus(&#39;Lendo pagina &#39; + (p + 1) + &#39; de &#39; + opts.maxPaginas + &#39;...&#39;);
+        updateUI();
+
+        let pageCollect = null;
+        try {
+          pageCollect = await collectLinksFromPageAndIframes(currentUrl);
+        } catch (error) {
+          const fail = {
+            url: currentUrl,
+            erro: &#39;Erro ao abrir pagina de listagem: &#39; + error.message
+          };
+          state.falhas.push(fail);
+          state.errors.push(fail);
+          break;
+        }
+
+        pageCollect.links.forEach((item) =&gt; {
+          if (!linksMap.has(item.link_noticia)) linksMap.set(item.link_noticia, item);
+        });
+
+        state.linksEncontrados = linksMap.size;
+        updateUI();
+
+        expectedPage += 1;
+        let nextUrl = pageCollect.nextPageUrl;
+
+        if (!nextUrl &amp;&amp; pageCollect.nextPageHint &amp;&amp; expectedPage &lt;= pageCollect.nextPageHint.total) {
+          try {
+            const parsed = new URL(currentUrl);
+            parsed.searchParams.set(&#39;page&#39;, String(expectedPage));
+            nextUrl = parsed.href;
+          } catch {
+            nextUrl = null;
+          }
+        }
+
+        if (!nextUrl) break;
+        currentUrl = nextUrl;
+        if (opts.delayMs &gt; 0) await sleep(Math.min(opts.delayMs, 1200));
+      }
+
+      if (state.cancelRequested) {
+        setStatus(&#39;Scan interrompido.&#39;);
+        setProgress(0);
+        return { links: [], added: 0, skipped: 0, interrompido: true };
+      }
+
+      const links = Array.from(linksMap.values());
+      state.linksEncontrados = links.length;
+
+      if (!links.length) {
+        const fail = {
+          url: opts.urlInicial,
+          erro: &#39;Nenhum link de noticia encontrado. Ajuste seletor ou revise CORS.&#39;
+        };
+        state.falhas.push(fail);
+        state.errors.push(fail);
+        setStatus(&#39;Scan concluido sem links.&#39;);
+        setProgress(100);
+        updateUI();
+        return { links: [], added: 0, skipped: 0 };
+      }
+
+      const result = fillQueueFromLinks(links);
+      setProgress(100);
+      setStatus(&#39;Scan concluido. Adicionados: &#39; + result.added + &#39; | Pulados: &#39; + result.skipped + &#39;.&#39;);
+      updateUI();
+
+      return { links, added: result.added, skipped: result.skipped };
+    } finally {
+      state.scanning = false;
+      updateUI();
+    }
+  }
+
+  async function runItem(item) {
+    runningSet.add(item.key);
+    updateUI();
+
+    const started = Date.now();
+
+    try {
+      let noticia = null;
+
+      if (item.api_noticia &amp;&amp; (
+        item.api_noticia.texto_noticia
+        || !item.link_noticia
+        || /^api:\/\//i.test(item.link_noticia)
+        || !isLikelyNewsDetailUrl(item.link_noticia)
+      )) {
+        noticia = item.api_noticia;
+      } else if (opts.detalharNoticias &amp;&amp; item.link_noticia) {
+        const detail = await fetchDocument(item.link_noticia, opts.corsProxy);
+        noticia = extractNewsFromDetail(detail.doc, item);
+      } else {
+        noticia = buildFastNews(item);
+      }
+
+      item.duration = Date.now() - started;
+      state.noticias.push(noticia);
+      state.doneKeys.add(item.key);
+      state.processed.push({ ...item, result: noticia });
+      setStatus(&#39;Extraido: &#39; + sanitizeSpaces(noticia.titulo_noticia || item.text || &#39;noticia&#39;));
+    } catch (error) {
+      item.retries = (item.retries || 0) + 1;
+
+      if (!state.cancelRequested &amp;&amp; state.running &amp;&amp; item.retries &lt;= opts.maxRetries) {
+        state.queue.push(item);
+        state.queuedKeys.add(item.key);
+        state.selectedKeys.add(item.key);
+      } else {
+        const fail = {
+          link_noticia: item.link_noticia,
+          erro: error.message
+        };
+        state.falhas.push(fail);
+        state.errors.push(fail);
+      }
+    } finally {
+      runningSet.delete(item.key);
+      if (opts.delayMs &gt; 0) await sleep(opts.delayMs);
+      updateUI();
+    }
+  }
+
+  function processLoop() {
+    if (!state.running) return;
+
+    while (runningSet.size &lt; opts.concurrency &amp;&amp; state.queue.length &gt; 0) {
+      const next = pullNext();
+      if (!next) break;
+      runItem(next);
+    }
+
+    if (!state.running) return;
+
+    const selectedQueueCount = getSelectedQueueCount();
+    if (selectedQueueCount === 0 &amp;&amp; runningSet.size === 0) {
+      state.running = false;
+      setStatus(&#39;Nenhum item selecionado na fila.&#39;);
+      setProgress(100);
+      updateUI();
+      return;
+    }
+
+    if (state.queue.length === 0 &amp;&amp; runningSet.size === 0) {
+      state.running = false;
+      setStatus(&#39;Processamento concluido.&#39;);
+      setProgress(100);
+      updateUI();
+      return;
+    }
+
+    clearTimeout(state.timer);
+    state.timer = setTimeout(processLoop, 120);
+    updateUI();
+  }
+
+  async function start() {
+    if (state.running) return;
+    syncOptsFromUI();
+
+    if (!state.queue.length) {
+      await scan();
+    }
+
+    if (!state.queue.length) {
+      alert(&#39;[EXTRACTRON] Nenhuma noticia na fila. Use scan() primeiro.&#39;);
+      return;
+    }
+
+    if (getSelectedQueueCount() === 0) {
+      alert(&#39;[EXTRACTRON] Nenhum item selecionado. Use [+] Todos ou selecione no modal de itens.&#39;);
+      return;
+    }
+
+    state.cancelRequested = false;
+    state.running = true;
+    state.startedAt = new Date();
+    setStatus(&#39;Processando fila...&#39;);
+    updateUI();
+    processLoop();
+  }
+
+  function stop() {
+    state.cancelRequested = true;
+    state.running = false;
+    clearTimeout(state.timer);
+    setStatus(&#39;Interrompendo...&#39;);
+    updateUI();
+  }
+
+  function clearHistory() {
+    state.noticias = [];
+    state.falhas = [];
+    state.errors = [];
+    state.processed = [];
+    state.doneKeys.clear();
+    setStatus(&#39;Historico limpo.&#39;);
+    setProgress(0);
+    updateUI();
+  }
+
+  function reset() {
+    stop();
+    state.queue = [];
+    state.processed = [];
+    state.noticias = [];
+    state.falhas = [];
+    state.errors = [];
+    state.blockedFrames = [];
+    state.paginasVisitadas = 0;
+    state.linksEncontrados = 0;
+    state.doneKeys.clear();
+    state.queuedKeys.clear();
+    state.selectedKeys.clear();
+    state.itemIdByKey.clear();
+    state.nextItemId = 1;
+    state.progressPercent = 0;
+    state.apiEndpoint = &#39;&#39;;
+    state.startedAt = null;
+    setStatus(&#39;Estado resetado.&#39;);
+    updateUI();
+  }
+
+  function selectAll() {
+    state.queue.forEach((it) =&gt; state.selectedKeys.add(it.key));
+    updateUI();
+  }
+
+  function deselectAll() {
+    state.selectedKeys.clear();
+    updateUI();
+  }
+
+  function toggleSelect(key) {
+    if (!key) return;
+    if (state.selectedKeys.has(key)) state.selectedKeys.delete(key);
+    else state.selectedKeys.add(key);
+    updateUI();
+  }
+
+  function itemMatchesNameFilter(item, rules) {
+    const id = ensureItemId(item);
+    if (rules.exactIds.has(id)) return true;
+    if (rules.ranges.some(([a, b]) =&gt; id &gt;= a &amp;&amp; id &lt;= b)) return true;
+
+    if (!rules.textTerms.length) return false;
+    const hay = normalizeLoose((item.text || &#39;&#39;) + &#39; &#39; + (item.titleName || &#39;&#39;) + &#39; &#39; + (item.link_noticia || &#39;&#39;));
+    return rules.textTerms.some((term) =&gt; hay.includes(term));
+  }
+
+  function applyQueueNameFilter(mode, raw) {
+    const rules = parseFilterRules(raw);
+    const hasRules = rules.textTerms.length &gt; 0 || rules.exactIds.size &gt; 0 || rules.ranges.length &gt; 0;
+    if (!hasRules) {
+      console.warn(&#39;[EXTRACTRON] Filtro de nomes/IDs vazio.&#39;);
+      return;
+    }
+
+    const matchingKeys = new Set();
+    state.queue.forEach((item) =&gt; {
+      if (itemMatchesNameFilter(item, rules)) matchingKeys.add(item.key);
+    });
+
+    if (mode === &#39;keep&#39;) {
+      const nextSelected = new Set();
+      state.queue.forEach((item) =&gt; {
+        if (matchingKeys.has(item.key)) nextSelected.add(item.key);
+      });
+      state.selectedKeys = nextSelected;
+    } else {
+      matchingKeys.forEach((key) =&gt; state.selectedKeys.delete(key));
+    }
+
+    updateUI();
+  }
+
+  function applyQueueTypeFilter(mode, raw) {
+    const typeTokens = parseTypeFilterTerms(raw);
+    if (!typeTokens.length) {
+      console.warn(&#39;[EXTRACTRON] Nenhum tipo valido no filtro.&#39;);
+      return;
+    }
+
+    const matchingKeys = new Set();
+    state.queue.forEach((item) =&gt; {
+      const itemType = normalizeFileTypeToken(item.fileType) || inferNewsTypeFromUrl(item.link_noticia);
+      if (typeTokens.includes(itemType)) matchingKeys.add(item.key);
+    });
+
+    if (mode === &#39;keep&#39;) {
+      const nextSelected = new Set();
+      state.queue.forEach((item) =&gt; {
+        if (matchingKeys.has(item.key)) nextSelected.add(item.key);
+      });
+      state.selectedKeys = nextSelected;
+    } else {
+      matchingKeys.forEach((key) =&gt; state.selectedKeys.delete(key));
+    }
+
+    updateUI();
+  }
+
+  async function expandTable() {
+    setStatus(&#39;ExpandTable nao se aplica para noticias. Executando scan completo...&#39;);
+    updateUI();
+    return scan();
+  }
+
+  function openBlockedFrames() {
+    const frames = Array.from(new Set(state.blockedFrames)).filter(Boolean);
+    if (!frames.length) {
+      console.warn(&#39;[EXTRACTRON] Nenhum iframe bloqueado para abrir.&#39;);
+      return [];
+    }
+
+    const opened = [];
+    for (const src of frames) {
+      try {
+        const win = window.open(src, &#39;_blank&#39;, &#39;noopener,noreferrer&#39;);
+        if (win) opened.push(src);
+      } catch {
+        // noop
+      }
+    }
+
+    if (!opened.length) {
+      console.warn(&#39;[EXTRACTRON] O navegador bloqueou popups. Permita popups e tente novamente.&#39;);
+    } else {
+      console.log(&#39;[EXTRACTRON] Iframe(s) aberto(s):&#39;, opened.length);
+    }
+
+    return opened;
+  }
+
+  function syncOptsFromUI() {
+    if (!panelEl) return;
+    opts.corsProxy = sanitizeSpaces(ui.proxy ? ui.proxy.value : opts.corsProxy);
+    opts.paginaInicial = asPositiveInt(ui.pageStart ? ui.pageStart.value : opts.paginaInicial, 1);
+    opts.maxPaginas = asPositiveInt(ui.pageMax ? ui.pageMax.value : opts.maxPaginas, 5);
+    opts.selectorCustom = sanitizeSpaces(ui.selector ? ui.selector.value : opts.selectorCustom);
+    opts.detalharNoticias = Boolean(ui.detail &amp;&amp; ui.detail.checked);
+    opts.delayMs = asNonNegativeInt(ui.speed ? ui.speed.value : opts.delayMs, 800);
+  }
+
+  function fillUI(config = {}) {
+    Object.assign(opts, config || {});
+    if (!panelEl) return;
+    ui.proxy.value = opts.corsProxy || &#39;&#39;;
+    ui.pageStart.value = String(opts.paginaInicial || 1);
+    ui.pageMax.value = String(opts.maxPaginas || 5);
+    ui.selector.value = opts.selectorCustom || &#39;&#39;;
+    ui.detail.checked = Boolean(opts.detalharNoticias);
+    ui.speed.value = String(opts.delayMs || 0);
+    ui.speedValue.textContent = String(opts.delayMs || 0) + &#39;ms&#39;;
+  }
+
+  function toggleTheme() {
+    if (!panelEl) return;
+    const isLight = panelEl.classList.toggle(&#39;light-mode&#39;);
+    if (ui.theme) ui.theme.textContent = isLight ? &#39;L&#39; : &#39;D&#39;;
+    localStorage.setItem(&#39;__xn-theme&#39;, isLight ? &#39;light&#39; : &#39;dark&#39;);
+    syncItemsModalTheme();
+  }
+
+  function syncItemsModalTheme() {
+    if (!panelEl || !modalEl) return;
+    modalEl.classList.toggle(&#39;light-mode&#39;, panelEl.classList.contains(&#39;light-mode&#39;));
+  }
+
+  function closeItemsModal() {
+    if (!modalEl) return;
+    modalEl.classList.add(&#39;hidden&#39;);
+  }
+
+  function openItemsModal() {
+    if (!modalEl) return;
+    syncItemsModalTheme();
+    renderItemsModalList();
+    modalEl.classList.remove(&#39;hidden&#39;);
+  }
+
+  function renderItemsModalList() {
+    if (!modalEl) return;
+
+    const listEl = modalEl.querySelector(&#39;#__dl-modal-list&#39;);
+    const summaryEl = modalEl.querySelector(&#39;#__dl-modal-summary&#39;);
+    if (!listEl || !summaryEl) return;
+
+    summaryEl.textContent = &#39;Itens na fila: &#39; + state.queue.length + &#39; | Selecionados: &#39; + getSelectedQueueCount();
+    listEl.innerHTML = &#39;&#39;;
+
+    if (state.queue.length === 0) {
+      const empty = document.createElement(&#39;div&#39;);
+      empty.style.padding = &#39;12px&#39;;
+      empty.style.fontSize = &#39;12px&#39;;
+      empty.style.opacity = &#39;0.8&#39;;
+      empty.textContent = &#39;Nenhum item na fila. Execute [⊙] Escanear para carregar noticias.&#39;;
+      listEl.appendChild(empty);
+      return;
+    }
+
+    state.queue.forEach((item) =&gt; {
+      const isSelected = state.selectedKeys.has(item.key);
+      const isProcessing = runningSet.has(item.key);
+      const type = normalizeFileTypeToken(item.fileType) || inferNewsTypeFromUrl(item.link_noticia);
+      item.fileType = type;
+      const displayId = String(ensureItemId(item)).padStart(4, &#39;0&#39;);
+
+      const row = document.createElement(&#39;div&#39;);
+      row.className = &#39;download-item&#39; + (isProcessing ? &#39; processing&#39; : &#39;&#39;);
+      row.innerHTML =
+        &#39;&lt;input type=&quot;checkbox&quot; class=&quot;download-checkbox&quot; &#39; + (isSelected ? &#39;checked&#39; : &#39;&#39;) + &#39;&gt;&#39; +
+        &#39;&lt;span class=&quot;download-id&quot;&gt;ID &#39; + displayId + &#39;&lt;/span&gt;&#39; +
+        &#39;&lt;span class=&quot;download-type&quot;&gt;&#39; + type + &#39;&lt;/span&gt;&#39; +
+        &#39;&lt;span class=&quot;download-name&quot; title=&quot;&#39; + (item.text || &#39;&#39;) + &#39;&quot;&gt;&#39; + (item.text || &#39;(sem nome)&#39;) + &#39;&lt;/span&gt;&#39; +
+        &#39;&lt;span class=&quot;download-icon&quot;&gt;&#39; + (isSelected ? &#39;[x]&#39; : &#39;[ ]&#39;) + &#39;&lt;/span&gt;&#39;;
+
+      const checkbox = row.querySelector(&#39;.download-checkbox&#39;);
+      if (checkbox) checkbox.onchange = () =&gt; toggleSelect(item.key);
+
+      listEl.appendChild(row);
+    });
+  }
+
+  function updateUI() {
+    if (!panelEl) return;
+
+    const selectedQueueCount = getSelectedQueueCount();
+    ui.statQueue.textContent = String(state.queue.length);
+    ui.statActive.textContent = String(runningSet.size);
+    ui.statProcessed.textContent = String(state.processed.length);
+    ui.statSelected.textContent = String(selectedQueueCount);
+    ui.statErrors.textContent = String(state.falhas.length);
+
+    const progress = getProgressPercent();
+    ui.progressFill.style.width = progress + &#39;%&#39;;
+    ui.progressPercent.textContent = progress + &#39;%&#39;;
+
+    const eta = getEstimatedTime();
+    ui.progressTime.textContent = state.running ? &#39;ETA &#39; + formatTime(eta) : &#39;--:--&#39;;
+    ui.status.textContent = state.statusText;
+
+    ui.scan.disabled = state.running || state.scanning;
+    ui.start.disabled = state.running || state.scanning || selectedQueueCount === 0;
+    ui.stop.disabled = !state.running &amp;&amp; !state.scanning;
+
+    ui.openIframes.disabled = state.blockedFrames.length === 0;
+    ui.openIframes.textContent = state.blockedFrames.length &gt; 0
+      ? &#39;[↗] Abrir Iframe(s) (&#39; + state.blockedFrames.length + &#39;)&#39;
+      : &#39;[↗] Abrir Iframe(s)&#39;;
+
+    ui.downloadOk.disabled = state.noticias.length === 0;
+    ui.downloadImages.disabled = state.noticias.length === 0;
+    ui.downloadFail.disabled = state.falhas.length === 0;
+
+    ui.summary.textContent =
+      &#39;Fila: &#39; + state.queue.length +
+      &#39; | Selecionados: &#39; + selectedQueueCount +
+      &#39; | Processados: &#39; + state.processed.length +
+      &#39; | Paginas lidas: &#39; + state.paginasVisitadas +
+      &#39; | Links encontrados: &#39; + state.linksEncontrados +
+      (state.apiEndpoint ? &#39; | API: &#39; + state.apiEndpoint : &#39;&#39;);
+
+    const uniqueFrames = Array.from(new Set(state.blockedFrames)).filter(Boolean);
+    if (uniqueFrames.length) {
+      const sample = uniqueFrames.slice(0, 2).join(&#39; | &#39;);
+      ui.iframeHint.textContent = &#39;Iframe bloqueado detectado. Use [↗] para abrir. Exemplo: &#39; + sample;
+    } else {
+      ui.iframeHint.textContent = &#39;Sem iframes bloqueados detectados no ultimo scan.&#39;;
+    }
+
+    if (modalEl &amp;&amp; !modalEl.classList.contains(&#39;hidden&#39;)) {
+      renderItemsModalList();
+    }
+  }
+
+  function createItemsModal() {
+    if (modalEl &amp;&amp; modalEl.parentNode) modalEl.parentNode.removeChild(modalEl);
+
+    modalEl = document.createElement(&#39;div&#39;);
+    modalEl.id = &#39;__dl-items-modal&#39;;
+    modalEl.className = &#39;hidden&#39;;
+    modalEl.innerHTML = `
+      &lt;div class=&quot;modal-card&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-label=&quot;Itens e filtros&quot;&gt;
+        &lt;div class=&quot;modal-header&quot;&gt;
+          &lt;span&gt;[LISTA] Itens da Fila e Filtros&lt;/span&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-modal-close&quot; style=&quot;flex:0 0 auto; min-width:40px; padding:6px 10px;&quot;&gt;X&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;modal-body&quot;&gt;
+          &lt;textarea id=&quot;__dl-filter-input&quot; placeholder=&quot;Digite nomes, IDs, faixas de ID ou tipos (pdf, html, news)...&quot;&gt;&lt;/textarea&gt;
+          &lt;div id=&quot;__dl-filter-help&quot;&gt;Separadores aceitos: quebra de linha, virgula, ponto e virgula e barra vertical.&lt;/div&gt;
+          &lt;div id=&quot;__dl-modal-actions&quot;&gt;
+            &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-keep&quot;&gt;[+] Manter Nomes&lt;/button&gt;
+            &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-remove&quot;&gt;[-] Remover Nomes&lt;/button&gt;
+            &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-keep-type&quot;&gt;[+] Manter Tipos&lt;/button&gt;
+            &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-remove-type&quot;&gt;[-] Remover Tipos&lt;/button&gt;
+            &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-select-all&quot;&gt;[+] Selecionar Todos&lt;/button&gt;
+            &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-deselect-all&quot;&gt;[-] Desmarcar Todos&lt;/button&gt;
+            &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btn-modal-clear-filter&quot;&gt;[C] Limpar Campo&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div id=&quot;__dl-modal-summary&quot;&gt;&lt;/div&gt;
+          &lt;div id=&quot;__dl-modal-list&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    `;
+
+    document.body.appendChild(modalEl);
+    syncItemsModalTheme();
+
+    const filterInput = modalEl.querySelector(&#39;#__dl-filter-input&#39;);
+
+    modalEl.querySelector(&#39;#btn-modal-close&#39;).onclick = () =&gt; closeItemsModal();
+    modalEl.querySelector(&#39;#btn-modal-clear-filter&#39;).onclick = () =&gt; {
+      if (filterInput) filterInput.value = &#39;&#39;;
+    };
+    modalEl.querySelector(&#39;#btn-modal-select-all&#39;).onclick = () =&gt; selectAll();
+    modalEl.querySelector(&#39;#btn-modal-deselect-all&#39;).onclick = () =&gt; deselectAll();
+    modalEl.querySelector(&#39;#btn-modal-keep&#39;).onclick = () =&gt; applyQueueNameFilter(&#39;keep&#39;, filterInput ? filterInput.value : &#39;&#39;);
+    modalEl.querySelector(&#39;#btn-modal-remove&#39;).onclick = () =&gt; applyQueueNameFilter(&#39;remove&#39;, filterInput ? filterInput.value : &#39;&#39;);
+    modalEl.querySelector(&#39;#btn-modal-keep-type&#39;).onclick = () =&gt; applyQueueTypeFilter(&#39;keep&#39;, filterInput ? filterInput.value : &#39;&#39;);
+    modalEl.querySelector(&#39;#btn-modal-remove-type&#39;).onclick = () =&gt; applyQueueTypeFilter(&#39;remove&#39;, filterInput ? filterInput.value : &#39;&#39;);
+
+    modalEl.addEventListener(&#39;click&#39;, (event) =&gt; {
+      if (event.target === modalEl) closeItemsModal();
+    });
+  }
+
+  function enableDrag(panel, handle) {
+    if (!panel || !handle) return;
+
+    const dragState = { active: false, offsetX: 0, offsetY: 0 };
+
+    const onMove = (event) =&gt; {
+      if (!dragState.active) return;
+      const x = event.clientX - dragState.offsetX;
+      const y = event.clientY - dragState.offsetY;
+
+      panel.style.right = &#39;&#39;;
+      panel.style.left = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, x)) + &#39;px&#39;;
+      panel.style.top = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, y)) + &#39;px&#39;;
+    };
+
+    const onUp = () =&gt; {
+      dragState.active = false;
+      document.removeEventListener(&#39;mousemove&#39;, onMove);
+      document.removeEventListener(&#39;mouseup&#39;, onUp);
+    };
+
+    handle.addEventListener(&#39;mousedown&#39;, (event) =&gt; {
+      dragState.active = true;
+      dragState.offsetX = event.clientX - panel.getBoundingClientRect().left;
+      dragState.offsetY = event.clientY - panel.getBoundingClientRect().top;
+      document.addEventListener(&#39;mousemove&#39;, onMove);
+      document.addEventListener(&#39;mouseup&#39;, onUp);
+    });
+  }
+
+  const CSS = `
+    * { box-sizing: border-box; }
+
+    #__dl-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 470px;
+      max-height: 88vh;
+      background: #1a1a1a;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: dlSlideIn 0.3s ease;
+      color: #ffffff;
+      border: 1px solid #333333;
+    }
+
+    @keyframes dlSlideIn {
+      from { transform: translateX(500px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    #__dl-panel.minimized #__dl-content {
+      display: none;
+    }
+
+    #__dl-header {
+      background: #2a2a2a;
+      color: #ffffff;
+      padding: 14px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333333;
+      cursor: move;
+      user-select: none;
+    }
+
+    #__dl-header .actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    #__dl-close,
+    #__dl-theme-toggle,
+    #__dl-min {
+      background: transparent;
+      border: none;
+      color: #888888;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+
+    #__dl-close:hover,
+    #__dl-theme-toggle:hover,
+    #__dl-min:hover {
+      color: #ffffff;
+      background: #333333;
+    }
+
+    #__dl-warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 10px 12px;
+      margin: 0;
+      font-size: 11px;
+      color: #856404;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    #__dl-warning:hover { opacity: 0.85; }
+    #__dl-warning.hidden { display: none !important; }
+
+    #__dl-config {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #333333;
+      background: #202020;
+    }
+
+    #__dl-config .config-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    #__dl-config .config-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    #__dl-config label {
+      display: grid;
+      gap: 4px;
+      font-size: 10px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    #__dl-config input[type=&quot;text&quot;],
+    #__dl-config input[type=&quot;url&quot;],
+    #__dl-config input[type=&quot;number&quot;] {
+      width: 100%;
+      background: #101010;
+      border: 1px solid #333333;
+      border-radius: 4px;
+      color: #f3f4f6;
+      padding: 7px 8px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    #__dl-config input:focus {
+      border-color: #6b7280;
+    }
+
+    #__dl-config .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #d1d5db;
+    }
+
+    #__dl-stats {
+      background: #242424;
+      padding: 12px;
+      font-size: 11px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+      gap: 8px;
+      border-bottom: 1px solid #333333;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      color: #888888;
+      font-weight: 500;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-value {
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    #__dl-progress {
+      padding: 12px;
+      border-bottom: 1px solid #333333;
+    }
+
+    #__dl-status {
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: #d1d5db;
+    }
+
+    #__dl-progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #333333;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #ffffff;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    #__dl-controls {
+      padding: 12px;
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid #333333;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex: 1 1 120px;
+      min-width: 120px;
+      max-width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #333333;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #2a2a2a;
+      color: #ffffff;
+      white-space: normal;
+      text-align: center;
+      text-overflow: ellipsis;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: #555555;
+      background: #333333;
+    }
+
+    .btn-primary {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #f0f0f0;
+      border-color: #f0f0f0;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: #ffffff;
+      border-color: #dc3545;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #c82333;
+      border-color: #c82333;
+    }
+
+    .btn-success {
+      background: #198754;
+      color: #ffffff;
+      border-color: #198754;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #157347;
+      border-color: #157347;
+    }
+
+    .btn-warning {
+      background: #b45309;
+      color: #ffffff;
+      border-color: #b45309;
+    }
+
+    .btn-warning:hover:not(:disabled) {
+      background: #92400e;
+      border-color: #92400e;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #__dl-list-summary,
+    #__dl-iframe-hint {
+      padding: 10px 12px;
+      border-bottom: 1px solid #333333;
+      color: #aaaaaa;
+      font-size: 11px;
+    }
+
+    #__dl-iframe-hint {
+      border-bottom: none;
+      color: #f59e0b;
+      padding-top: 0;
+    }
+
+    .speed-control {
+      padding: 12px;
+      border-top: 1px solid #333333;
+      font-size: 11px;
+    }
+
+    .speed-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: #888888;
+      font-weight: 500;
+    }
+
+    input[type=&quot;range&quot;] {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: #333333;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type=&quot;range&quot;]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    input[type=&quot;range&quot;]::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      border: none;
+    }
+
+    #__dl-items-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000000;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    #__dl-items-modal.hidden { display: none; }
+
+    #__dl-items-modal .modal-card {
+      width: min(920px, 100%);
+      max-height: 88vh;
+      background: #1a1a1a;
+      color: #ffffff;
+      border: 1px solid #333333;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #__dl-items-modal .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid #333333;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    #__dl-items-modal .modal-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    #__dl-filter-input {
+      width: 100%;
+      min-height: 70px;
+      resize: vertical;
+      border-radius: 6px;
+      border: 1px solid #3a3a3a;
+      background: #101010;
+      color: #f0f0f0;
+      padding: 8px;
+      font-size: 12px;
+    }
+
+    #__dl-filter-help {
+      color: #999999;
+      font-size: 10px;
+    }
+
+    #__dl-modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    #__dl-modal-summary {
+      font-size: 11px;
+      color: #bbbbbb;
+    }
+
+    #__dl-modal-list {
+      min-height: 160px;
+      max-height: 46vh;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .download-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      background: #242424;
+      border: 1px solid #333333;
+      transition: all 0.2s;
+      gap: 8px;
+    }
+
+    .download-item.processing {
+      background: #3a2a1a;
+      border-color: #ff9800;
+    }
+
+    .download-checkbox {
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      accent-color: #ffffff;
+    }
+
+    .download-id {
+      min-width: 62px;
+      font-size: 10px;
+      color: #9ec5fe;
+      font-weight: 600;
+    }
+
+    .download-type {
+      min-width: 46px;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: #d1d5db;
+    }
+
+    .download-name {
+      flex: 1;
+      font-size: 11px;
+      color: #cccccc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .download-icon {
+      font-size: 11px;
+      color: #888888;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    #__dl-panel.light-mode {
+      background: #f5f5f5;
+      color: #1a1a1a;
+    }
+
+    #__dl-panel.light-mode #__dl-header {
+      background: #ffffff;
+      color: #1a1a1a;
+      border-bottom-color: #dddddd;
+    }
+
+    #__dl-panel.light-mode #__dl-close,
+    #__dl-panel.light-mode #__dl-theme-toggle,
+    #__dl-panel.light-mode #__dl-min {
+      color: #666666;
+    }
+
+    #__dl-panel.light-mode #__dl-close:hover,
+    #__dl-panel.light-mode #__dl-theme-toggle:hover,
+    #__dl-panel.light-mode #__dl-min:hover {
+      color: #1a1a1a;
+      background: #e8e8e8;
+    }
+
+    #__dl-panel.light-mode #__dl-config,
+    #__dl-panel.light-mode #__dl-stats {
+      background: #ffffff;
+      border-bottom-color: #dddddd;
+    }
+
+    #__dl-panel.light-mode #__dl-config label {
+      color: #6b7280;
+    }
+
+    #__dl-panel.light-mode #__dl-config input[type=&quot;text&quot;],
+    #__dl-panel.light-mode #__dl-config input[type=&quot;url&quot;],
+    #__dl-panel.light-mode #__dl-config input[type=&quot;number&quot;] {
+      background: #ffffff;
+      color: #111827;
+      border-color: #d1d5db;
+    }
+
+    #__dl-panel.light-mode .stat-label { color: #666666; }
+    #__dl-panel.light-mode .stat-value { color: #1a1a1a; }
+    #__dl-panel.light-mode #__dl-progress,
+    #__dl-panel.light-mode #__dl-controls,
+    #__dl-panel.light-mode #__dl-list-summary {
+      border-bottom-color: #dddddd;
+    }
+
+    #__dl-panel.light-mode .progress-bar { background: #dddddd; }
+    #__dl-panel.light-mode .progress-fill { background: #1a1a1a; }
+    #__dl-panel.light-mode .btn {
+      border-color: #dddddd;
+      background: #ffffff;
+      color: #1a1a1a;
+    }
+
+    #__dl-panel.light-mode .btn:hover:not(:disabled) {
+      border-color: #999999;
+      background: #f0f0f0;
+    }
+
+    #__dl-panel.light-mode .btn-primary {
+      background: #1a1a1a;
+      color: #ffffff;
+      border-color: #1a1a1a;
+    }
+
+    #__dl-panel.light-mode .btn-primary:hover:not(:disabled) {
+      background: #333333;
+      border-color: #333333;
+    }
+
+    #__dl-panel.light-mode #__dl-list-summary {
+      color: #6b7280;
+      background: #fafafa;
+    }
+
+    #__dl-items-modal.light-mode .modal-card {
+      background: #ffffff;
+      color: #1a1a1a;
+      border-color: #dddddd;
+    }
+
+    #__dl-items-modal.light-mode .modal-header { border-bottom-color: #dddddd; }
+
+    #__dl-items-modal.light-mode #__dl-filter-input {
+      background: #ffffff;
+      color: #1a1a1a;
+      border-color: #cccccc;
+    }
+
+    #__dl-items-modal.light-mode #__dl-filter-help,
+    #__dl-items-modal.light-mode #__dl-modal-summary {
+      color: #666666;
+    }
+
+    #__dl-items-modal.light-mode .download-item {
+      background: #f8fafc;
+      border-color: #e5e7eb;
+    }
+
+    #__dl-items-modal.light-mode .download-name { color: #111827; }
+    #__dl-items-modal.light-mode .download-type {
+      background: #e5e7eb;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+
+    @media (max-width: 640px) {
+      #__dl-panel {
+        width: calc(100% - 16px);
+        right: 8px;
+        left: 8px;
+        max-height: 92vh;
+      }
+
+      #__dl-config .config-row,
+      #__dl-config .config-row-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .btn {
+        flex: 1 1 48%;
+        min-width: 0;
+      }
+
+      #__dl-items-modal { padding: 8px; }
+      #__dl-items-modal .modal-card { max-height: 92vh; }
+      #__dl-modal-list { max-height: 52vh; }
+    }
+  `;
+
+  function createPanel() {
+    const existingPanel = document.getElementById(&#39;__dl-panel&#39;);
+    if (existingPanel) existingPanel.remove();
+    const existingStyle = document.getElementById(&#39;__extractron-noticias-style&#39;);
+    if (existingStyle) existingStyle.remove();
+    const existingModal = document.getElementById(&#39;__dl-items-modal&#39;);
+    if (existingModal) existingModal.remove();
+
+    styleEl = document.createElement(&#39;style&#39;);
+    styleEl.id = &#39;__extractron-noticias-style&#39;;
+    styleEl.textContent = CSS;
+    document.head.appendChild(styleEl);
+
+    panelEl = document.createElement(&#39;div&#39;);
+    panelEl.id = &#39;__dl-panel&#39;;
+    panelEl.innerHTML = `
+      &lt;div id=&quot;__dl-header&quot;&gt;
+        &lt;span&gt;BAIXATRON NOTICIAS&lt;/span&gt;
+        &lt;div class=&quot;actions&quot;&gt;
+          &lt;button id=&quot;__dl-min&quot; title=&quot;Minimizar&quot;&gt;_&lt;/button&gt;
+          &lt;button id=&quot;__dl-theme-toggle&quot; title=&quot;Tema&quot;&gt;D&lt;/button&gt;
+          &lt;button id=&quot;__dl-close&quot; title=&quot;Fechar&quot;&gt;X&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id=&quot;__dl-content&quot;&gt;
+        &lt;div id=&quot;__dl-warning&quot;&gt;
+          CORS e iframes podem bloquear leitura. Se necessario use proxy e o botao [↗] Abrir Iframe(s).
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-config&quot;&gt;
+          &lt;div class=&quot;config-row&quot;&gt;
+            &lt;label&gt;Proxy CORS (Opcional)
+              &lt;input id=&quot;xn-proxy&quot; type=&quot;text&quot; placeholder=&quot;https://proxy/?url={url}&quot;&gt;
+            &lt;/label&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;config-row-3&quot;&gt;
+            &lt;label&gt;Pagina Inicial
+              &lt;input id=&quot;xn-page-start&quot; type=&quot;number&quot; min=&quot;1&quot; value=&quot;1&quot;&gt;
+            &lt;/label&gt;
+            &lt;label&gt;Max Paginas
+              &lt;input id=&quot;xn-page-max&quot; type=&quot;number&quot; min=&quot;1&quot; value=&quot;5&quot;&gt;
+            &lt;/label&gt;
+            &lt;label&gt;Selector CSS
+              &lt;input id=&quot;xn-selector&quot; type=&quot;text&quot; placeholder=&quot;main a[href*=&#39;/noticias/&#39;]&quot;&gt;
+            &lt;/label&gt;
+          &lt;/div&gt;
+
+          &lt;label class=&quot;check&quot;&gt;
+            &lt;input id=&quot;xn-detail&quot; type=&quot;checkbox&quot; checked&gt;
+            &lt;span&gt;Abrir detalhe de cada noticia (titulo, data, texto e imagens)&lt;/span&gt;
+          &lt;/label&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-stats&quot;&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Fila&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-queue&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Ativos&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-active&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Processados&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-processed&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Selecionados&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-selected&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;stat-item&quot;&gt;
+            &lt;span class=&quot;stat-label&quot;&gt;Erros&lt;/span&gt;
+            &lt;span class=&quot;stat-value&quot; id=&quot;stat-errors&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-progress&quot;&gt;
+          &lt;div id=&quot;__dl-status&quot;&gt;Aguardando acao...&lt;/div&gt;
+          &lt;div id=&quot;__dl-progress-top&quot;&gt;
+            &lt;span id=&quot;progress-percent&quot;&gt;0%&lt;/span&gt;
+            &lt;span id=&quot;progress-time&quot;&gt;--:--&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;progress-bar&quot;&gt;
+            &lt;div class=&quot;progress-fill&quot; id=&quot;__dl-progress-fill&quot;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-controls&quot;&gt;
+          &lt;button class=&quot;btn btn-primary&quot; id=&quot;btn-scan&quot;&gt;[⊙] Escanear&lt;/button&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-open-iframes&quot;&gt;[↗] Abrir Iframe(s)&lt;/button&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-open-items-modal&quot;&gt;[📋] Itens e Filtros&lt;/button&gt;
+          &lt;button class=&quot;btn btn-primary&quot; id=&quot;btn-start&quot;&gt;[▶] Iniciar&lt;/button&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-stop&quot; disabled&gt;[⏸] Pausar&lt;/button&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-select-all&quot;&gt;[+] Todos&lt;/button&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-deselect-all&quot;&gt;[-] Nenhum&lt;/button&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-clear-history&quot;&gt;[🗑] Limpar Historico&lt;/button&gt;
+          &lt;button class=&quot;btn btn-danger&quot; id=&quot;btn-reset&quot;&gt;[↻] Reset Total&lt;/button&gt;
+          &lt;button class=&quot;btn btn-success&quot; id=&quot;btn-dl-ok&quot; disabled&gt;[⬇] JSON Obrigatorio&lt;/button&gt;
+          &lt;button class=&quot;btn&quot; id=&quot;btn-dl-images&quot; disabled&gt;[🖼] Baixar Imagens&lt;/button&gt;
+          &lt;button class=&quot;btn btn-warning&quot; id=&quot;btn-dl-fail&quot; disabled&gt;[⬇] JSON Falhas&lt;/button&gt;
+        &lt;/div&gt;
+
+        &lt;div id=&quot;__dl-list-summary&quot;&gt;Fila atual: 0 item(ns).&lt;/div&gt;
+        &lt;div id=&quot;__dl-iframe-hint&quot;&gt;Sem iframes bloqueados detectados no ultimo scan.&lt;/div&gt;
+
+        &lt;div class=&quot;speed-control&quot;&gt;
+          &lt;div class=&quot;speed-label&quot;&gt;
+            &lt;span&gt;Velocidade&lt;/span&gt;
+            &lt;span id=&quot;speed-value&quot;&gt;800ms&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;input type=&quot;range&quot; id=&quot;speed-slider&quot; min=&quot;150&quot; max=&quot;3000&quot; step=&quot;50&quot; value=&quot;800&quot;&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    `;
+
+    document.body.appendChild(panelEl);
+
+    ui.header = panelEl.querySelector(&#39;#__dl-header&#39;);
+    ui.content = panelEl.querySelector(&#39;#__dl-content&#39;);
+    ui.close = panelEl.querySelector(&#39;#__dl-close&#39;);
+    ui.min = panelEl.querySelector(&#39;#__dl-min&#39;);
+    ui.theme = panelEl.querySelector(&#39;#__dl-theme-toggle&#39;);
+    ui.warning = panelEl.querySelector(&#39;#__dl-warning&#39;);
+    ui.proxy = panelEl.querySelector(&#39;#xn-proxy&#39;);
+    ui.pageStart = panelEl.querySelector(&#39;#xn-page-start&#39;);
+    ui.pageMax = panelEl.querySelector(&#39;#xn-page-max&#39;);
+    ui.selector = panelEl.querySelector(&#39;#xn-selector&#39;);
+    ui.detail = panelEl.querySelector(&#39;#xn-detail&#39;);
+    ui.speed = panelEl.querySelector(&#39;#speed-slider&#39;);
+    ui.speedValue = panelEl.querySelector(&#39;#speed-value&#39;);
+    ui.status = panelEl.querySelector(&#39;#__dl-status&#39;);
+    ui.progressFill = panelEl.querySelector(&#39;#__dl-progress-fill&#39;);
+    ui.progressPercent = panelEl.querySelector(&#39;#progress-percent&#39;);
+    ui.progressTime = panelEl.querySelector(&#39;#progress-time&#39;);
+    ui.statQueue = panelEl.querySelector(&#39;#stat-queue&#39;);
+    ui.statActive = panelEl.querySelector(&#39;#stat-active&#39;);
+    ui.statProcessed = panelEl.querySelector(&#39;#stat-processed&#39;);
+    ui.statSelected = panelEl.querySelector(&#39;#stat-selected&#39;);
+    ui.statErrors = panelEl.querySelector(&#39;#stat-errors&#39;);
+    ui.scan = panelEl.querySelector(&#39;#btn-scan&#39;);
+    ui.openIframes = panelEl.querySelector(&#39;#btn-open-iframes&#39;);
+    ui.openItems = panelEl.querySelector(&#39;#btn-open-items-modal&#39;);
+    ui.start = panelEl.querySelector(&#39;#btn-start&#39;);
+    ui.stop = panelEl.querySelector(&#39;#btn-stop&#39;);
+    ui.selectAll = panelEl.querySelector(&#39;#btn-select-all&#39;);
+    ui.deselectAll = panelEl.querySelector(&#39;#btn-deselect-all&#39;);
+    ui.clearHistory = panelEl.querySelector(&#39;#btn-clear-history&#39;);
+    ui.reset = panelEl.querySelector(&#39;#btn-reset&#39;);
+    ui.downloadOk = panelEl.querySelector(&#39;#btn-dl-ok&#39;);
+    ui.downloadImages = panelEl.querySelector(&#39;#btn-dl-images&#39;);
+    ui.downloadFail = panelEl.querySelector(&#39;#btn-dl-fail&#39;);
+    ui.summary = panelEl.querySelector(&#39;#__dl-list-summary&#39;);
+    ui.iframeHint = panelEl.querySelector(&#39;#__dl-iframe-hint&#39;);
+
+    ui.close.onclick = () =&gt; {
+      if (state.running || state.scanning) {
+        if (!confirm(&#39;Existe uma execucao em andamento. Fechar mesmo assim?&#39;)) return;
+      }
+      destroy();
+    };
+
+    ui.min.onclick = () =&gt; {
+      isMinimized = !isMinimized;
+      panelEl.classList.toggle(&#39;minimized&#39;, isMinimized);
+      ui.min.textContent = isMinimized ? &#39;[ ]&#39; : &#39;_&#39;;
+    };
+
+    ui.theme.onclick = () =&gt; toggleTheme();
+    ui.warning.onclick = () =&gt; {
+      ui.warning.classList.add(&#39;hidden&#39;);
+      localStorage.setItem(&#39;__xn-warning-closed&#39;, &#39;true&#39;);
+    };
+
+    ui.scan.onclick = () =&gt; { scan(); };
+    ui.openIframes.onclick = () =&gt; { openBlockedFrames(); };
+    ui.openItems.onclick = () =&gt; { openItemsModal(); };
+    ui.start.onclick = () =&gt; { start(); };
+    ui.stop.onclick = () =&gt; { stop(); };
+    ui.selectAll.onclick = () =&gt; { selectAll(); };
+    ui.deselectAll.onclick = () =&gt; { deselectAll(); };
+    ui.clearHistory.onclick = () =&gt; {
+      if (confirm(&#39;Limpar historico de noticias extraidas e falhas?&#39;)) clearHistory();
+    };
+    ui.reset.onclick = () =&gt; {
+      if (confirm(&#39;Resetar fila, historico e selecoes?&#39;)) reset();
+    };
+    ui.downloadOk.onclick = () =&gt; {
+      if (!state.noticias.length) return;
+      baixarJson(&#39;noticia_extraidas.json&#39;, toRequiredNoticiasPayload(state.noticias));
+    };
+    ui.downloadImages.onclick = () =&gt; {
+      baixarImagensNoticias();
+    };
+    ui.downloadFail.onclick = () =&gt; {
+      if (!state.falhas.length) return;
+      baixarJson(&#39;noticia_extraidas_falhas.json&#39;, state.falhas);
+    };
+
+    ui.speed.onchange = (event) =&gt; {
+      const value = asNonNegativeInt(event.target.value, opts.delayMs);
+      opts.delayMs = value;
+      ui.speedValue.textContent = value + &#39;ms&#39;;
+    };
+
+    enableDrag(panelEl, ui.header);
+    createItemsModal();
+
+    if (localStorage.getItem(&#39;__xn-warning-closed&#39;) === &#39;true&#39;) {
+      ui.warning.classList.add(&#39;hidden&#39;);
+    }
+
+    const savedTheme = localStorage.getItem(&#39;__xn-theme&#39;) || &#39;dark&#39;;
+    if (savedTheme === &#39;light&#39;) {
+      panelEl.classList.add(&#39;light-mode&#39;);
+      ui.theme.textContent = &#39;L&#39;;
+    } else {
+      ui.theme.textContent = &#39;D&#39;;
+    }
+
+    fillUI(opts);
+    setStatus(&#39;Painel pronto para scan.&#39;);
+    setProgress(0);
+    updateUI();
+  }
+
+  function setOptions(newOpts) {
+    Object.assign(opts, newOpts || {});
+    fillUI(opts);
+    updateUI();
+  }
+
+  function destroy() {
+    stop();
+
+    try {
+      if (styleEl &amp;&amp; styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+      if (panelEl &amp;&amp; panelEl.parentNode) panelEl.parentNode.removeChild(panelEl);
+      if (modalEl &amp;&amp; modalEl.parentNode) modalEl.parentNode.removeChild(modalEl);
+    } catch {
+      // noop
+    }
+
+    if (window.__extractronNoticias &amp;&amp; window.__extractronNoticias.__source === SOURCE_TAG) {
+      delete window.__extractronNoticias;
+    }
+    if (window.__dlNoticias &amp;&amp; window.__dlNoticias.__source === SOURCE_TAG) {
+      delete window.__dlNoticias;
+    }
+    if (window.__dl &amp;&amp; window.__dl.__source === SOURCE_TAG) {
+      delete window.__dl;
+    }
+  }
+
+  createPanel();
+
+  const api = {
+    __source: SOURCE_TAG,
+    opts,
+    state,
+    fillUI,
+    setOptions,
+    scan,
+    start,
+    stop,
+    reset,
+    clear: reset,
+    clearHistory,
+    selectAll,
+    deselectAll,
+    toggleSelect,
+    applyQueueNameFilter,
+    applyQueueTypeFilter,
+    expandTable,
+    openBlockedFrames,
+    openItemsModal,
+    toggleTheme,
+    downloadImages: () =&gt; baixarImagensNoticias(),
+    downloadOk: () =&gt; baixarJson(&#39;noticia_extraidas.json&#39;, toRequiredNoticiasPayload(state.noticias)),
+    downloadFail: () =&gt; baixarJson(&#39;noticia_extraidas_falhas.json&#39;, state.falhas),
+    destroy
+  };
+
+  window.__extractronNoticias = api;
+  window.__dlNoticias = api;
+  if (!window.__dl || window.__dl.__source === SOURCE_TAG) {
+    window.__dl = api;
+  }
+
+  console.log(&#39;[EXTRACTRON] BAIXATRON Noticias carregado.&#39;);
+  console.log(&#39;[EXTRACTRON] Comandos: __extractronNoticias.scan(), __extractronNoticias.start(), __extractronNoticias.stop(), __extractronNoticias.reset(), __extractronNoticias.openBlockedFrames()&#39;);
+  console.log(&#39;[EXTRACTRON] Alias: __dlNoticias.* e (se livre) __dl.*&#39;);
+})();
+</textarea>
+  <script src="../assets/script-shell.js"></script>
+  <script src="../assets/script-js-page.js"></script>
+</body>
+</html>

@@ -82,14 +82,14 @@
 // @name         Marcelo
 // @namespace    https://github.com/eduar
 // @version      0.1.0
-// @description  Preenche o formul&#225;rio automaticamente usando dados do JSON
+// @description  Preenche o formulário automaticamente usando dados do JSON
 // @match        *://*/*
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
 
 (async function () {
-  // Estado e op&#231;&#245;es (inspirado no painel do Baixatron)
+  // Estado e opções (inspirado no painel do Baixatron)
   const state = {
     paused: false,
     stopped: false,
@@ -100,8 +100,8 @@
     errors: 0,
     skipped: 0,
     percent: 0,
-    theme: localStorage.getItem(&#39;__marcelo-theme&#39;) || &#39;dark&#39;,
-    speedFactor: parseFloat(localStorage.getItem(&#39;__marcelo-speedFactor&#39;) || &#39;1&#39;),
+    theme: localStorage.getItem('__marcelo-theme') || 'dark',
+    speedFactor: parseFloat(localStorage.getItem('__marcelo-speedFactor') || '1'),
     startedAt: null,
     sumItemDuration: 0,
   };
@@ -109,13 +109,13 @@
   let arquivos = [];
   let arquivosFiltrados = [];
 
-  // Utilit&#225;rios
+  // Utilitários
   const wait = (ms) =&gt; new Promise((r) =&gt; setTimeout(r, ms));
   const scaledSleep = async (ms) =&gt; {
     const goal = ms * Math.max(0.25, Math.min(4, state.speedFactor));
     const start = Date.now();
     while (Date.now() - start &lt; goal) {
-      if (state.stopped) throw new Error(&#39;Script parado pelo usu&#225;rio&#39;);
+      if (state.stopped) throw new Error('Script parado pelo usuário');
       while (state.paused &amp;&amp; !state.stopped) await wait(100);
       await wait(60);
     }
@@ -124,7 +124,7 @@
   const waitForElement = async (selector, shouldExist = true, timeout = 10000) =&gt; {
     const startTime = Date.now();
     while (Date.now() - startTime &lt; timeout) {
-      if (state.stopped) throw new Error(&#39;Script parado pelo usu&#225;rio&#39;);
+      if (state.stopped) throw new Error('Script parado pelo usuário');
       if (state.paused) await wait(100);
       const el = document.querySelector(selector);
       if (shouldExist &amp;&amp; el) return el;
@@ -139,8 +139,8 @@
     const startedAt = Date.now();
     const timeout = 20000;
     while (Date.now() - startedAt &lt; timeout) {
-      const loading = document.querySelector(&#39;.p-button-loading-icon, .pi-spinner, .pi-spin&#39;);
-      const saveButton = document.querySelector(&#39;button[aria-label=&quot;Salvar e Publicar&quot;], button[aria-label=&quot;Salvar&quot;], form button[type=&quot;submit&quot;]&#39;);
+      const loading = document.querySelector('.p-button-loading-icon, .pi-spinner, .pi-spin');
+      const saveButton = document.querySelector('button[aria-label="Salvar e Publicar"], button[aria-label="Salvar"], form button[type="submit"]');
       if (!saveButton) return true;
       if (!loading &amp;&amp; !saveButton.disabled) {
         await wait(250);
@@ -148,17 +148,17 @@
       }
       await wait(120);
     }
-    throw new Error(&#39;Timeout aguardando conclus&#227;o do salvamento&#39;);
+    throw new Error('Timeout aguardando conclusão do salvamento');
   };
 
-  const normalizeText = (value) =&gt; String(value ?? &#39;&#39;).trim();
+  const normalizeText = (value) =&gt; String(value ?? '').trim();
   const normalizeUrl = (value) =&gt; {
     const raw = normalizeText(value);
-    if (!raw) return &#39;&#39;;
+    if (!raw) return '';
     return raw
-      .replace(/^https?:\/\/(www\.)?araguaina\.to\.gov\.br\/?/i, &#39;&#39;)
-      .replace(/^(www\.)?araguaina\.to\.gov\.br\/?/i, &#39;&#39;)
-      .replace(/^\/+/, &#39;&#39;);
+      .replace(/^https?:\/\/(www\.)?araguaina\.to\.gov\.br\/?/i, '')
+      .replace(/^(www\.)?araguaina\.to\.gov\.br\/?/i, '')
+      .replace(/^\/+/, '');
   };
   const isVisible = (el) =&gt; !!(el &amp;&amp; (el.offsetParent || el.getClientRects().length));
 
@@ -174,18 +174,69 @@
     if (!el) return;
     el.value = value;
     el.focus();
-    const enterEvent = new KeyboardEvent(&#39;keydown&#39;, {
-      key: &#39;Enter&#39;,
-      code: &#39;Enter&#39;,
+    const enterEvent = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
       keyCode: 13,
       which: 13,
       bubbles: true,
       cancelable: true,
     });
     el.dispatchEvent(enterEvent);
-    el.dispatchEvent(new Event(&#39;input&#39;, { bubbles: true }));
-    el.dispatchEvent(new Event(&#39;change&#39;, { bubbles: true }));
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
     el.blur();
+  };
+
+  const formatDateForForm = (value) =&gt; {
+    const raw = normalizeText(value);
+    if (!raw) return '';
+
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+
+    const ymd = raw.match(/^(\d{4})[\/.](\d{1,2})[\/.](\d{1,2})$/);
+    if (ymd) {
+      return `${String(Number(ymd[3])).padStart(2, '0')}/${String(Number(ymd[2])).padStart(2, '0')}/${ymd[1]}`;
+    }
+
+    const br = raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+    if (br) {
+      return `${String(Number(br[1])).padStart(2, '0')}/${String(Number(br[2])).padStart(2, '0')}/${br[3]}`;
+    }
+
+    return raw;
+  };
+
+  const preencherData = async (value) =&gt; {
+    const dataFormatada = formatDateForForm(value);
+    if (!dataFormatada) {
+      console.warn('Data vazia no JSON:', value);
+      return false;
+    }
+
+    const input = findFirstVisible([
+      '#data input',
+      '#data input[type="text"]',
+      'input[name="data"]',
+      'input[placeholder*="data" i]',
+      '.p-calendar input',
+      '.p-datepicker input',
+    ]);
+
+    if (!input) {
+      console.warn('Campo de data nao encontrado.');
+      return false;
+    }
+
+    setFieldValue(input, dataFormatada);
+    await scaledSleep(120);
+
+    if (normalizeText(input.value) !== dataFormatada) {
+      setFieldValue(input, dataFormatada);
+    }
+
+    return normalizeText(input.value) === dataFormatada;
   };
 
   const preencherLinkArquivo = async (url) =&gt; {
@@ -193,35 +244,35 @@
     if (!value) return true;
 
     let input = findFirstVisible([
-      &#39;.p-fileupload-content input[type=&quot;text&quot;]&#39;,
-      &#39;.p-fileupload-content input:not([type=&quot;file&quot;])&#39;,
-      &#39;.p-fileupload-content textarea&#39;,
-      &#39;input[placeholder*=&quot;url&quot; i]&#39;,
-      &#39;input[placeholder*=&quot;link&quot; i]&#39;,
+      '.p-fileupload-content input[type="text"]',
+      '.p-fileupload-content input:not([type="file"])',
+      '.p-fileupload-content textarea',
+      'input[placeholder*="url" i]',
+      'input[placeholder*="link" i]',
     ]);
 
     if (!input) {
       const btnOpenLink = findFirstVisible([
-        &#39;.p-fileupload-buttonbar button.p-button-help&#39;,
-        &#39;.p-fileupload-buttonbar button[aria-label*=&quot;URL&quot; i]&#39;,
-        &#39;.p-fileupload-buttonbar button[aria-label*=&quot;Link&quot; i]&#39;,
+        '.p-fileupload-buttonbar button.p-button-help',
+        '.p-fileupload-buttonbar button[aria-label*="URL" i]',
+        '.p-fileupload-buttonbar button[aria-label*="Link" i]',
       ]);
 
       if (btnOpenLink) {
         btnOpenLink.click();
         await scaledSleep(350);
         input = findFirstVisible([
-          &#39;.p-fileupload-content input[type=&quot;text&quot;]&#39;,
-          &#39;.p-fileupload-content input:not([type=&quot;file&quot;])&#39;,
-          &#39;.p-fileupload-content textarea&#39;,
-          &#39;input[placeholder*=&quot;url&quot; i]&#39;,
-          &#39;input[placeholder*=&quot;link&quot; i]&#39;,
+          '.p-fileupload-content input[type="text"]',
+          '.p-fileupload-content input:not([type="file"])',
+          '.p-fileupload-content textarea',
+          'input[placeholder*="url" i]',
+          'input[placeholder*="link" i]',
         ]);
       }
     }
 
     if (!input) {
-      console.warn(&#39;Campo de URL do arquivo n&#227;o encontrado.&#39;);
+      console.warn('Campo de URL do arquivo não encontrado.');
       return false;
     }
 
@@ -235,25 +286,25 @@
 
   const fillInput = (selector, value) =&gt; {
     const el = document.querySelector(selector);
-    if (!el) return console.warn(&#39;Elemento n&#227;o encontrado:&#39;, selector);
+    if (!el) return console.warn('Elemento não encontrado:', selector);
     el.value = value;
     el.focus();
-    const enterEvent = new KeyboardEvent(&#39;keydown&#39;, {
-      key: &#39;Enter&#39;,
-      code: &#39;Enter&#39;,
+    const enterEvent = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
       keyCode: 13,
       which: 13,
       bubbles: true,
       cancelable: true,
     });
     el.dispatchEvent(enterEvent);
-    el.dispatchEvent(new Event(&#39;input&#39;, { bubbles: true }));
-    el.dispatchEvent(new Event(&#39;change&#39;, { bubbles: true }));
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
   };
 
   const click = (selector) =&gt; {
     const el = document.querySelector(selector);
-    if (!el) return console.warn(&#39;Elemento n&#227;o encontrado:&#39;, selector);
+    if (!el) return console.warn('Elemento não encontrado:', selector);
     el.focus();
     el.click();
   };
@@ -262,9 +313,9 @@
   const selectByAriaLabel = (label) =&gt; {
     if (!label) return false;
     const targetLabel = normalizeText(label);
-    const items = Array.from(document.querySelectorAll(&#39;li[aria-label]&#39;));
+    const items = Array.from(document.querySelectorAll('li[aria-label]'));
     const target = items.find((el) =&gt; {
-      const aria = normalizeText(el.getAttribute(&#39;aria-label&#39;));
+      const aria = normalizeText(el.getAttribute('aria-label'));
       const text = normalizeText(el.textContent);
       return (
         aria === targetLabel ||
@@ -274,7 +325,7 @@
       );
     });
     if (!target) {
-      console.warn(`Op&#231;&#227;o n&#227;o encontrada para aria-label: ${label}`);
+      console.warn(`Opção não encontrada para aria-label: ${label}`);
       return false;
     }
     target.click();
@@ -286,7 +337,7 @@
   // =============================
   const CSS = `
     * { box-sizing: border-box; }
-    #marcelo-panel { position: fixed; top: 14px; right: 14px; width: 460px; max-height: 86vh; border-radius: 10px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif; z-index: 999999; color: #fff; background: #181a1f; box-shadow: 0 8px 32px rgba(0,0,0,.45); }
+    #marcelo-panel { position: fixed; top: 14px; right: 14px; width: 460px; max-height: 86vh; border-radius: 10px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; z-index: 999999; color: #fff; background: #181a1f; box-shadow: 0 8px 32px rgba(0,0,0,.45); }
     #marcelo-panel.light { background: #f5f6f8; color: #111; }
     #marcelo-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; background: #21232b; cursor: move; user-select: none; border-bottom: 1px solid #2c2f37; font-weight: 700; font-size: 13px; }
     #marcelo-panel.light #marcelo-header { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
@@ -317,13 +368,13 @@
     .m-btn.danger { background: #ef4444; border-color: #ef4444; color: #fff; }
     .m-btn.danger:hover { background: #dc2626; border-color: #dc2626; }
     .row { display: flex; gap: 8px; align-items: center; }
-    .row input[type=&quot;text&quot;] { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #30343d; background: #1d212a; color: #fff; font-size: 12px; outline: none; }
-    #marcelo-panel.light .row input[type=&quot;text&quot;] { background: #fff; color: #111; border: 1px solid #e5e7eb; }
+    .row input[type="text"] { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #30343d; background: #1d212a; color: #fff; font-size: 12px; outline: none; }
+    #marcelo-panel.light .row input[type="text"] { background: #fff; color: #111; border: 1px solid #e5e7eb; }
     .m-help { font-size: 10px; opacity: .75; padding: 2px 2px 0; }
     #marcelo-speed { padding: 10px 12px; border-top: 1px solid #2c2f37; font-size: 11px; }
     #marcelo-panel.light #marcelo-speed { border-top: 1px solid #e5e7eb; }
-    input[type=&quot;range&quot;] { width: 100%; height: 4px; background: #2c2f37; border-radius: 2px; appearance: none; }
-    input[type=&quot;range&quot;]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 999px; background: #10b981; cursor: pointer; }
+    input[type="range"] { width: 100%; height: 4px; background: #2c2f37; border-radius: 2px; appearance: none; }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 999px; background: #10b981; cursor: pointer; }
     #marcelo-collapsed { display: none; }
     #marcelo-panel.min { width: 260px; }
     #marcelo-panel.min #marcelo-body { display: none; }
@@ -331,9 +382,9 @@
   `;
 
   const injectStyle = () =&gt; {
-    if (document.getElementById(&#39;marcelo-style&#39;)) return;
-    const style = document.createElement(&#39;style&#39;);
-    style.id = &#39;marcelo-style&#39;;
+    if (document.getElementById('marcelo-style')) return;
+    const style = document.createElement('style');
+    style.id = 'marcelo-style';
     style.textContent = CSS;
     document.head.appendChild(style);
   };
@@ -344,27 +395,27 @@
       if (!drag.active) return;
       const x = e.clientX - drag.dx;
       const y = e.clientY - drag.dy;
-      panel.style.right = &#39;&#39;;
-      panel.style.left = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, x)) + &#39;px&#39;;
-      panel.style.top = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, y)) + &#39;px&#39;;
+      panel.style.right = '';
+      panel.style.left = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, x)) + 'px';
+      panel.style.top = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, y)) + 'px';
     };
     const onUp = () =&gt; {
       drag.active = false;
-      document.removeEventListener(&#39;mousemove&#39;, onMove);
-      document.removeEventListener(&#39;mouseup&#39;, onUp);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
     };
-    handle.addEventListener(&#39;mousedown&#39;, (e) =&gt; {
+    handle.addEventListener('mousedown', (e) =&gt; {
       drag.active = true;
       const r = panel.getBoundingClientRect();
       drag.dx = e.clientX - r.left;
       drag.dy = e.clientY - r.top;
-      document.addEventListener(&#39;mousemove&#39;, onMove);
-      document.addEventListener(&#39;mouseup&#39;, onUp);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
     });
   };
 
   const setStatus = (txt) =&gt; {
-    const el = document.getElementById(&#39;marcelo-status&#39;);
+    const el = document.getElementById('marcelo-status');
     if (el) el.textContent = txt;
   };
 
@@ -379,105 +430,105 @@
     const total = state.total || 0;
     const pct = total ? Math.round((state.processed / total) * 100) : 0;
     state.percent = pct;
-    const fill = document.getElementById(&#39;marcelo-fill&#39;);
-    const pctEl = document.getElementById(&#39;marcelo-pct&#39;);
+    const fill = document.getElementById('marcelo-fill');
+    const pctEl = document.getElementById('marcelo-pct');
     const qEls = {
-      fila: document.getElementById(&#39;m-q-fila&#39;),
-      ativos: document.getElementById(&#39;m-q-ativos&#39;),
-      proc: document.getElementById(&#39;m-q-proc&#39;),
-      sel: document.getElementById(&#39;m-q-sel&#39;),
-      err: document.getElementById(&#39;m-q-err&#39;),
+      fila: document.getElementById('m-q-fila'),
+      ativos: document.getElementById('m-q-ativos'),
+      proc: document.getElementById('m-q-proc'),
+      sel: document.getElementById('m-q-sel'),
+      err: document.getElementById('m-q-err'),
     };
-    if (fill) fill.style.width = pct + &#39;%&#39;;
-    if (pctEl) pctEl.textContent = pct + &#39;%&#39;;
+    if (fill) fill.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
     if (qEls.fila) qEls.fila.textContent = String(q.fila);
     if (qEls.ativos) qEls.ativos.textContent = String(q.ativos);
     if (qEls.proc) qEls.proc.textContent = String(q.proc);
     if (qEls.sel) qEls.sel.textContent = String(q.sel);
     if (qEls.err) qEls.err.textContent = String(q.err);
-    const prog = document.getElementById(&#39;marcelo-progress-label&#39;);
+    const prog = document.getElementById('marcelo-progress-label');
     if (prog) prog.textContent = `${state.currentIndex} / ${state.total}`;
 
     // timers
-    const elapsedEl = document.getElementById(&#39;marcelo-elapsed&#39;);
-    const etaEl = document.getElementById(&#39;marcelo-eta&#39;);
+    const elapsedEl = document.getElementById('marcelo-elapsed');
+    const etaEl = document.getElementById('marcelo-eta');
     if (elapsedEl) {
       const secs = state.startedAt ? Math.floor((Date.now() - state.startedAt) / 1000) : 0;
       elapsedEl.textContent = `⏱️ ${formatTime(secs)}`;
     }
     if (etaEl) {
       const etaSecs = getEstimatedSeconds();
-      etaEl.textContent = `🕒 ${etaSecs ? formatTime(etaSecs) : &#39;--:--&#39;}`;
+      etaEl.textContent = `🕒 ${etaSecs ? formatTime(etaSecs) : '--:--'}`;
     }
   };
 
   const toggleTheme = () =&gt; {
-    const panel = document.getElementById(&#39;marcelo-panel&#39;);
+    const panel = document.getElementById('marcelo-panel');
     if (!panel) return;
-    if (state.theme === &#39;dark&#39;) {
-      state.theme = &#39;light&#39;;
-      panel.classList.add(&#39;light&#39;);
+    if (state.theme === 'dark') {
+      state.theme = 'light';
+      panel.classList.add('light');
     } else {
-      state.theme = &#39;dark&#39;;
-      panel.classList.remove(&#39;light&#39;);
+      state.theme = 'dark';
+      panel.classList.remove('light');
     }
-    localStorage.setItem(&#39;__marcelo-theme&#39;, state.theme);
+    localStorage.setItem('__marcelo-theme', state.theme);
   };
 
   const renderPanel = () =&gt; {
-    const existing = document.getElementById(&#39;marcelo-panel&#39;);
+    const existing = document.getElementById('marcelo-panel');
     if (existing) existing.remove();
 
     injectStyle();
-    const panel = document.createElement(&#39;div&#39;);
-    panel.id = &#39;marcelo-panel&#39;;
-    if (state.theme === &#39;light&#39;) panel.classList.add(&#39;light&#39;);
+    const panel = document.createElement('div');
+    panel.id = 'marcelo-panel';
+    if (state.theme === 'light') panel.classList.add('light');
     panel.innerHTML = `
-      &lt;div id=&quot;marcelo-header&quot;&gt;
-        &lt;div id=&quot;marcelo-title&quot;&gt;🧩 Marcelo — Automa&#231;&#227;o&lt;/div&gt;
-        &lt;div id=&quot;marcelo-actions&quot;&gt;
-          &lt;button id=&quot;m-theme&quot; class=&quot;m-btn-icon&quot; title=&quot;Tema&quot;&gt;${state.theme === &#39;light&#39; ? &#39;☀️&#39; : &#39;🌙&#39;}&lt;/button&gt;
-          &lt;button id=&quot;m-min&quot; class=&quot;m-btn-icon&quot; title=&quot;Minimizar&quot;&gt;➖&lt;/button&gt;
-          &lt;button id=&quot;m-close&quot; class=&quot;m-btn-icon&quot; title=&quot;Fechar&quot;&gt;✕&lt;/button&gt;
+      &lt;div id="marcelo-header"&gt;
+        &lt;div id="marcelo-title"&gt;🧩 Marcelo — Automação&lt;/div&gt;
+        &lt;div id="marcelo-actions"&gt;
+          &lt;button id="m-theme" class="m-btn-icon" title="Tema"&gt;${state.theme === 'light' ? '☀️' : '🌙'}&lt;/button&gt;
+          &lt;button id="m-min" class="m-btn-icon" title="Minimizar"&gt;➖&lt;/button&gt;
+          &lt;button id="m-close" class="m-btn-icon" title="Fechar"&gt;✕&lt;/button&gt;
         &lt;/div&gt;
       &lt;/div&gt;
-      &lt;div id=&quot;marcelo-body&quot;&gt;
-        &lt;div id=&quot;marcelo-warning&quot;&gt;
-          Dica: use barra de espa&#231;o para Pausar/Continuar &#183; T: tema &#183; S: parar
+      &lt;div id="marcelo-body"&gt;
+        &lt;div id="marcelo-warning"&gt;
+          Dica: use barra de espaço para Pausar/Continuar · T: tema · S: parar
         &lt;/div&gt;
-        &lt;div id=&quot;marcelo-stats&quot;&gt;
-          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Fila&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-fila&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
-          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Ativos&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-ativos&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
-          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Processados&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-proc&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
-          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Selecionados&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-sel&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
-          &lt;div class=&quot;m-stat&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Erros&lt;/span&gt;&lt;span class=&quot;val&quot; id=&quot;m-q-err&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+        &lt;div id="marcelo-stats"&gt;
+          &lt;div class="m-stat"&gt;&lt;span class="lbl"&gt;Fila&lt;/span&gt;&lt;span class="val" id="m-q-fila"&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class="m-stat"&gt;&lt;span class="lbl"&gt;Ativos&lt;/span&gt;&lt;span class="val" id="m-q-ativos"&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class="m-stat"&gt;&lt;span class="lbl"&gt;Processados&lt;/span&gt;&lt;span class="val" id="m-q-proc"&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class="m-stat"&gt;&lt;span class="lbl"&gt;Selecionados&lt;/span&gt;&lt;span class="val" id="m-q-sel"&gt;0&lt;/span&gt;&lt;/div&gt;
+          &lt;div class="m-stat"&gt;&lt;span class="lbl"&gt;Erros&lt;/span&gt;&lt;span class="val" id="m-q-err"&gt;0&lt;/span&gt;&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div id=&quot;marcelo-progress&quot;&gt;
-          &lt;div class=&quot;row&quot; style=&quot;justify-content: space-between;&quot;&gt;
-            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-status&quot;&gt;Aguardando arquivo JSON…&lt;/div&gt;
-            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-pct&quot;&gt;0%&lt;/div&gt;
+        &lt;div id="marcelo-progress"&gt;
+          &lt;div class="row" style="justify-content: space-between;"&gt;
+            &lt;div class="m-help" id="marcelo-status"&gt;Aguardando arquivo JSON…&lt;/div&gt;
+            &lt;div class="m-help" id="marcelo-pct"&gt;0%&lt;/div&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;m-bar&quot;&gt;&lt;div class=&quot;m-fill&quot; id=&quot;marcelo-fill&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-          &lt;div class=&quot;m-help&quot; id=&quot;marcelo-progress-label&quot; style=&quot;margin-top:6px;&quot;&gt;0 / 0&lt;/div&gt;
-          &lt;div class=&quot;row&quot; style=&quot;justify-content: space-between; margin-top:6px;&quot;&gt;
-            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-elapsed&quot;&gt;⏱️ 00:00&lt;/div&gt;
-            &lt;div class=&quot;m-help&quot; id=&quot;marcelo-eta&quot;&gt;🕒 --:--&lt;/div&gt;
+          &lt;div class="m-bar"&gt;&lt;div class="m-fill" id="marcelo-fill"&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class="m-help" id="marcelo-progress-label" style="margin-top:6px;"&gt;0 / 0&lt;/div&gt;
+          &lt;div class="row" style="justify-content: space-between; margin-top:6px;"&gt;
+            &lt;div class="m-help" id="marcelo-elapsed"&gt;⏱️ 00:00&lt;/div&gt;
+            &lt;div class="m-help" id="marcelo-eta"&gt;🕒 --:--&lt;/div&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div id=&quot;marcelo-controls&quot;&gt;
-          &lt;button id=&quot;m-start&quot; class=&quot;m-btn primary&quot; disabled&gt;▶ Iniciar&lt;/button&gt;
-          &lt;button id=&quot;m-pause&quot; class=&quot;m-btn&quot; disabled&gt;⏸ Pausar&lt;/button&gt;
-          &lt;button id=&quot;m-stop&quot; class=&quot;m-btn danger&quot;&gt;⏹ Parar&lt;/button&gt;
-          &lt;button id=&quot;m-loadjson&quot; class=&quot;m-btn&quot; style=&quot;grid-column: span 3;&quot;&gt;📂 Carregar JSON&lt;/button&gt;
-          &lt;div class=&quot;row&quot; style=&quot;grid-column: span 3;&quot;&gt;
-            &lt;input id=&quot;m-startfrom&quot; type=&quot;text&quot; placeholder=&quot;Come&#231;ar a partir do decreto (ex: 123)&quot;&gt;
-            &lt;button id=&quot;m-apply&quot; class=&quot;m-btn&quot;&gt;Aplicar&lt;/button&gt;
+        &lt;div id="marcelo-controls"&gt;
+          &lt;button id="m-start" class="m-btn primary" disabled&gt;▶ Iniciar&lt;/button&gt;
+          &lt;button id="m-pause" class="m-btn" disabled&gt;⏸ Pausar&lt;/button&gt;
+          &lt;button id="m-stop" class="m-btn danger"&gt;⏹ Parar&lt;/button&gt;
+          &lt;button id="m-loadjson" class="m-btn" style="grid-column: span 3;"&gt;📂 Carregar JSON&lt;/button&gt;
+          &lt;div class="row" style="grid-column: span 3;"&gt;
+            &lt;input id="m-startfrom" type="text" placeholder="Começar a partir do decreto (ex: 123)"&gt;
+            &lt;button id="m-apply" class="m-btn"&gt;Aplicar&lt;/button&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;m-help&quot; id=&quot;m-startinfo&quot; style=&quot;grid-column: span 3;&quot;&gt;Carregue o arquivo JSON para come&#231;ar&lt;/div&gt;
+          &lt;div class="m-help" id="m-startinfo" style="grid-column: span 3;"&gt;Carregue o arquivo JSON para começar&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div id=&quot;marcelo-speed&quot;&gt;
-          &lt;div class=&quot;row&quot; style=&quot;justify-content: space-between; margin-bottom:6px&quot;&gt;&lt;span&gt;Velocidade&lt;/span&gt;&lt;span id=&quot;m-speed-label&quot;&gt;${state.speedFactor.toFixed(2)}x&lt;/span&gt;&lt;/div&gt;
-          &lt;input id=&quot;m-speed&quot; type=&quot;range&quot; min=&quot;0.25&quot; max=&quot;3&quot; step=&quot;0.05&quot; value=&quot;${state.speedFactor}&quot;&gt;
+        &lt;div id="marcelo-speed"&gt;
+          &lt;div class="row" style="justify-content: space-between; margin-bottom:6px"&gt;&lt;span&gt;Velocidade&lt;/span&gt;&lt;span id="m-speed-label"&gt;${state.speedFactor.toFixed(2)}x&lt;/span&gt;&lt;/div&gt;
+          &lt;input id="m-speed" type="range" min="0.25" max="3" step="0.05" value="${state.speedFactor}"&gt;
         &lt;/div&gt;
       &lt;/div&gt;
     `;
@@ -485,39 +536,39 @@
     document.body.appendChild(panel);
 
     // Eventos
-    const btnStart = document.getElementById(&#39;m-start&#39;);
-    const btnPause = document.getElementById(&#39;m-pause&#39;);
-    const btnStop = document.getElementById(&#39;m-stop&#39;);
-    const btnApply = document.getElementById(&#39;m-apply&#39;);
-    const btnLoadJson = document.getElementById(&#39;m-loadjson&#39;);
-    const inputStart = document.getElementById(&#39;m-startfrom&#39;);
-    const startInfo = document.getElementById(&#39;m-startinfo&#39;);
-    const statusEl = document.getElementById(&#39;marcelo-status&#39;);
+    const btnStart = document.getElementById('m-start');
+    const btnPause = document.getElementById('m-pause');
+    const btnStop = document.getElementById('m-stop');
+    const btnApply = document.getElementById('m-apply');
+    const btnLoadJson = document.getElementById('m-loadjson');
+    const inputStart = document.getElementById('m-startfrom');
+    const startInfo = document.getElementById('m-startinfo');
+    const statusEl = document.getElementById('marcelo-status');
 
-    document.getElementById(&#39;m-close&#39;).onclick = () =&gt; panel.remove();
-    document.getElementById(&#39;m-min&#39;).onclick = () =&gt; {
-      if (panel.classList.contains(&#39;min&#39;)) {
-        panel.classList.remove(&#39;min&#39;);
+    document.getElementById('m-close').onclick = () =&gt; panel.remove();
+    document.getElementById('m-min').onclick = () =&gt; {
+      if (panel.classList.contains('min')) {
+        panel.classList.remove('min');
       } else {
-        panel.classList.add(&#39;min&#39;);
+        panel.classList.add('min');
       }
     };
-    document.getElementById(&#39;m-theme&#39;).onclick = () =&gt; {
+    document.getElementById('m-theme').onclick = () =&gt; {
       toggleTheme();
-      document.getElementById(&#39;m-theme&#39;).textContent = state.theme === &#39;light&#39; ? &#39;☀️&#39; : &#39;🌙&#39;;
+      document.getElementById('m-theme').textContent = state.theme === 'light' ? '☀️' : '🌙';
     };
 
-    enableDrag(panel, document.getElementById(&#39;marcelo-header&#39;));
+    enableDrag(panel, document.getElementById('marcelo-header'));
 
     btnPause.onclick = () =&gt; {
       state.paused = !state.paused;
-      btnPause.textContent = state.paused ? &#39;▶ Continuar&#39; : &#39;⏸ Pausar&#39;;
-      setStatus(state.paused ? &#39;⏸️ Pausado&#39; : &#39;▶️ Executando...&#39;);
+      btnPause.textContent = state.paused ? '▶ Continuar' : '⏸ Pausar';
+      setStatus(state.paused ? '⏸️ Pausado' : '▶️ Executando...');
     };
     btnStop.onclick = () =&gt; {
       state.stopped = true;
       state.running = false;
-      setStatus(&#39;⏹️ Parando...&#39;);
+      setStatus('⏹️ Parando...');
       updateStats();
     };
     btnStart.onclick = async () =&gt; {
@@ -546,8 +597,8 @@
         state.processed = 0;
         state.errors = 0;
         btnStart.disabled = arquivosFiltrados.length === 0;
-        startInfo.textContent = &#39;Processando todos os decretos&#39;;
-        startInfo.style.opacity = &#39;0.9&#39;;
+        startInfo.textContent = 'Processando todos os decretos';
+        startInfo.style.opacity = '0.9';
         updateStats();
         return;
       }
@@ -561,54 +612,54 @@
         state.errors = 0;
         btnStart.disabled = arquivosFiltrados.length === 0;
         startInfo.textContent = `✓ Pulando ${state.skipped} decreto(s)`;
-        startInfo.style.color = &#39;#10b981&#39;;
+        startInfo.style.color = '#10b981';
         updateStats();
       } else {
-        startInfo.textContent = `✗ Decreto &quot;${numeroInicial}&quot; n&#227;o encontrado`;
-        startInfo.style.color = &#39;#ef4444&#39;;
+        startInfo.textContent = `✗ Decreto "${numeroInicial}" não encontrado`;
+        startInfo.style.color = '#ef4444';
       }
     };
 
     // Velocidade
-    const speed = document.getElementById(&#39;m-speed&#39;);
-    const speedLbl = document.getElementById(&#39;m-speed-label&#39;);
+    const speed = document.getElementById('m-speed');
+    const speedLbl = document.getElementById('m-speed-label');
     speed.oninput = (e) =&gt; {
-      state.speedFactor = parseFloat(e.target.value || &#39;1&#39;);
+      state.speedFactor = parseFloat(e.target.value || '1');
       speedLbl.textContent = `${state.speedFactor.toFixed(2)}x`;
-      localStorage.setItem(&#39;__marcelo-speedFactor&#39;, String(state.speedFactor));
+      localStorage.setItem('__marcelo-speedFactor', String(state.speedFactor));
     };
 
     // Atalhos
-    window.addEventListener(&#39;keydown&#39;, (e) =&gt; {
-      if ([&#39;INPUT&#39;, &#39;TEXTAREA&#39;].includes((e.target || {}).tagName)) return;
-      if (e.key === &#39; &#39;) {
+    window.addEventListener('keydown', (e) =&gt; {
+      if (['INPUT', 'TEXTAREA'].includes((e.target || {}).tagName)) return;
+      if (e.key === ' ') {
         e.preventDefault();
         if (!btnPause.disabled) btnPause.click();
-      } else if (e.key.toLowerCase() === &#39;s&#39;) {
+      } else if (e.key.toLowerCase() === 's') {
         e.preventDefault();
         btnStop.click();
-      } else if (e.key.toLowerCase() === &#39;t&#39;) {
+      } else if (e.key.toLowerCase() === 't') {
         e.preventDefault();
-        document.getElementById(&#39;m-theme&#39;).click();
+        document.getElementById('m-theme').click();
       }
     });
 
     // Estado inicial
-    statusEl.textContent = &#39;Aguardando arquivo JSON…&#39;;
+    statusEl.textContent = 'Aguardando arquivo JSON…';
     btnPause.disabled = true;
     btnStart.disabled = true;
     updateStats();
   };
 
   // =============================
-  // N&#250;cleo da automa&#231;&#227;o (adaptado do script original)
+  // Núcleo da automação (adaptado do script original)
   // =============================
   const loop = async () =&gt; {
     try {
-      const btnPause = document.getElementById(&#39;m-pause&#39;);
-      const btnStart = document.getElementById(&#39;m-start&#39;);
-      const inputStart = document.getElementById(&#39;m-startfrom&#39;);
-      const btnApply = document.getElementById(&#39;m-apply&#39;);
+      const btnPause = document.getElementById('m-pause');
+      const btnStart = document.getElementById('m-start');
+      const inputStart = document.getElementById('m-startfrom');
+      const btnApply = document.getElementById('m-apply');
       btnPause.disabled = false;
       inputStart.disabled = true;
       btnApply.disabled = true;
@@ -626,55 +677,59 @@
         const itemStart = Date.now();
 
         // Fluxo de decreto/documento (igual ao Formtron)
-        fillInput(&#39;#acao-form &gt; div:nth-child(1) &gt; div.pt-1.w-full &gt; div:nth-child(1) &gt; div &gt; div:nth-child(1) &gt; span &gt; div &gt; div &gt; div:nth-child(1) &gt; span &gt; div &gt; div &gt; span &gt; input&#39;, data.numero ?? &#39;&#39;);
+        fillInput('#acao-form &gt; div:nth-child(1) &gt; div.pt-1.w-full &gt; div:nth-child(1) &gt; div &gt; div:nth-child(1) &gt; span &gt; div &gt; div &gt; div:nth-child(1) &gt; span &gt; div &gt; div &gt; span &gt; input', data.numero ?? '');
         await scaledSleep(2000);
-        click(&#39;#tipo_documento &gt; div&#39;);
+        click('#tipo_documento &gt; div');
         await scaledSleep(400);
-        click(&#39;#tipo_documento_38&#39;);
+        click('#tipo_documento_9');
         await scaledSleep(400);
 
-        fillInput(&#39;#numero input&#39;, data.numeroDoDocumento ?? &#39;&#39;);
+        fillInput('#numero input', data.numeroDoDocumento ?? '');
 
         if (normalizeText(data.letra)) {
-          fillInput(&#39;#letra&#39;, data.letra);
+          fillInput('#letra', data.letra);
         }
 
-        fillInput(&#39;#data input&#39;, data.data ?? &#39;&#39;);
+        const dataOk = await preencherData(data.data);
+        if (!dataOk) {
+          state.errors++;
+          setStatus(`⚠️ Data não preenchida (${data.data || 'vazia'}) no item ${state.currentIndex}`);
+        }
 
-        fillInput(&#39;textarea.p-inputtextarea&#39;, data.descricao ?? &#39;&#39;);
+        fillInput('textarea.p-inputtextarea', data.descricao ?? '');
 
         const urlOk = await preencherLinkArquivo(data.url);
         if (!urlOk) {
           state.errors++;
-          setStatus(`⚠️ URL n&#227;o encontrada no formul&#225;rio (decreto ${state.currentIndex})`);
+          setStatus(`⚠️ URL não encontrada no formulário (decreto ${state.currentIndex})`);
         }
         await scaledSleep(220);
 
         // Salvar
         setStatus(`💾 Salvando decreto ${state.currentIndex}...`);
-        click(&#39;#acao-form button[aria-label=&quot;Salvar&quot;]&#39;);
+        click('#acao-form button[aria-label="Salvar"]');
         try {
           await waitForSaveComplete();
           state.sumItemDuration += (Date.now() - itemStart);
           state.processed++;
           updateStats();
           if (state.currentIndex &lt; state.total) {
-            setStatus(&#39;➕ Criando novo formul&#225;rio...&#39;);
-            click(&#39;button[aria-label=&quot;Novo&quot;]&#39;);
+            setStatus('➕ Criando novo formulário...');
+            click('button[aria-label="Novo"]');
             await scaledSleep(800);
           }
         } catch (error) {
-          if (error?.response &amp;&amp; String(error.response.message || &#39;&#39;).includes(&#39;Too Many Attemps&#39;)) {
+          if (error?.response &amp;&amp; String(error.response.message || '').includes('Too Many Attemps')) {
             await scaledSleep(20000);
             setStatus(`💾 (Retry) Salvando decreto ${state.currentIndex}...`);
-            click(&#39;#acao-form button[aria-label=&quot;Salvar&quot;]&#39;);
+            click('#acao-form button[aria-label="Salvar"]');
             await waitForSaveComplete();
             state.sumItemDuration += (Date.now() - itemStart);
             state.processed++;
             updateStats();
             if (state.currentIndex &lt; state.total) {
-              setStatus(&#39;➕ Criando novo formul&#225;rio...&#39;);
-              click(&#39;button[aria-label=&quot;Novo&quot;]&#39;);
+              setStatus('➕ Criando novo formulário...');
+              click('button[aria-label="Novo"]');
               await scaledSleep(800);
             }
           } else {
@@ -685,19 +740,19 @@
       }
 
       if (state.stopped) {
-        setStatus(&#39;⏹️ Script parado pelo usu&#225;rio&#39;);
+        setStatus('⏹️ Script parado pelo usuário');
       } else {
-        setStatus(`✅ Conclu&#237;do! ${state.total} decretos processados`);
+        setStatus(`✅ Concluído! ${state.total} decretos processados`);
       }
     } catch (e) {
-      console.error(&#39;Erro:&#39;, e);
+      console.error('Erro:', e);
       setStatus(`❌ Erro: ${e}`);
     } finally {
       state.running = false;
-      const btnPause = document.getElementById(&#39;m-pause&#39;);
-      const btnStart = document.getElementById(&#39;m-start&#39;);
-      const inputStart = document.getElementById(&#39;m-startfrom&#39;);
-      const btnApply = document.getElementById(&#39;m-apply&#39;);
+      const btnPause = document.getElementById('m-pause');
+      const btnStart = document.getElementById('m-start');
+      const inputStart = document.getElementById('m-startfrom');
+      const btnApply = document.getElementById('m-apply');
       if (btnPause) btnPause.disabled = true;
       if (btnStart) btnStart.disabled = false;
       if (inputStart) inputStart.disabled = false;
@@ -709,12 +764,12 @@
 
   // Tempo: helpers
   const formatTime = (seconds) =&gt; {
-    if (!seconds || seconds &lt;= 0) return &#39;00:00&#39;;
+    if (!seconds || seconds &lt;= 0) return '00:00';
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    if (hrs &gt; 0) return `${hrs}:${String(mins).padStart(2, &#39;0&#39;)}:${String(secs).padStart(2, &#39;0&#39;)}`;
-    return `${String(mins).padStart(2, &#39;0&#39;)}:${String(secs).padStart(2, &#39;0&#39;)}`;
+    if (hrs &gt; 0) return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   const getEstimatedSeconds = () =&gt; {
@@ -731,9 +786,9 @@
   // =============================
   const pickJson = async () =&gt; {
     return new Promise((resolve) =&gt; {
-      const input = document.createElement(&#39;input&#39;);
-      input.type = &#39;file&#39;;
-      input.accept = &#39;.json&#39;;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
       input.onchange = (e) =&gt; {
         const file = e.target.files[0];
         const reader = new FileReader();
@@ -742,7 +797,7 @@
             const data = JSON.parse(ev.target.result);
             resolve(data);
           } catch (err) {
-            alert(&#39;Arquivo JSON inv&#225;lido&#39;);
+            alert('Arquivo JSON inválido');
             resolve([]);
           }
         };
@@ -760,32 +815,32 @@
     state.currentIndex = 0;
     state.processed = 0;
     state.errors = 0;
-    const startInfo = document.getElementById(&#39;m-startinfo&#39;);
-    if (startInfo) startInfo.textContent = arquivos.length ? `Total: ${arquivos.length} decreto(s) no arquivo` : &#39;Nenhum dado carregado&#39;;
-    const btnStart = document.getElementById(&#39;m-start&#39;);
+    const startInfo = document.getElementById('m-startinfo');
+    if (startInfo) startInfo.textContent = arquivos.length ? `Total: ${arquivos.length} decreto(s) no arquivo` : 'Nenhum dado carregado';
+    const btnStart = document.getElementById('m-start');
     if (btnStart) btnStart.disabled = arquivos.length === 0;
-    setStatus(arquivos.length ? `Arquivo carregado: ${arquivos.length} decreto(s)` : &#39;Nenhum dado carregado&#39;);
+    setStatus(arquivos.length ? `Arquivo carregado: ${arquivos.length} decreto(s)` : 'Nenhum dado carregado');
     updateStats();
   };
 
-  // Expor API m&#237;nima
+  // Expor API mínima
   window.__marcelo = {
     pause: () =&gt; (state.paused = true),
     resume: () =&gt; (state.paused = false),
     stop: () =&gt; (state.stopped = true),
     setSpeed: (f) =&gt; {
       state.speedFactor = Math.max(0.25, Math.min(4, Number(f) || 1));
-      localStorage.setItem(&#39;__marcelo-speedFactor&#39;, String(state.speedFactor));
-      const lbl = document.getElementById(&#39;m-speed-label&#39;);
+      localStorage.setItem('__marcelo-speedFactor', String(state.speedFactor));
+      const lbl = document.getElementById('m-speed-label');
       if (lbl) lbl.textContent = `${state.speedFactor.toFixed(2)}x`;
     },
     toggleTheme,
   };
 
-  // Inicializa&#231;&#227;o
+  // Inicialização
   renderPanel();
-  // Aguarda o usu&#225;rio clicar em &quot;Carregar JSON&quot;
-  setStatus(&#39;Aguardando arquivo JSON…&#39;);
+  // Aguarda o usuário clicar em "Carregar JSON"
+  setStatus('Aguardando arquivo JSON…');
   updateStats();
 })();
 </textarea>

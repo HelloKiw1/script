@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Atricon Collector",
+  "description": "Coleta avaliacoes do Avalia Atricon usando a sessao aberta no Chrome.",
+  "version": "0.4.0",
+  "action": {
+    "default_title": "Atricon Collector",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "downloads",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://avalia.atricon.org.br/*",
+    "https://conta.atricon.org.br/*"
+  ]
+}

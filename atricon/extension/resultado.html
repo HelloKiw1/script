@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resultado Atricon</title>
+  <link rel="stylesheet" href="resultado.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <span class="eyebrow">Resultado</span>
+        <h1>Coleta Atricon</h1>
+      </div>
+      <div class="actions">
+        <button id="copyJson" type="button" class="secondary">Copiar JSON</button>
+        <button id="downloadJson" type="button">Baixar JSON</button>
+      </div>
+    </header>
+    <section id="empty" class="empty" hidden>Nenhum resultado salvo pela extensao.</section>
+    <section id="tablePanel" class="table-panel" hidden>
+      <table>
+        <thead>
+          <tr>
+            <th>Orgao</th>
+            <th>Cidade</th>
+            <th>Status</th>
+            <th>Setor atual</th>
+            <th>Data</th>
+            <th>Porcentagem</th>
+            <th>Erro</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </section>
+  </main>
+  <script src="resultado.js"></script>
+</body>
+</html>

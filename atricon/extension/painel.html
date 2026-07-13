@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atricon Collector</title>
+  <link rel="stylesheet" href="painel.css">
+</head>
+<body>
+  <aside class="extension-rail" aria-hidden="true">
+    <div class="rail-button">&gt;</div>
+    <div class="rail-mark">SCRIPT</div>
+    <div class="rail-button">C</div>
+  </aside>
+  <main class="shell">
+    <header>
+      <div>
+        <span class="eyebrow">Extensao Chrome</span>
+        <h1>Atricon Collector</h1>
+        <p>Seleciona cidades, faz login automatico e abre o visualizador com o resultado da coleta.</p>
+      </div>
+      <div class="actions">
+        <button id="openAtricon" type="button" class="secondary">Abrir Atricon</button>
+        <button id="collect" type="button">Coletar avaliacoes</button>
+      </div>
+    </header>
+
+    <section class="city-panel">
+      <div class="panel-head">
+        <div>
+          <strong>Cidades</strong>
+          <span id="citySummary">Carregando lista...</span>
+        </div>
+        <div class="mode-control" aria-label="Modo de selecao">
+          <button id="modeAll" type="button" class="mode active" data-mode="all">Todas</button>
+          <button id="modeSpecific" type="button" class="mode" data-mode="specific">Especificas</button>
+          <button id="modeSingle" type="button" class="mode" data-mode="single">Unica</button>
+        </div>
+      </div>
+      <div class="city-tools">
+        <input id="citySearch" type="search" placeholder="Filtrar cidade ou orgao">
+        <button id="selectAllCities" type="button" class="secondary">Selecionar todas</button>
+        <button id="clearCities" type="button" class="secondary">Limpar</button>
+      </div>
+      <div id="cityList" class="city-list"></div>
+    </section>
+
+    <section class="credential-panel">
+      <div class="panel-head">
+        <div>
+          <strong>Credenciais</strong>
+          <span id="credentialSummary">Carregando credenciais internas...</span>
+        </div>
+        <div class="actions compact">
+          <button id="reloadCredentials" type="button" class="secondary">Recarregar credenciais</button>
+        </div>
+      </div>
+      <p class="panel-note">As credenciais ficam embutidas na extensao e sao usadas para login automatico em cada cidade selecionada.</p>
+    </section>
+
+    <section class="status-panel">
+      <div class="status-line">
+        <strong id="statusTitle">Pronto</strong>
+        <span id="statusDetail">Entre no Atricon antes de coletar.</span>
+      </div>
+      <progress id="progress" max="100" value="0"></progress>
+    </section>
+
+    <section class="log-panel">
+      <div class="log-head">
+        <strong>Log</strong>
+        <button id="clearLog" type="button" class="ghost">Limpar</button>
+      </div>
+      <pre id="log"></pre>
+    </section>
+
+    <section class="result-panel" id="resultPanel" hidden>
+      <div class="result-head">
+        <div>
+          <strong>Ultimo resultado</strong>
+          <span id="resultCount"></span>
+        </div>
+        <div class="actions compact">
+          <button id="openResult" type="button" class="secondary">Ver tabela</button>
+          <button id="downloadAgain" type="button">Baixar JSON</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="painel.js"></script>
+</body>
+</html>

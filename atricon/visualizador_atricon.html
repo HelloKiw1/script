@@ -1284,11 +1284,22 @@
           throw new Error(`falha ao carregar ${jsonUrl}: HTTP ${response.status}`);
         }
         const text = await response.text();
-        const sourceName = decodeURIComponent(jsonUrl.split('/').pop() || 'resultado_atricon.json');
+        const sourceName = jsonSourceName(jsonUrl);
         loadMainJsonText(text, sourceName);
       } catch (error) {
         showMainJsonError(error);
       }
+    }
+
+    function jsonSourceName(jsonUrl) {
+      const value = String(jsonUrl || '');
+      if (/^data:application\/json/i.test(value)) {
+        return 'resultado_atricon_extensao.json';
+      }
+      if (/^blob:/i.test(value)) {
+        return 'resultado_atricon_extensao.json';
+      }
+      return decodeURIComponent(value.split('/').pop() || 'resultado_atricon.json');
     }
 
     async function loadCollectorAccounts() {

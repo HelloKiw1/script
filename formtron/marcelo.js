@@ -108,6 +108,57 @@
     el.blur();
   };
 
+  const formatDateForForm = (value) => {
+    const raw = normalizeText(value);
+    if (!raw) return '';
+
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+
+    const ymd = raw.match(/^(\d{4})[\/.](\d{1,2})[\/.](\d{1,2})$/);
+    if (ymd) {
+      return `${String(Number(ymd[3])).padStart(2, '0')}/${String(Number(ymd[2])).padStart(2, '0')}/${ymd[1]}`;
+    }
+
+    const br = raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+    if (br) {
+      return `${String(Number(br[1])).padStart(2, '0')}/${String(Number(br[2])).padStart(2, '0')}/${br[3]}`;
+    }
+
+    return raw;
+  };
+
+  const preencherData = async (value) => {
+    const dataFormatada = formatDateForForm(value);
+    if (!dataFormatada) {
+      console.warn('Data vazia no JSON:', value);
+      return false;
+    }
+
+    const input = findFirstVisible([
+      '#data input',
+      '#data input[type="text"]',
+      'input[name="data"]',
+      'input[placeholder*="data" i]',
+      '.p-calendar input',
+      '.p-datepicker input',
+    ]);
+
+    if (!input) {
+      console.warn('Campo de data nao encontrado.');
+      return false;
+    }
+
+    setFieldValue(input, dataFormatada);
+    await scaledSleep(120);
+
+    if (normalizeText(input.value) !== dataFormatada) {
+      setFieldValue(input, dataFormatada);
+    }
+
+    return normalizeText(input.value) === dataFormatada;
+  };
+
   const preencherLinkArquivo = async (url) => {
     const value = normalizeUrl(url);
     if (!value) return true;
@@ -550,7 +601,7 @@
         await scaledSleep(2000);
         click('#tipo_documento > div');
         await scaledSleep(400);
-        click('#tipo_documento_38');
+        click('#tipo_documento_6');
         await scaledSleep(400);
 
         fillInput('#numero input', data.numeroDoDocumento ?? '');
@@ -559,7 +610,11 @@
           fillInput('#letra', data.letra);
         }
 
-        fillInput('#data input', data.data ?? '');
+        const dataOk = await preencherData(data.data);
+        if (!dataOk) {
+          state.errors++;
+          setStatus(`⚠️ Data não preenchida (${data.data || 'vazia'}) no item ${state.currentIndex}`);
+        }
 
         fillInput('textarea.p-inputtextarea', data.descricao ?? '');
 

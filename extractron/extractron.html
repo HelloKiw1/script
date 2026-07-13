@@ -658,6 +658,11 @@
             return /\bdecretos?\b/.test(nome);
         }
 
+        function isTipoDeclaracao(tipoDocumento) {
+            const nome = normalizarBusca(tipoDocumento);
+            return /\bdeclaracoes?\b|\bdeclaracao\b/.test(nome);
+        }
+
         function isTipoJulgamentoContas(tipoDocumento) {
             const nome = normalizarSemAcentos(tipoDocumento).toLowerCase().replace(/[_\-]+/g, ' ');
             const compacto = nome.replace(/[^a-z0-9]+/g, '');
@@ -689,6 +694,15 @@
             };
 
             const normalizarAno = (valorAno) => String(valorAno || '').replace(/\D/g, '').slice(0, 4);
+
+            const matchDiaMesExtenso = fonte.match(/\b(\d{1,2})\s+dias?\s+do\s+m[e\u00ea]s\s+de\s+([A-Za-z\u00C0-\u00FF]+)\s+de\s+((?:\d[\s\.,]*){4})\b/i);
+            if (matchDiaMesExtenso) {
+                const dia = String(parseInt(matchDiaMesExtenso[1], 10)).padStart(2, '0');
+                const mesNome = normalizarSemAcentos(matchDiaMesExtenso[2]).toLowerCase().replace(/\s+/g, '');
+                const mes = meses[mesNome] || meses[matchDiaMesExtenso[2].toLowerCase()];
+                const ano = normalizarAno(matchDiaMesExtenso[3]);
+                if (mes && ano.length === 4) return `${dia}/${mes}/${ano}`;
+            }
 
             // Ex.: "Plenária das Sessões ... Amazonas, 11 de fevereiro de 2025."
             const matchExtensoComLocal = fonte.match(/(?:[A-Za-zÀ-ÿ\s\-]+,\s*)?(\d{1,2})\s+de\s+([A-Za-zçÇãÃõÕáÁéÉíÍóÓúÚâÂêÊôÔàÀ]+)\s+de\s+((?:\d[\s\.,]*){4})/i);
@@ -833,6 +847,12 @@
                 adicionar(match.index || 0, match[1], match[2], normalizarAno(match[3]));
             }
 
+            for (const match of fonte.matchAll(/\b(\d{1,2})\s+dias?\s+do\s+m[e\u00ea]s\s+de\s+([A-Za-z\u00C0-\u00FF]+)\s+de\s+((?:\d[\s\.,]*){4})\b/gi)) {
+                const mesNome = normalizarSemAcentos(match[2]).toLowerCase().replace(/\s+/g, '');
+                const mes = meses[mesNome] || meses[match[2].toLowerCase()];
+                if (mes) adicionar(match.index || 0, match[1], mes, normalizarAno(match[3]));
+            }
+
             for (const match of fonte.matchAll(/\b(\d{1,2})\s+(?:de\s+)?([A-Za-z\u00C0-\u00FF]+)\s+(?:de\s+)?((?:\d[\s\.,]*){4})\b/gi)) {
                 const mesNome = normalizarSemAcentos(match[2]).toLowerCase().replace(/\s+/g, '');
                 const mes = meses[mesNome] || meses[match[2].toLowerCase()];
@@ -937,7 +957,7 @@
 
         function tipoDocumentoSemNumero(tipoDocumento) {
             const nome = normalizarBusca(tipoDocumento);
-            return /\b(despesas|receitas|diarias|estornos|empenhos|liquidacoes|balancetes|relatorio|rgf|ldo|ppa|plano\s+plurianual|procedimentos?\s+licitatorios?|homologacao|ata\s+de\s+registro\s+de\s+precos?)\b/.test(nome);
+            return /\b(declaracoes?|declaracao|despesas|receitas|diarias|estornos|empenhos|liquidacoes|balancetes|relatorio|rgf|ldo|ppa|plano\s+plurianual|procedimentos?\s+licitatorios?|homologacao|ata\s+de\s+registro\s+de\s+precos?)\b/.test(nome);
         }
 
         function detectarTipoDespesaPeloNome(nomeArquivo) {
@@ -1749,6 +1769,7 @@
             if (tipoDespesa) return tipoDespesa;
             if (/\bof[ií]cio\b/i.test(nome) || /^of[_\-\s\.]*\d{3,6}[\.\-_](?:19|20)\d{2}/i.test(nome)) return 'Ofício';
             if (/requerimento/i.test(nome) || /requerimento/.test(nomeNormalizado)) return 'Requerimento';
+            if (/declara/i.test(nome) || /\bdeclaracoes?\b|\bdeclaracao\b/.test(nomeNormalizado)) return 'Declaracao';
             if (/folha[\s_\-]*de[\s_\-]*pagamento|folhadepagamento|\bfopag\b/i.test(nome) || /folha\s*de\s*pagamento|folhadepagamento|\bfopag\b/.test(nomeNormalizado)) return 'Folha de Pagamento';
             if (/quadro[\s_\-]*atual[\s_\-]*de[\s_\-]*servidores|quadroatualdeservidores/i.test(nome) || /quadro\s*atual\s*de\s*servidores|quadroatualdeservidores/.test(nomeNormalizado)) return 'Quadro Atual de Servidores';
             if (/di[aá]rio[\s_\-]?oficial/i.test(nome) || /\bdoem\b/i.test(nome)) return 'Diario Oficial';
@@ -1811,13 +1832,14 @@
             const isResolucao = isTipoResolucao(tipoEfetivo);
             const isPortaria = isTipoPortaria(tipoEfetivo) || /PORTARIA/i.test(file.name);
             const isDecreto = isTipoDecreto(tipoEfetivo) || /DECRETO/i.test(file.name);
+            const isDeclaracao = isTipoDeclaracao(tipoEfetivo);
             const isJulgamentoContas = isTipoJulgamentoContas(tipoEfetivo) || isContextoJulgamentoContas(file.name);
 
             // Alguns tipos carregam número/data/ementa no início. Limitar páginas evita
             // timeouts em PDFs digitalizados com anexos longos.
             const maxPaginas = processarSomentePrimeiraPagina
                 ? 1
-                : (isJulgamentoContas ? 1 : ((isProjetoLei || isResolucao || isPortaria || isDecreto) ? Math.min(3, pdf.numPages) : pdf.numPages));
+                : ((isJulgamentoContas || isDeclaracao) ? 1 : ((isProjetoLei || isResolucao || isPortaria || isDecreto) ? Math.min(3, pdf.numPages) : pdf.numPages));
 
             // Ler páginas (limitadas para PPP e Projeto de Lei)
             for (let i = 1; i <= maxPaginas; i++) {
@@ -3333,6 +3355,134 @@
 
         // Resolve o tipo efetivo: se tipoDocumento já foi definido, mantém; senão tenta resolver
         // pelo cache de tipos, para garantir que o resultado sempre carrega o nome cadastrado.
+        function extrairInformacoesDeclaracao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento) {
+            const textoCompleto = normalizarTextoCompleto(texto);
+            const inicio = textoCompleto.substring(0, 2500);
+
+            const obterDescricaoDeclaracaoPorNome = () => {
+                const chaveArquivo = normalizarSemAcentos(limparDescricaoArquivo(nomeArquivo))
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]+/g, '');
+                const descricoesPorArquivo = {
+                    DECLARACAOATADEREGISTRO: 'DECLARA\u00c7\u00c3O ADES\u00c3O \u00c0 ATA DE REGISTROS DE PRE\u00c7OS',
+                    DECLARACAOCONCURSO: 'DECLARA\u00c7\u00c3O SITUA\u00c7\u00c3O DO CONCURSO P\u00daBLICO E SELE\u00c7\u00d5ES P\u00daBLICAS',
+                    DECLARACAOCONTAEXECUTIVO: 'DECLARA\u00c7\u00c3O CONTAS EXECUTIVO'
+                };
+
+                return descricoesPorArquivo[chaveArquivo] || null;
+            };
+
+            const limparDescricaoDeclaracao = (valor) => String(valor || '')
+                .replace(/^[\s"'\u2018\u2019\u201c\u201d]+|[\s"'\u2018\u2019\u201c\u201d]+$/g, '')
+                .replace(/\s+EM\s+ATEN(?:[\u00c7C][\u00c3A]O|CAO)\s+AOS?\s+PRINC[\s\S]*$/i, '')
+                .replace(/\s+/g, ' ')
+                .replace(/\s+([,.;:!?])/g, '$1')
+                .trim();
+
+            const corrigirDescricaoDeclaracao = (valor) => {
+                const descricao = limparDescricaoDeclaracao(valor);
+                const chave = normalizarSemAcentos(descricao)
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]+/g, '');
+                const descricoesCanonicas = {
+                    RESOLUCOES: 'resoluções',
+                    TRANSFERENCIASRECEBIDASDECONVENIOS: 'transferências recebidas de convênios',
+                    TRANSFERENCIASREALIZADASDECONVENIOS: 'transferências realizadas de convênios',
+                    ACORDOSFIRMADOSSEMTRANSFERENCIADERECURSOSFINANCEIROS: 'acordos firmados sem transferência de recursos financeiros',
+                    LISTADEESTAGIARIO: 'lista de estagiários',
+                    LISTADEESTAGIARIOS: 'lista de estagiários',
+                    LISTADETERCEIRIZADOS: 'lista de terceirizados',
+                    CONCURSOSEPROCESSOSSELETIVOS: 'concursos e processos seletivos',
+                    DEMAISCONCURSOSELISTADEAPROVADOS: 'demais concursos e lista de aprovados',
+                    DIARIAS: 'diárias',
+                    TABELADEVALORESDASDIARIAS: 'tabela de valores das diárias',
+                    LICITACOES: 'licitações',
+                    EDITAISDELICITACOES: 'editais de licitações',
+                    ATADEADESAOSRP: 'ata de adesão - SRP',
+                    PLANODECONTRATACOESANUAL: 'plano de contratações anual',
+                    RELACOESDOSLICITANTESECONTRATADOSSANCIONADOSADMINISTRATIVAMENTE: 'relações dos licitantes e contratados sancionados administrativamente',
+                    LISTADOSFISCAISDECONTRATOS: 'lista dos fiscais de contratos',
+                    OBRAS: 'obras',
+                    RELACAODEOBRASPARALISADAS: 'relação de obras paralisadas',
+                    RELATORIODEGESTAOEATIVIDADES: 'relatório de gestão e atividades',
+                    RESULTADODEAPRECIACAOEJULGAMENTODASCONTASPELOTRIBUNALDECONTAS: 'resultado de apreciação e julgamento das contas pelo tribunal de contas',
+                    PLANOESTRATEGICOINSTITUCIONAL: 'plano estratégico institucional',
+                    RELATORIOANUALESTATISTICO: 'relatório anual estatístico',
+                    DOCUMENTOSCLASSIFICADOSPORGRAUDESIGILO: 'documentos classificados por grau de sigilo',
+                    INFORMACOESDESCLASSIFICADAS: 'informações desclassificadas',
+                    CARTADESERVICOSAOUSUARIO: 'carta de serviços ao usuário',
+                    PAUTASDASSESSOESECOMISSOES: 'pautas das sessões e comissões',
+                    ATASDASSESSOES: 'atas das sessões',
+                    LISTADEVOTACOES: 'lista de votações',
+                    RESULTADODEJULGAMENTODASCONTASDOCHEFEDOPODEREXECUTIVOPELOCHEFEDOPODERLEGISLATIVO: 'resultado de julgamento das contas do chefe do poder executivo pelo chefe do Poder Legislativo',
+                    COTASPARAATIVIDADEPARLAMENTAR: 'cotas para atividade parlamentar'
+                };
+
+                return descricoesCanonicas[chave] || descricao;
+            };
+
+            const extrairDescricao = () => {
+                const descricaoPorNome = obterDescricaoDeclaracaoPorNome();
+                if (descricaoPorNome) return descricaoPorNome;
+
+                const assuntoCorpo = inicio.match(/\bN[\u00c3A]O\s+possui\s+([\s\S]{3,260}?)(?=\s+(?:no\s+)?per[\u00edi]odo\s+(?:de\s*)?:|\s+no\s+per[\u00edi]odo\b|\s+durante\s+o\s+per[\u00edi]odo\b|[.;])/i);
+                if (assuntoCorpo) {
+                    const descricao = corrigirDescricaoDeclaracao(assuntoCorpo[1]);
+                    if (descricao.length >= 3) return descricao;
+                }
+
+                const depoisTitulo = inicio.match(/\bDeclara[\u00e7c][\u00e3a]o\b\s*["'\u201c\u201d]\s*([^"'\u201c\u201d]{6,220})\s*["'\u201c\u201d]/i);
+                if (depoisTitulo) {
+                    const descricao = corrigirDescricaoDeclaracao(depoisTitulo[1]);
+                    if (descricao.length >= 6) return descricao;
+                }
+
+                const primeiraAspa = inicio.match(/["'\u201c\u201d]\s*([^"'\u201c\u201d]{6,220})\s*["'\u201c\u201d]/);
+                if (primeiraAspa) {
+                    const descricao = corrigirDescricaoDeclaracao(primeiraAspa[1]);
+                    if (descricao.length >= 6) return descricao;
+                }
+
+                const linhaAposTitulo = inicio.match(/\bDeclara[\u00e7c][\u00e3a]o\b\s+(.{6,220}?)(?=\bDeclaro\b|\bDeclaramos\b|$)/i);
+                if (linhaAposTitulo) {
+                    const descricao = corrigirDescricaoDeclaracao(linhaAposTitulo[1]);
+                    if (descricao.length >= 6) return descricao;
+                }
+
+                return limparDescricaoArquivo(nomeArquivo) || null;
+            };
+
+            const extrairDataDeclaracao = () => {
+                const normalizarAno = (valorAno) => String(valorAno || '').replace(/\D/g, '').slice(0, 4);
+                const assinatura = textoCompleto.match(/\bDados\s*:\s*((?:\d[\s\.,]*){4})[\.\/-](\d{1,2})[\.\/-](\d{1,2})/i);
+                if (assinatura) {
+                    const ano = normalizarAno(assinatura[1]);
+                    const mes = String(parseInt(assinatura[2], 10)).padStart(2, '0');
+                    const dia = String(parseInt(assinatura[3], 10)).padStart(2, '0');
+                    if (ano.length === 4) return `${dia}/${mes}/${ano}`;
+                }
+
+                const datas = extrairDatasPadraoOrdenadas(textoCompleto);
+                if (datas.length) return datas[datas.length - 1].data;
+
+                return extrairDataPadrao(textoCompleto, nomeArquivo);
+            };
+
+            const descricao = extrairDescricao();
+            const data = extrairDataDeclaracao();
+
+            return {
+                numero: numeroDocumento,
+                arquivo: nomeArquivo,
+                numeroDoDocumento: null,
+                data: data || null,
+                letra: null,
+                descricao: descricao ? descricao.toUpperCase().substring(0, 300) : null,
+                url: `${urlDocumentos}${encodeURIComponent(nomeArquivo)}`,
+                tipoDocumento: tipoDocumento || resolverTipoNome('Declaracao') || 'Declaracao'
+            };
+        }
+
         function resolverTipoNome(tipoDetectado) {
             if (!tipoDetectado) return tipoDetectado;
             const norm = normalizarBusca(tipoDetectado);
@@ -3371,6 +3521,11 @@
                     console.log(`[DEBUG] ${nomeArquivo} -> Detectado como REQUERIMENTO pelo tipo selecionado`);
                     const res = extrairInformacoesRequerimento(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento);
                     return pósProcessarNumero(res, texto, nomeArquivo);
+                }
+
+                if (isTipoDeclaracao(tipoDocumento)) {
+                    console.log(`[DEBUG] ${nomeArquivo} -> Detectado como DECLARACAO pelo tipo selecionado`);
+                    return extrairInformacoesDeclaracao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipoDocumento);
                 }
 
                 if (tipoDocumentoSemNumero(tipoDocumento)) {
@@ -3463,6 +3618,11 @@
                 return extrairInformacoesDespesaGenerica(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo(tipoDetectadoPeloNome));
             }
 
+            if (isTipoDeclaracao(tipoDetectadoPeloNome)) {
+                console.log(`[DEBUG] ${nomeArquivo} -> Detectado como DECLARACAO pelo detector de nome`);
+                return extrairInformacoesDeclaracao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Declaracao'));
+            }
+
             if (tipoDetectadoPeloNome && tipoDocumentoSemNumero(tipoDetectadoPeloNome)) {
                 console.log(`[DEBUG] ${nomeArquivo} -> Detectado como DESPESA/CONTABIL pelo detector de nome`);
                 return extrairInformacoesDespesaGenerica(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo(tipoDetectadoPeloNome));
@@ -3536,7 +3696,7 @@
                 const res = extrairInformacoesRequerimento(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Requerimento'));
                 return pósProcessarNumero(res, texto, nomeArquivo);
             }
-            
+
             // PRIORIDADE 1: Verificar pelo NOME DO ARQUIVO (mais confiável)
             if (/(^|[\s_\-])leis?(?:\d{2,4})?(?:\s+n)?[°ºª\s\-\d\/]*(?=$|[\s_\-])/i.test(nomeArquivo)) {
                 console.log(`[DEBUG] ${nomeArquivo} -> Detectado como LEI pelo nome do arquivo`);
@@ -3582,6 +3742,15 @@
                 console.log(`[DEBUG] ${nomeArquivo} -> Detectado como REQUERIMENTO pelo conteúdo/nome`);
                 const res = extrairInformacoesRequerimento(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Requerimento'));
                 return pósProcessarNumero(res, texto, nomeArquivo);
+            }
+
+            const inicioDeclaracao = texto.substring(0, 1500);
+            const inicioDeclaracaoNormalizado = normalizarBusca(inicioDeclaracao);
+            const isDeclaracao = /\bDeclara[\u00e7c][\u00e3a]o\b\s*["'\u201c\u201d]/i.test(inicioDeclaracao)
+                || /\bdeclaracao\b\s+[\"']?ausencia\s+de\s+declaracao\b/.test(inicioDeclaracaoNormalizado);
+            if (isDeclaracao) {
+                console.log(`[DEBUG] ${nomeArquivo} -> Detectado como DECLARACAO pelo conteudo`);
+                return extrairInformacoesDeclaracao(texto, nomeArquivo, numeroDocumento, urlDocumentos, tipo('Declaracao'));
             }
             
             // Verificar se é um PROJETO DE LEI

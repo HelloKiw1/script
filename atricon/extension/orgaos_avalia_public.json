@@ -1,0 +1,272 @@
+[
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Anan\u00e1s",
+    "has_access": false
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Aparecida do Rio Negro",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Aparecida do Rio Negro",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Araguan\u00e3",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Aragua\u00e7u",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Aragua\u00edna",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Arapoema",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Baba\u00e7ul\u00e2ndia",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Carmol\u00e2ndia",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Carmol\u00e2ndia",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Centen\u00e1rio",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Centen\u00e1rio",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Colm\u00e9ia",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Divin\u00f3polis do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Duer\u00e9",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Envira",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Filad\u00e9lfia",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Itaguatins",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Lagoa da Confus\u00e3o",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Lajeado",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Lajeado",
+    "has_access": false
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Lizarda",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Luzin\u00f3polis",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Mateiros",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Mateiros",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Miranorte",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Miranorte",
+    "has_access": false
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Monte do Carmo",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Nazar\u00e9",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Nazar\u00e9",
+    "has_access": false
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Nova Olinda",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Novo Acordo",
+    "has_access": false
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Palmeirante",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Palmeiras do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Pau D'Arco",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Pindorama do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Piraqu\u00ea",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Ponte Alta do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Pugmil",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Recursol\u00e2ndia",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Recursol\u00e2ndia",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Riachinho",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Rio Sono",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Santa F\u00e9 do Araguaia",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Santa Maria do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Santa Maria do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Silvan\u00f3polis",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Silvan\u00f3polis",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "S\u00e3o Bento do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "S\u00e3o F\u00e9lix do Tocantins",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "S\u00e3o Gabriel da Cachoeira",
+    "has_access": true
+  },
+  {
+    "orgao": "C\u00e2mara Municipal",
+    "cidade": "Taboc\u00e3o",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Tocantin\u00f3polis",
+    "has_access": true
+  },
+  {
+    "orgao": "Prefeitura Municipal",
+    "cidade": "Tupirama",
+    "has_access": true
+  }
+]

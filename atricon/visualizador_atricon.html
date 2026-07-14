@@ -141,7 +141,7 @@
 
     .file-control {
       display: grid;
-      grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(118px, auto));
+      grid-template-columns: minmax(260px, 1fr) repeat(4, minmax(118px, auto));
       align-items: center;
       gap: 10px;
       justify-content: flex-end;
@@ -912,7 +912,7 @@
       .file-control {
         width: 100%;
         max-width: none;
-        grid-template-columns: minmax(240px, 1fr) repeat(3, minmax(112px, 150px));
+        grid-template-columns: minmax(240px, 1fr) repeat(4, minmax(104px, 150px));
         justify-content: stretch;
       }
 
@@ -976,6 +976,7 @@
 
       #fileInput,
       #exportCsv,
+      #resetViewer,
       #themeToggle {
         grid-column: auto;
         grid-row: auto;
@@ -1026,6 +1027,7 @@
         <button id="generateReport" type="button" disabled>Gerar relatório</button>
         <button id="generateChecklist" type="button" disabled>Gerar checklist</button>
         <button id="exportCsv" type="button" disabled>Exportar CSV</button>
+        <button id="resetViewer" class="secondary-button" type="button">Reiniciar</button>
         <button id="themeToggle" class="secondary-button" type="button" aria-pressed="true">Modo claro</button>
       </div>
     </div>
@@ -1041,7 +1043,7 @@
     </nav>
 
     <section id="resultsPanel" class="tab-panel">
-      <section class="json-paste-panel" aria-label="Colar JSON">
+      <section id="jsonPastePanel" class="json-paste-panel" aria-label="Colar JSON">
         <div class="json-paste-head">
           <div>
             <strong>Colar JSON</strong>
@@ -1055,7 +1057,7 @@
         <textarea id="pastedJson" spellcheck="false" placeholder='Cole o JSON aqui, por exemplo: [{"orgao":"Prefeitura Municipal","cidade":"Mateiros"}]'></textarea>
       </section>
 
-      <section class="toolbar" aria-label="Filtros">
+      <section id="resultToolbar" class="toolbar" aria-label="Filtros" hidden>
       <label>
         Buscar
         <input id="searchInput" type="search" placeholder="Orgão, cidade, status, erro...">
@@ -1089,7 +1091,7 @@
       <button id="clearFilters" class="secondary-button" type="button">Limpar</button>
     </section>
 
-    <aside id="metricsDrawer" class="metrics-drawer" aria-label="Contadores" aria-expanded="false">
+    <aside id="metricsDrawer" class="metrics-drawer" aria-label="Contadores" aria-expanded="false" hidden>
       <button id="metricsDrawerToggle" class="metrics-drawer-toggle" type="button" aria-controls="metricsDrawer" aria-expanded="false" title="Abrir contadores">
         <span>Contadores</span>
       </button>
@@ -1227,11 +1229,14 @@
     const generateReport = document.getElementById('generateReport');
     const generateChecklist = document.getElementById('generateChecklist');
     const exportCsv = document.getElementById('exportCsv');
+    const resetViewer = document.getElementById('resetViewer');
     const themeToggle = document.getElementById('themeToggle');
     const searchInput = document.getElementById('searchInput');
+    const jsonPastePanel = document.getElementById('jsonPastePanel');
     const pastedJson = document.getElementById('pastedJson');
     const loadPastedJson = document.getElementById('loadPastedJson');
     const clearPastedJson = document.getElementById('clearPastedJson');
+    const resultToolbar = document.getElementById('resultToolbar');
     const statusFilter = document.getElementById('statusFilter');
     const manifestationFilter = document.getElementById('manifestationFilter');
     const cityFilter = document.getElementById('cityFilter');
@@ -1269,6 +1274,7 @@
     generateReport.addEventListener('click', generateReportDocument);
     generateChecklist.addEventListener('click', generateChecklistDocument);
     exportCsv.addEventListener('click', exportFilteredCsv);
+    resetViewer.addEventListener('click', resetViewerPage);
     themeToggle.addEventListener('click', () => {
       setTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
     });
@@ -1333,6 +1339,7 @@
       } catch (error) {
         state.rows = [];
         state.filtered = [];
+        setResultLoadedState(false);
         resetComparison('Carregue um JSON principal valido antes de comparar.');
         compareInput.disabled = true;
         fileMeta.textContent = 'Nenhum arquivo carregado.';
@@ -1350,6 +1357,7 @@
       const parsed = JSON.parse(text);
       const rows = Array.isArray(parsed) ? parsed : [parsed];
       state.rows = rows.map(normalizeRow);
+      setResultLoadedState(state.rows.length > 0);
       fileMeta.innerHTML = `<strong>${escapeHtml(sourceName)}</strong><span>${state.rows.length} registro(s)</span>`;
       fillFilterOptions();
       setDefaultResultFilters();
@@ -1394,6 +1402,7 @@
     function showMainJsonError(error) {
       state.rows = [];
       state.filtered = [];
+      setResultLoadedState(false);
       resetComparison('Carregue um JSON principal valido antes de comparar.');
       compareInput.disabled = true;
       fileMeta.textContent = 'Nenhum arquivo carregado.';
@@ -1404,6 +1413,21 @@
       exportCsv.disabled = true;
       generateReport.disabled = true;
       generateChecklist.disabled = true;
+    }
+
+    function setResultLoadedState(loaded) {
+      jsonPastePanel.hidden = loaded;
+      resultToolbar.hidden = !loaded;
+      metricsDrawer.hidden = !loaded;
+    }
+
+    function resetViewerPage() {
+      const cleanUrl = window.location.href.split(/[?#]/)[0];
+      if (window.location.href === cleanUrl) {
+        window.location.reload();
+        return;
+      }
+      window.location.href = cleanUrl;
     }
 
     async function loadJsonFromUrlParam() {

@@ -157,7 +157,8 @@ p {
   flex-wrap: nowrap;
 }
 
-button {
+button,
+.button-link {
   min-height: 40px;
   padding: 0 16px;
   border: 1px solid #b45309;
@@ -169,18 +170,28 @@ button {
   transition: background .16s ease, border-color .16s ease, transform .16s ease;
 }
 
-button:hover {
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+button:hover,
+.button-link:hover {
   background: #fbbf24;
   border-color: #f59e0b;
 }
 
-button:active {
+button:active,
+.button-link:active {
   transform: translateY(1px);
 }
 
 button.secondary,
 button.ghost,
-.file-button {
+.file-button,
+.button-link.secondary {
   border-color: var(--line-strong);
   background: var(--input-bg);
   color: var(--accent-dark);
@@ -188,7 +199,8 @@ button.ghost,
 
 button.secondary:hover,
 button.ghost:hover,
-.file-button:hover {
+.file-button:hover,
+.button-link.secondary:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
 }

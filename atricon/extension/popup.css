@@ -2,47 +2,102 @@
   box-sizing: border-box;
 }
 
+:root {
+  color-scheme: dark;
+  --bg: #0f0b08;
+  --panel: #14100d;
+  --line: rgba(245, 158, 11, .22);
+  --line-strong: rgba(245, 158, 11, .42);
+  --text: #fff7ed;
+  --muted: #b7a99b;
+  --accent: #f59e0b;
+  --accent-dark: #fbbf24;
+  --accent-soft: rgba(245, 158, 11, .14);
+  --input-bg: #080605;
+}
+
 body {
-  width: 280px;
+  width: 304px;
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  color: #172033;
-  background: #f6f8fb;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(245, 158, 11, .20), transparent 190px),
+    radial-gradient(circle at 90% 100%, rgba(88, 28, 135, .16), transparent 210px),
+    var(--bg);
 }
 
 main {
   display: grid;
   gap: 10px;
   padding: 14px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .035), transparent),
+    var(--panel);
 }
 
 .brand {
   display: grid;
-  gap: 3px;
-  padding-bottom: 4px;
+  gap: 4px;
+  padding: 4px 2px 8px;
+}
+
+.eyebrow {
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .brand strong {
-  font-size: 16px;
+  font-size: 18px;
+  line-height: 1.15;
 }
 
-.brand span {
-  color: #64748b;
+.brand span:not(.eyebrow) {
+  color: var(--muted);
   font-size: 12px;
 }
 
-button {
-  min-height: 38px;
-  border: 0;
+button,
+.button-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid #b45309;
   border-radius: 6px;
-  background: #0c7c8c;
-  color: #ffffff;
-  font-weight: 800;
+  background: var(--accent);
+  color: #1f1300;
+  font-weight: 900;
   cursor: pointer;
+  text-decoration: none;
+  transition: background .16s ease, border-color .16s ease, transform .16s ease;
 }
 
-button.secondary {
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #172033;
+button:hover,
+.button-link:hover {
+  background: #fbbf24;
+  border-color: #f59e0b;
+}
+
+button:active,
+.button-link:active {
+  transform: translateY(1px);
+}
+
+button.secondary,
+.button-link.secondary {
+  border-color: var(--line-strong);
+  background: var(--input-bg);
+  color: var(--accent-dark);
+}
+
+button.secondary:hover,
+.button-link.secondary:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }

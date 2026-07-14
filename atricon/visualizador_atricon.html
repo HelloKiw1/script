@@ -271,6 +271,10 @@
       grid-column: 1 / -1;
     }
 
+    #resultsPanel > .json-paste-panel {
+      grid-column: 1 / -1;
+    }
+
     #resultsPanel > #emptyState,
     #resultsPanel > #tableShell {
       grid-column: 1;
@@ -279,6 +283,60 @@
 
     .tab-panel[hidden] {
       display: none !important;
+    }
+
+    .json-paste-panel {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .025), transparent),
+        var(--panel);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .json-paste-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .json-paste-head strong {
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .json-paste-head span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .json-paste-panel textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text);
+      font: 12px/1.5 Consolas, "Courier New", monospace;
+      outline: none;
+      white-space: pre;
+    }
+
+    .json-paste-panel textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .json-paste-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
     }
 
     .compare-panel {
@@ -872,6 +930,16 @@
         grid-template-columns: 1fr 1fr;
       }
 
+      .json-paste-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .json-paste-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
       #resultsPanel > #emptyState,
       #resultsPanel > #tableShell {
         grid-column: 1;
@@ -914,6 +982,14 @@
       }
 
       h1 { font-size: 21px; }
+
+      .json-paste-actions {
+        flex-direction: column;
+      }
+
+      .json-paste-actions button {
+        width: 100%;
+      }
 
       .metrics-drawer {
         top: 82px;
@@ -965,6 +1041,20 @@
     </nav>
 
     <section id="resultsPanel" class="tab-panel">
+      <section class="json-paste-panel" aria-label="Colar JSON">
+        <div class="json-paste-head">
+          <div>
+            <strong>Colar JSON</strong>
+            <span>Cole aqui o resultado copiado da extensao ou de outro arquivo.</span>
+          </div>
+          <div class="json-paste-actions">
+            <button id="loadPastedJson" type="button">Carregar JSON</button>
+            <button id="clearPastedJson" class="secondary-button" type="button">Limpar</button>
+          </div>
+        </div>
+        <textarea id="pastedJson" spellcheck="false" placeholder='Cole o JSON aqui, por exemplo: [{"orgao":"Prefeitura Municipal","cidade":"Mateiros"}]'></textarea>
+      </section>
+
       <section class="toolbar" aria-label="Filtros">
       <label>
         Buscar
@@ -1139,6 +1229,9 @@
     const exportCsv = document.getElementById('exportCsv');
     const themeToggle = document.getElementById('themeToggle');
     const searchInput = document.getElementById('searchInput');
+    const pastedJson = document.getElementById('pastedJson');
+    const loadPastedJson = document.getElementById('loadPastedJson');
+    const clearPastedJson = document.getElementById('clearPastedJson');
     const statusFilter = document.getElementById('statusFilter');
     const manifestationFilter = document.getElementById('manifestationFilter');
     const cityFilter = document.getElementById('cityFilter');
@@ -1180,6 +1273,16 @@
       setTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
     });
     searchInput.addEventListener('input', applyFilters);
+    loadPastedJson.addEventListener('click', loadPastedJsonText);
+    clearPastedJson.addEventListener('click', () => {
+      pastedJson.value = '';
+      pastedJson.focus();
+    });
+    pastedJson.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        loadPastedJsonText();
+      }
+    });
     statusFilter.addEventListener('change', applyFilters);
     manifestationFilter.addEventListener('change', applyFilters);
     cityFilter.addEventListener('change', applyFilters);
@@ -1203,6 +1306,7 @@
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => switchTab(button.dataset.tab));
     });
+    window.addEventListener('message', handleExtensionResultMessage);
     loadJsonFromUrlParam();
     loadCollectorAccounts();
 
@@ -1255,6 +1359,36 @@
       generateChecklist.disabled = state.rows.length === 0;
       resetComparison('Selecione o segundo JSON para comparar.');
       compareInput.disabled = state.rows.length === 0;
+    }
+
+    function loadPastedJsonText() {
+      const text = pastedJson.value.trim();
+      if (!text) {
+        showMainJsonError(new Error('cole um JSON antes de carregar.'));
+        return;
+      }
+
+      try {
+        loadMainJsonText(text, 'json_colado_no_visualizador.json');
+      } catch (error) {
+        showMainJsonError(error);
+      }
+    }
+
+    function handleExtensionResultMessage(event) {
+      if (event.source !== window) return;
+      const payload = event.data || {};
+      if (payload.type !== 'ATRICON_EXTENSION_RESULT') return;
+      if (!Array.isArray(payload.rows)) return;
+
+      try {
+        loadMainJsonText(
+          JSON.stringify(payload.rows),
+          payload.sourceName || 'resultado_atricon_extensao.json'
+        );
+      } catch (error) {
+        showMainJsonError(error);
+      }
     }
 
     function showMainJsonError(error) {

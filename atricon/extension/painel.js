@@ -4,17 +4,21 @@ const LOGIN_URL = `${BASE_URL}/login/`;
 const OAUTH_START_URL = `${BASE_URL}/oauth/authenticate/`;
 const MINHAS_AVALIACOES_URL = `${BASE_URL}/avaliacoes/minhas-avaliacoes/`;
 const LOGOUT_URL = `${BASE_URL}/logout/`;
-const VIEWER_FILE_URL = 'file:///C:/Users/Suporte%2001/Documents/Github/script/atricon/visualizador_atricon.html';
+const VIEWER_URL = 'https://hellokiw1.github.io/script/atricon/visualizador_atricon.html';
+const MAX_VIEWER_URL_LENGTH = 150000;
 
 const collectButton = document.getElementById('collect');
 const openAtriconButton = document.getElementById('openAtricon');
 const clearLogButton = document.getElementById('clearLog');
+const toggleLogButton = document.getElementById('toggleLog');
 const openResultButton = document.getElementById('openResult');
 const downloadAgainButton = document.getElementById('downloadAgain');
 const statusTitle = document.getElementById('statusTitle');
 const statusDetail = document.getElementById('statusDetail');
 const progress = document.getElementById('progress');
+const logPanel = document.getElementById('logPanel');
 const logBox = document.getElementById('log');
+const logSummary = document.getElementById('logSummary');
 const resultPanel = document.getElementById('resultPanel');
 const resultCount = document.getElementById('resultCount');
 const citySummary = document.getElementById('citySummary');
@@ -36,7 +40,9 @@ let credentialsByKey = new Map();
 openAtriconButton.addEventListener('click', () => chrome.tabs.create({ url: HOME_URL }));
 clearLogButton.addEventListener('click', () => {
   logBox.textContent = '';
+  updateLogSummary('');
 });
+toggleLogButton.addEventListener('click', toggleLogPanel);
 collectButton.addEventListener('click', collectAssessments);
 openResultButton.addEventListener('click', () => openVisualizerRows(lastRows));
 downloadAgainButton.addEventListener('click', () => downloadRows(lastRows));
@@ -96,6 +102,10 @@ async function collectAssessments() {
       throw new Error('nenhuma avaliacao da tabela corresponde as cidades selecionadas.');
     }
     const outputRows = [];
+    const collectDeep = assessmentRows.length === 1;
+    if (collectDeep) {
+      log('Modo profundo ativo: uma unica avaliacao selecionada.');
+    }
 
     for (let index = 0; index < assessmentRows.length; index += 1) {
       const row = assessmentRows[index];
@@ -117,11 +127,14 @@ async function collectAssessments() {
       setStatus(`Coletando ${current}/${assessmentRows.length}`, row.entidade || row.numero || 'avaliacao');
       progress.value = Math.round((index / Math.max(assessmentRows.length, 1)) * 100);
 
-      if (normalizeText(row.status) !== 'validado') {
-        output.erro = `login ainda nao validado. Status atual: ${row.status}`;
+      if (statusBlocksCollection(row, collectDeep)) {
+        output.erro = `status fora de Validado no modo geral. Status atual: ${row.status}`;
         log(`[${current}/${assessmentRows.length}] ${row.entidade}: ${output.erro}`);
         outputRows.push(output);
         continue;
+      }
+      if (collectDeep && normalizeText(row.status) !== 'validado') {
+        log(`[${current}/${assessmentRows.length}] ${row.entidade}: status ${row.status}; tentando coleta profunda mesmo assim.`);
       }
 
       if (!row.link) {
@@ -138,6 +151,7 @@ async function collectAssessments() {
         const percentResult = await executeInTab(tab.id, extractPercentageFromQuestionnaire, [row.indice]);
         output.porcentagem = percentResult.porcentagem || output.porcentagem;
         if (!output.porcentagem) output.erro = 'porcentagem nao encontrada no questionario.';
+        if (collectDeep) await collectDeepForRow(tab.id, row, output);
         log(`[${current}/${assessmentRows.length}] ${row.entidade}: ${output.porcentagem || 'sem porcentagem'}`);
       } catch (error) {
         output.erro = `erro ao abrir questionario: ${error.message}`;
@@ -170,7 +184,11 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
   const tab = await openOrReuseAnyAtriconTab(HOME_URL);
   const outputRows = [];
   const expectedKeys = keysForSelectedOptions(selectedKeys);
+  const collectDeep = expectedKeys.size === 1 && accounts.length === 1;
   const accountsByKey = new Set(accounts.map((account) => account.key));
+  if (collectDeep) {
+    log('Modo profundo ativo: uma unica cidade selecionada.');
+  }
 
   for (const key of expectedKeys) {
     if (accountsByKey.has(key)) continue;
@@ -226,11 +244,14 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       output.questionario_id = row.questionario_id;
       output.porcentagem = normalizePercentageText(row.indice);
 
-      if (normalizeText(row.status) !== 'validado') {
-        output.erro = `login ainda nao validado. Status atual: ${row.status}`;
+      if (statusBlocksCollection(row, collectDeep)) {
+        output.erro = `status fora de Validado no modo geral. Status atual: ${row.status}`;
         outputRows.push(output);
         log(`[${current}/${accounts.length}] ${account.cidade}: ${output.erro}`);
         continue;
+      }
+      if (collectDeep && normalizeText(row.status) !== 'validado') {
+        log(`[${current}/${accounts.length}] ${account.cidade}: status ${row.status}; tentando coleta profunda mesmo assim.`);
       }
 
       if (!row.link) {
@@ -246,6 +267,7 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       const percentResult = await executeInTab(tab.id, extractPercentageFromQuestionnaire, [row.indice]);
       output.porcentagem = percentResult.porcentagem || output.porcentagem;
       if (!output.porcentagem) output.erro = 'porcentagem nao encontrada no questionario.';
+      if (collectDeep) await collectDeepForRow(tab.id, row, output);
       outputRows.push(output);
       log(`[${current}/${accounts.length}] ${account.cidade}: ${output.porcentagem || 'sem porcentagem'}`);
     } catch (error) {
@@ -266,6 +288,45 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
   });
   showResultSummary(outputRows);
   await openVisualizerRows(outputRows);
+}
+
+async function collectDeepForRow(tabId, row, output) {
+  const formUrl = questionnaireFormUrl(row);
+  if (!formUrl) {
+    output.erro_evidencias = 'link do formulario do questionario nao encontrado.';
+    log(`Coleta profunda ignorada: ${output.erro_evidencias}`);
+    return;
+  }
+
+  setStatus('Coleta profunda', row.entidade || output.cidade || 'avaliacao');
+  log(`Coleta profunda: abrindo formulario ${formUrl}`);
+  await chrome.tabs.update(tabId, { url: formUrl, active: true });
+  await waitForTabComplete(tabId, 45000);
+  await sleep(1400);
+
+  const result = await executeInTab(tabId, extractDeepEvidencesFromForm, [row.questionario_id]);
+  if (!result?.ok) {
+    const message = result?.error || 'nao foi possivel coletar evidencias de validacao.';
+    output.erro_evidencias = message;
+    if (!output.erro) output.erro = message;
+    log(`Coleta profunda: ${message}`);
+    return;
+  }
+
+  output.evidencias_validacao = Array.isArray(result.evidencias) ? result.evidencias : [];
+  output.total_evidencias_validacao = output.evidencias_validacao.length;
+  log(`Coleta profunda: ${output.total_evidencias_validacao} evidencia(s) de validacao coletada(s).`);
+}
+
+function questionnaireFormUrl(row) {
+  if (row?.questionario_id) return `${BASE_URL}/questionarios/${row.questionario_id}/questionario-form/`;
+  if (row?.link) return String(row.link).replace('/view/', '/questionario-form/');
+  return '';
+}
+
+function statusBlocksCollection(row, collectDeep) {
+  if (collectDeep) return false;
+  return normalizeText(row?.status) !== 'validado';
 }
 
 async function loginWithCredentials(tabId, account) {
@@ -654,13 +715,52 @@ async function openVisualizerRows(rows) {
   if (!Array.isArray(rows) || !rows.length) return;
   const json = JSON.stringify(rows, null, 2);
   const dataUrl = `data:application/json;charset=utf-8,${encodeURIComponent(json)}`;
+  if (dataUrl.length > MAX_VIEWER_URL_LENGTH) {
+    log('Resultado grande demais para abrir pela URL. Abrindo visualizador e enviando dados pela extensao.');
+    await openGithubVisualizerWithRows(rows);
+    return;
+  }
+
   try {
     await chrome.tabs.create({ url: dataUrl, active: false });
   } catch (error) {
     log(`Aviso: nao foi possivel abrir aba JSON separada: ${error.message}`);
   }
-  const viewerUrl = `${VIEWER_FILE_URL}?json=${encodeURIComponent(dataUrl)}`;
+  const viewerUrl = `${VIEWER_URL}?json=${encodeURIComponent(dataUrl)}`;
   await chrome.tabs.create({ url: viewerUrl, active: true });
+}
+
+async function openGithubVisualizerWithRows(rows) {
+  const tab = await chrome.tabs.create({ url: `${VIEWER_URL}?extension=1`, active: true });
+  await waitForTabComplete(tab.id, 45000);
+  await sleep(700);
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      world: 'MAIN',
+      func: injectRowsIntoVisualizer,
+      args: [rows, `resultado_atricon_extensao_${timestampForFilename()}.json`]
+    });
+  } catch (error) {
+    log(`Aviso: nao foi possivel enviar dados ao visualizador GitHub: ${error.message}`);
+    await chrome.tabs.create({ url: chrome.runtime.getURL('resultado.html'), active: true });
+  }
+}
+
+function injectRowsIntoVisualizer(rows, sourceName) {
+  const text = JSON.stringify(rows || []);
+  if (typeof window.loadMainJsonText === 'function') {
+    window.loadMainJsonText(text, sourceName || 'resultado_atricon_extensao.json');
+    return { ok: true, method: 'direct' };
+  }
+
+  window.postMessage({
+    type: 'ATRICON_EXTENSION_RESULT',
+    sourceName: sourceName || 'resultado_atricon_extensao.json',
+    rows: Array.isArray(rows) ? rows : []
+  }, window.location.origin);
+  return { ok: true, method: 'message' };
 }
 
 function showResultSummary(rows) {
@@ -677,6 +777,20 @@ function log(message) {
   const now = new Date().toLocaleTimeString('pt-BR');
   logBox.textContent += `[${now}] ${message}\n`;
   logBox.scrollTop = logBox.scrollHeight;
+  updateLogSummary(message);
+}
+
+function toggleLogPanel() {
+  const minimized = logPanel.classList.toggle('is-minimized');
+  toggleLogButton.textContent = minimized ? 'Mostrar' : 'Ocultar';
+}
+
+function updateLogSummary(message) {
+  if (!message) {
+    logSummary.textContent = 'Minimizado';
+    return;
+  }
+  logSummary.textContent = String(message).slice(0, 120);
 }
 
 function sleep(ms) {
@@ -811,6 +925,360 @@ async function extractPercentageFromQuestionnaire(fallback) {
   }
 
   return { porcentagem: readPercentage(fallback) };
+}
+
+async function extractDeepEvidencesFromForm(questionarioId) {
+  const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+  const normalize = (value) => clean(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const absoluteUrl = (value) => {
+    if (!value) return '';
+    try {
+      return new URL(value, document.baseURI).href;
+    } catch {
+      return '';
+    }
+  };
+
+  const getPanes = () => {
+    const linkedPanes = Array.from(document.querySelectorAll('#dimensoes .nav-link')).map((link) => {
+      const href = link.getAttribute('href') || '';
+      const id = href.includes('#') ? href.split('#').pop() : link.getAttribute('aria-controls') || '';
+      return {
+        id,
+        title: clean(link.textContent || '')
+      };
+    }).filter((item) => item.id && document.getElementById(item.id));
+
+    if (linkedPanes.length) return linkedPanes;
+    return Array.from(document.querySelectorAll('.tab-pane[id]')).map((pane, index) => ({
+      id: pane.id,
+      title: `Aba ${index + 1}`
+    }));
+  };
+
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    if (getPanes().length) break;
+    await wait(500);
+  }
+
+  const panes = getPanes();
+  if (!panes.length) {
+    return { ok: false, error: `formulario do questionario nao carregou. URL atual: ${location.href}` };
+  }
+
+  const activatePane = async (paneId) => {
+    const link = Array.from(document.querySelectorAll('#dimensoes .nav-link')).find((item) => {
+      const href = item.getAttribute('href') || '';
+      return href.endsWith(`#${paneId}`) || item.getAttribute('aria-controls') === paneId;
+    });
+
+    if (link) {
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+
+    document.querySelectorAll('#dimensoes .nav-link').forEach((item) => item.classList.remove('active'));
+    if (link) link.classList.add('active');
+    document.querySelectorAll('.tab-pane').forEach((pane) => pane.classList.remove('active', 'show'));
+    const pane = document.getElementById(paneId);
+    if (pane) pane.classList.add('active', 'show');
+    await wait(250);
+  };
+
+  const evidenceButtonData = (button, modalSelector) => {
+    const criterioMatch = String(modalSelector || '').match(/modalEvidencias(\d+)/);
+    let respostaId = criterioMatch ? criterioMatch[1] : '';
+    let tipo = '';
+    const onclick = button.getAttribute('onclick') || '';
+    const onclickMatch = onclick.match(/carregarEvidencias\(\s*(\d+)\s*,\s*['"]([^'"]+)['"]/);
+    if (onclickMatch) {
+      respostaId = onclickMatch[1];
+      tipo = onclickMatch[2];
+    }
+
+    if (!tipo) {
+      const typedParent = button.closest('[data-tipo]');
+      tipo = typedParent ? typedParent.getAttribute('data-tipo') || '' : '';
+    }
+
+    return {
+      respostaId,
+      tipo: tipo || 'questionario_form'
+    };
+  };
+
+  const extractCriterionContext = (button) => {
+    const empty = {
+      criterio: '',
+      grau_importancia: '',
+      validacoes_avaliacao: [],
+      validacoes_validacao: [],
+      validacoes_nao_atendidas: [],
+      validacoes_nao_atendidas_texto: ''
+    };
+    const card = button.closest('.card');
+    if (!card) return empty;
+
+    const titleNode = card.querySelector('[data-bs-target^="#Criterio"], [data-bs-target*="Criterio"]');
+    const titleClone = titleNode ? titleNode.cloneNode(true) : null;
+    const titleBadge = titleClone ? titleClone.querySelector('.badge') : null;
+    const grau = titleBadge ? clean(titleBadge.textContent) : '';
+    if (titleBadge) titleBadge.remove();
+    const criterio = clean(titleClone ? titleClone.textContent : '');
+
+    const readColumn = (needle) => {
+      const header = Array.from(card.querySelectorAll('h6')).find((item) => normalize(item.textContent).includes(needle));
+      const column = header ? header.closest('[class*="col-"]') : null;
+      if (!column) return [];
+      return Array.from(column.querySelectorAll('.mb-2')).map((item) => {
+        const badge = item.querySelector('.badge');
+        const clone = item.cloneNode(true);
+        const cloneBadge = clone.querySelector('.badge');
+        if (cloneBadge) cloneBadge.remove();
+        return {
+          item: clean(clone.textContent),
+          status: clean(badge ? badge.textContent : '')
+        };
+      }).filter((item) => item.item);
+    };
+
+    const validacao = readColumn('validacao');
+    const failures = [];
+    validacao.forEach((item) => {
+      if (!normalize(item.status).startsWith('nao')) return;
+      if (!failures.includes(item.item)) failures.push(item.item);
+    });
+
+    return {
+      criterio,
+      grau_importancia: grau,
+      validacoes_avaliacao: readColumn('avaliacao'),
+      validacoes_validacao: validacao,
+      validacoes_nao_atendidas: failures,
+      validacoes_nao_atendidas_texto: failures.join(', ')
+    };
+  };
+
+  const loadEvidenceModalContent = async (modalSelector, respostaId, tipo) => {
+    if (!respostaId) return false;
+    const modal = document.querySelector(modalSelector);
+    const body = document.getElementById(`modalEvidenciasBody${respostaId}`) || (modal ? modal.querySelector('.modal-body') : null);
+    if (!body) return false;
+
+    try {
+      body.innerHTML = '<div class="text-center py-5"><div class="spinner-border"></div></div>';
+      const response = await fetch(`/questionarios/${respostaId}/evidencias/${tipo}/`, {
+        credentials: 'same-origin'
+      });
+      if (!response.ok) return false;
+      body.innerHTML = await response.text();
+      if (window.htmx && typeof window.htmx.process === 'function') window.htmx.process(body);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const waitModalLoaded = async (modalSelector) => {
+    const match = String(modalSelector || '').match(/modalEvidencias(\d+)/);
+    const timelineSelector = match ? `#timeline${match[1]}` : "ul[id^='timeline']";
+
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const modal = document.querySelector(modalSelector);
+      const body = modal ? modal.querySelector('.modal-body') : null;
+      const timeline = modal ? modal.querySelector(timelineSelector) : null;
+      if (timeline && timeline.querySelectorAll('li').length) return true;
+      if (body && clean(body.textContent).length && !body.querySelector('.spinner-border')) return true;
+      await wait(500);
+    }
+    return false;
+  };
+
+  const evidenceContentText = (element) => {
+    if (!element) return '';
+    const clone = element.cloneNode(true);
+    Array.from(clone.childNodes).forEach((node) => {
+      if (node.nodeType === Node.COMMENT_NODE) node.remove();
+    });
+    clone.querySelectorAll('script, style, .note-toolbar, .note-statusbar, .note-popover, .note-modal').forEach((node) => node.remove());
+    const read = (node) => clean(node.innerText || node.textContent || '');
+    const preferred = clone.querySelector('.mb-0, .card-text, .note-editable, [data-evidence-content]');
+    const preferredText = preferred ? read(preferred) : '';
+    if (preferredText) return preferredText;
+    clone.querySelectorAll('.d-flex.justify-content-between.align-items-center.mb-2, .badge, button').forEach((node) => node.remove());
+    return read(clone);
+  };
+
+  const imageUrlsFromElement = (element) => {
+    const urls = [];
+    const push = (value) => {
+      const url = absoluteUrl(value);
+      if (url && !urls.includes(url)) urls.push(url);
+    };
+
+    Array.from(element.querySelectorAll('img')).forEach((image) => {
+      const anchor = image.closest('a[href]');
+      if (anchor) push(anchor.getAttribute('href'));
+      [
+        'data-full',
+        'data-original',
+        'data-src',
+        'data-large',
+        'data-url',
+        'data-image',
+        'data-zoom-image',
+        'data-download-url'
+      ].forEach((attr) => push(image.getAttribute(attr)));
+      String(image.getAttribute('srcset') || '').split(',').forEach((part) => {
+        push(part.trim().split(/\s+/)[0]);
+      });
+      push(image.currentSrc);
+      push(image.src);
+      push(image.getAttribute('src'));
+    });
+
+    return urls;
+  };
+
+  const parseBrazilianDate = (text) => {
+    const match = clean(text).match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\D+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (!match) return { label: '', sort: 0 };
+    const day = match[1].padStart(2, '0');
+    const month = match[2].padStart(2, '0');
+    const year = match[3].length === 2 ? `20${match[3]}` : match[3];
+    const hour = (match[4] || '00').padStart(2, '0');
+    const minute = (match[5] || '00').padStart(2, '0');
+    const second = (match[6] || '00').padStart(2, '0');
+    return {
+      label: `${day}/${month}/${year}${match[4] ? ` ${hour}:${minute}` : ''}`,
+      sort: Date.parse(`${year}-${month}-${day}T${hour}:${minute}:${second}`)
+    };
+  };
+
+  const extractModalValidationEvidences = (modalSelector, chapterTitle, criterioId, startOrder, criterioContext) => {
+    const modal = document.querySelector(modalSelector);
+    if (!modal) return [];
+
+    const desc = modal.querySelector('p.card-title-desc');
+    const tipo = desc?.querySelector('.badge') ? clean(desc.querySelector('.badge').textContent) : '';
+    const titulo = desc ? clean(clean(desc.textContent).replace(tipo, '')) : '';
+    const raw = [];
+
+    Array.from(modal.querySelectorAll("ul[id^='timeline'] > li")).forEach((item, itemIndex) => {
+      const badge = item.querySelector('.badge');
+      if (!badge || !normalize(badge.textContent).startsWith('valida')) return;
+
+      const cardBody = item.querySelector('.flex-grow-1 .card .card-body') || item.querySelector('.card-body') || item;
+      const conteudoTexto = evidenceContentText(cardBody);
+      const itemText = clean(item.innerText || item.textContent || conteudoTexto);
+      const date = parseBrazilianDate(itemText);
+      raw.push({
+        titulo: chapterTitle,
+        criterio_id: criterioId,
+        tipo,
+        titulo_evidencia: titulo,
+        conteudo_texto: conteudoTexto,
+        imagens: imageUrlsFromElement(item),
+        data_evidencia: date.label,
+        _sort: date.sort || 0,
+        _dom: itemIndex
+      });
+    });
+
+    raw.sort((a, b) => (b._sort - a._sort) || (b._dom - a._dom));
+    if (!raw.length) return [];
+
+    const mensagens = raw.map((item, index) => {
+      const copy = { ...item };
+      delete copy._sort;
+      delete copy._dom;
+      copy.ordem_na_evidencia = index + 1;
+      copy.total_mensagens_evidencia = raw.length;
+      return copy;
+    });
+    const base = mensagens[0];
+    const group = {
+      titulo: base.titulo,
+      criterio_id: base.criterio_id,
+      tipo: base.tipo,
+      titulo_evidencia: base.titulo_evidencia,
+      data_evidencia: base.data_evidencia,
+      conteudo_texto: mensagens.map((item) => item.conteudo_texto).filter(Boolean).join('\n\n'),
+      imagens: mensagens.flatMap((item) => item.imagens || []),
+      total_mensagens_evidencia: mensagens.length,
+      numero_evidencia: `${questionarioId || 'questionario'}-${criterioId || 'criterio'}-${String(startOrder).padStart(4, '0')}`,
+      ordem: startOrder,
+      mensagens_evidencia: []
+    };
+
+    Object.assign(group, criterioContext || {});
+    mensagens.forEach((message, index) => {
+      const ordem = index + 1;
+      group[`data_evidencia_${ordem}`] = message.data_evidencia;
+      group[`conteudo_texto_${ordem}`] = message.conteudo_texto;
+      group[`imagens_${ordem}`] = message.imagens || [];
+      group.mensagens_evidencia.push({
+        ordem,
+        data_evidencia: message.data_evidencia,
+        conteudo_texto: message.conteudo_texto,
+        imagens: message.imagens || []
+      });
+    });
+    return [group];
+  };
+
+  const evidencias = [];
+  let botoesEvidencias = 0;
+  const visitedButtons = new Set();
+
+  for (const pane of panes) {
+    await activatePane(pane.id);
+    const paneElement = document.getElementById(pane.id);
+    if (!paneElement) continue;
+
+    const buttons = Array.from(paneElement.querySelectorAll('button')).filter((button) => {
+      const text = clean(button.textContent || '');
+      return /Evid/i.test(text) && /\d+\s*Evid/i.test(text);
+    });
+
+    for (const button of buttons) {
+      const modalSelector = button.getAttribute('data-bs-target') || button.getAttribute('data-target') || '';
+      if (!modalSelector) continue;
+
+      const data = evidenceButtonData(button, modalSelector);
+      const criterioId = data.respostaId || (String(modalSelector).match(/modalEvidencias(\d+)/) || [])[1] || '';
+      const buttonKey = criterioId || modalSelector;
+      if (visitedButtons.has(buttonKey)) continue;
+      visitedButtons.add(buttonKey);
+      botoesEvidencias += 1;
+
+      const criterioContext = extractCriterionContext(button);
+      const preLoad = extractModalValidationEvidences(modalSelector, pane.title || pane.id, criterioId, evidencias.length + 1, criterioContext);
+      if (await loadEvidenceModalContent(modalSelector, data.respostaId, data.tipo)) {
+        await waitModalLoaded(modalSelector);
+      }
+      const loaded = extractModalValidationEvidences(modalSelector, pane.title || pane.id, criterioId, evidencias.length + 1, criterioContext);
+      evidencias.push(...(loaded.length ? loaded : preLoad));
+    }
+  }
+
+  if (botoesEvidencias && !evidencias.length) {
+    return {
+      ok: false,
+      error: `${botoesEvidencias} botao(oes) de evidencias encontrado(s), mas nenhuma evidencia de validacao foi coletada.`,
+      botoes: botoesEvidencias,
+      evidencias: []
+    };
+  }
+
+  return {
+    ok: true,
+    botoes: botoesEvidencias,
+    evidencias
+  };
 }
 
 async function startLoginFlowInPage(oauthStartUrl) {

@@ -236,6 +236,12 @@ button:disabled {
   gap: 12px;
 }
 
+.log-head > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
 .status-line strong,
 .result-head strong,
 .log-head strong,
@@ -246,6 +252,7 @@ button:disabled {
 
 .status-line span,
 .result-head span,
+.log-head span,
 .panel-head span {
   color: var(--muted);
   font-size: 13px;
@@ -405,6 +412,14 @@ pre {
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;
+}
+
+.log-panel.is-minimized {
+  padding-block: 12px;
+}
+
+.log-panel.is-minimized pre {
+  display: none;
 }
 
 @media (max-width: 1060px) {

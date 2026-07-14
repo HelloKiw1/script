@@ -39,9 +39,17 @@ function renderRow(row) {
       <td>${escapeHtml(row.setor_atual)}</td>
       <td>${escapeHtml(row.data)}</td>
       <td>${escapeHtml(row.porcentagem)}</td>
+      <td>${escapeHtml(evidenceCount(row))}</td>
       <td class="${row.erro ? 'error' : ''}">${escapeHtml(row.erro || 'Sem erro')}</td>
     </tr>
   `;
+}
+
+function evidenceCount(row) {
+  const total = Number(row.total_evidencias_validacao || 0);
+  if (total) return `${total} validacao`;
+  const evidences = Array.isArray(row.evidencias_validacao) ? row.evidencias_validacao.length : 0;
+  return evidences ? `${evidences} validacao` : '0';
 }
 
 function downloadRows(rowsToDownload) {

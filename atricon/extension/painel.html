@@ -66,10 +66,16 @@
       <progress id="progress" max="100" value="0"></progress>
     </section>
 
-    <section class="log-panel">
+    <section class="log-panel is-minimized" id="logPanel">
       <div class="log-head">
-        <strong>Log</strong>
-        <button id="clearLog" type="button" class="ghost">Limpar</button>
+        <div>
+          <strong>Log</strong>
+          <span id="logSummary">Minimizado</span>
+        </div>
+        <div class="actions compact">
+          <button id="toggleLog" type="button" class="ghost">Mostrar</button>
+          <button id="clearLog" type="button" class="ghost">Limpar</button>
+        </div>
       </div>
       <pre id="log"></pre>
     </section>

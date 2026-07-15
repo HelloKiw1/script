@@ -1,10 +1,16 @@
 const tbody = document.getElementById('tbody');
 const empty = document.getElementById('empty');
 const tablePanel = document.getElementById('tablePanel');
+const notice = document.getElementById('notice');
 const copyJsonButton = document.getElementById('copyJson');
 const downloadJsonButton = document.getElementById('downloadJson');
+const RESULT_CHANNEL_NAME = 'atricon-result';
 
 let rows = [];
+let isSummary = false;
+const resultChannel = typeof BroadcastChannel === 'function'
+  ? new BroadcastChannel(RESULT_CHANNEL_NAME)
+  : null;
 
 copyJsonButton.addEventListener('click', async () => {
   await navigator.clipboard.writeText(JSON.stringify(rows, null, 2));
@@ -12,12 +18,36 @@ copyJsonButton.addEventListener('click', async () => {
 
 downloadJsonButton.addEventListener('click', () => downloadRows(rows));
 
+if (resultChannel) {
+  resultChannel.addEventListener('message', (event) => {
+    if (event.data?.type !== 'ATRICON_RESULT_ROWS') return;
+    if (!Array.isArray(event.data.rows)) return;
+    rows = event.data.rows;
+    isSummary = false;
+    render();
+  });
+}
+
 load();
 
 async function load() {
   const data = await chrome.storage.local.get('lastAtriconResult');
   rows = Array.isArray(data.lastAtriconResult?.rows) ? data.lastAtriconResult.rows : [];
+  isSummary = data.lastAtriconResult?.is_summary === true;
+  render();
+  requestLiveResult();
+}
+
+function requestLiveResult() {
+  if (!resultChannel) return;
+  resultChannel.postMessage({ type: 'RESULT_PAGE_READY' });
+  setTimeout(() => resultChannel.postMessage({ type: 'RESULT_PAGE_READY' }), 300);
+  setTimeout(() => resultChannel.postMessage({ type: 'RESULT_PAGE_READY' }), 1000);
+}
+
+function render() {
   if (!rows.length) {
+    notice.hidden = true;
     empty.hidden = false;
     tablePanel.hidden = true;
     copyJsonButton.disabled = true;
@@ -25,9 +55,15 @@ async function load() {
     return;
   }
 
+  notice.hidden = !isSummary;
+  if (isSummary) {
+    notice.textContent = 'O resultado salvo nesta extensao e apenas um resumo porque o JSON completo excedeu o limite do Chrome. Abra esta pagina pelo painel logo apos a coleta para receber o resultado completo e copiar ou baixar o arquivo.';
+  }
   empty.hidden = true;
   tablePanel.hidden = false;
   tbody.innerHTML = rows.map(renderRow).join('');
+  copyJsonButton.disabled = isSummary;
+  downloadJsonButton.disabled = isSummary;
 }
 
 function renderRow(row) {

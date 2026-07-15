@@ -4,8 +4,7 @@ const LOGIN_URL = `${BASE_URL}/login/`;
 const OAUTH_START_URL = `${BASE_URL}/oauth/authenticate/`;
 const MINHAS_AVALIACOES_URL = `${BASE_URL}/avaliacoes/minhas-avaliacoes/`;
 const LOGOUT_URL = `${BASE_URL}/logout/`;
-const VIEWER_URL = 'https://hellokiw1.github.io/script/atricon/visualizador_atricon.html';
-const MAX_VIEWER_URL_LENGTH = 150000;
+const RESULT_CHANNEL_NAME = 'atricon-result';
 
 const collectButton = document.getElementById('collect');
 const openAtriconButton = document.getElementById('openAtricon');
@@ -16,6 +15,9 @@ const downloadAgainButton = document.getElementById('downloadAgain');
 const statusTitle = document.getElementById('statusTitle');
 const statusDetail = document.getElementById('statusDetail');
 const progress = document.getElementById('progress');
+const processedCount = document.getElementById('processedCount');
+const remainingCount = document.getElementById('remainingCount');
+const totalCount = document.getElementById('totalCount');
 const logPanel = document.getElementById('logPanel');
 const logBox = document.getElementById('log');
 const logSummary = document.getElementById('logSummary');
@@ -36,6 +38,10 @@ let selectedCityKeys = new Set();
 let selectionMode = 'all';
 let credentialAccounts = [];
 let credentialsByKey = new Map();
+let pendingResultPayload = null;
+const resultChannel = typeof BroadcastChannel === 'function'
+  ? new BroadcastChannel(RESULT_CHANNEL_NAME)
+  : null;
 
 openAtriconButton.addEventListener('click', () => chrome.tabs.create({ url: HOME_URL }));
 clearLogButton.addEventListener('click', () => {
@@ -44,7 +50,7 @@ clearLogButton.addEventListener('click', () => {
 });
 toggleLogButton.addEventListener('click', toggleLogPanel);
 collectButton.addEventListener('click', collectAssessments);
-openResultButton.addEventListener('click', () => openVisualizerRows(lastRows));
+openResultButton.addEventListener('click', () => openResultPageRows(lastRows));
 downloadAgainButton.addEventListener('click', () => downloadRows(lastRows));
 citySearch.addEventListener('input', renderCityList);
 selectAllCitiesButton.addEventListener('click', selectAllCities);
@@ -53,6 +59,12 @@ reloadCredentialsButton.addEventListener('click', loadEmbeddedCredentials);
 modeButtons.forEach((button) => {
   button.addEventListener('click', () => setSelectionMode(button.dataset.mode));
 });
+
+if (resultChannel) {
+  resultChannel.addEventListener('message', (event) => {
+    if (event.data?.type === 'RESULT_PAGE_READY') sendPendingResultToPage();
+  });
+}
 
 restoreLastResult();
 loadCityOptions();
@@ -69,6 +81,7 @@ async function restoreLastResult() {
 async function collectAssessments() {
   collectButton.disabled = true;
   progress.value = 0;
+  updateProgressMetrics(0, 0);
   lastRows = [];
   resultPanel.hidden = true;
   const selectedKeys = selectedKeysForCollection();
@@ -102,6 +115,7 @@ async function collectAssessments() {
       throw new Error('nenhuma avaliacao da tabela corresponde as cidades selecionadas.');
     }
     const outputRows = [];
+    updateProgressMetrics(0, assessmentRows.length);
     const collectDeep = assessmentRows.length === 1;
     if (collectDeep) {
       log('Modo profundo ativo: uma unica avaliacao selecionada.');
@@ -126,11 +140,14 @@ async function collectAssessments() {
 
       setStatus(`Coletando ${current}/${assessmentRows.length}`, row.entidade || row.numero || 'avaliacao');
       progress.value = Math.round((index / Math.max(assessmentRows.length, 1)) * 100);
+      updateProgressMetrics(index, assessmentRows.length);
 
       if (statusBlocksCollection(row, collectDeep)) {
         output.erro = `status fora de Validado no modo geral. Status atual: ${row.status}`;
         log(`[${current}/${assessmentRows.length}] ${row.entidade}: ${output.erro}`);
         outputRows.push(output);
+        updateProgressMetrics(current, assessmentRows.length);
+        progress.value = Math.round((current / Math.max(assessmentRows.length, 1)) * 100);
         continue;
       }
       if (collectDeep && normalizeText(row.status) !== 'validado') {
@@ -141,6 +158,8 @@ async function collectAssessments() {
         output.erro = 'link do questionario nao encontrado.';
         log(`[${current}/${assessmentRows.length}] ${row.entidade}: ${output.erro}`);
         outputRows.push(output);
+        updateProgressMetrics(current, assessmentRows.length);
+        progress.value = Math.round((current / Math.max(assessmentRows.length, 1)) * 100);
         continue;
       }
 
@@ -159,19 +178,17 @@ async function collectAssessments() {
       }
 
       outputRows.push(output);
+      updateProgressMetrics(current, assessmentRows.length);
+      progress.value = Math.round((current / Math.max(assessmentRows.length, 1)) * 100);
     }
 
     progress.value = 100;
+    updateProgressMetrics(outputRows.length, assessmentRows.length);
     setStatus('Coleta concluida', `${outputRows.length} registro(s) gerado(s).`);
     lastRows = outputRows;
-    await chrome.storage.local.set({
-      lastAtriconResult: {
-        created_at: new Date().toISOString(),
-        rows: outputRows
-      }
-    });
+    await saveLastResult(outputRows);
     showResultSummary(outputRows);
-    await openVisualizerRows(outputRows);
+    await openResultPageRows(outputRows);
   } catch (error) {
     setStatus('Erro na coleta', error.message);
     log(`ERRO: ${error.message}`);
@@ -186,6 +203,7 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
   const expectedKeys = keysForSelectedOptions(selectedKeys);
   const collectDeep = expectedKeys.size === 1 && accounts.length === 1;
   const accountsByKey = new Set(accounts.map((account) => account.key));
+  updateProgressMetrics(0, expectedKeys.size);
   if (collectDeep) {
     log('Modo profundo ativo: uma unica cidade selecionada.');
   }
@@ -206,6 +224,8 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       erro: 'credencial nao encontrada para esta cidade.'
     });
   }
+  updateProgressMetrics(outputRows.length, expectedKeys.size);
+  progress.value = Math.round((outputRows.length / Math.max(expectedKeys.size, 1)) * 100);
 
   for (let index = 0; index < accounts.length; index += 1) {
     const account = accounts[index];
@@ -223,7 +243,8 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
 
     try {
       setStatus(`Login ${current}/${accounts.length}`, `${account.orgao} de ${account.cidade}`);
-      progress.value = Math.round((index / Math.max(accounts.length, 1)) * 100);
+      progress.value = Math.round((outputRows.length / Math.max(expectedKeys.size, 1)) * 100);
+      updateProgressMetrics(outputRows.length, expectedKeys.size);
       log(`[${current}/${accounts.length}] Fazendo login: ${account.orgao} de ${account.cidade}`);
       await loginWithCredentials(tab.id, account);
 
@@ -247,6 +268,8 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       if (statusBlocksCollection(row, collectDeep)) {
         output.erro = `status fora de Validado no modo geral. Status atual: ${row.status}`;
         outputRows.push(output);
+        updateProgressMetrics(outputRows.length, expectedKeys.size);
+        progress.value = Math.round((outputRows.length / Math.max(expectedKeys.size, 1)) * 100);
         log(`[${current}/${accounts.length}] ${account.cidade}: ${output.erro}`);
         continue;
       }
@@ -257,6 +280,8 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       if (!row.link) {
         output.erro = 'link do questionario nao encontrado.';
         outputRows.push(output);
+        updateProgressMetrics(outputRows.length, expectedKeys.size);
+        progress.value = Math.round((outputRows.length / Math.max(expectedKeys.size, 1)) * 100);
         log(`[${current}/${accounts.length}] ${account.cidade}: ${output.erro}`);
         continue;
       }
@@ -269,25 +294,25 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       if (!output.porcentagem) output.erro = 'porcentagem nao encontrada no questionario.';
       if (collectDeep) await collectDeepForRow(tab.id, row, output);
       outputRows.push(output);
+      updateProgressMetrics(outputRows.length, expectedKeys.size);
+      progress.value = Math.round((outputRows.length / Math.max(expectedKeys.size, 1)) * 100);
       log(`[${current}/${accounts.length}] ${account.cidade}: ${output.porcentagem || 'sem porcentagem'}`);
     } catch (error) {
       output.erro = error.message;
       outputRows.push(output);
+      updateProgressMetrics(outputRows.length, expectedKeys.size);
+      progress.value = Math.round((outputRows.length / Math.max(expectedKeys.size, 1)) * 100);
       log(`[${current}/${accounts.length}] ${account.cidade}: ERRO - ${error.message}`);
     }
   }
 
   progress.value = 100;
+  updateProgressMetrics(outputRows.length, expectedKeys.size);
   setStatus('Coleta concluida', `${outputRows.length} registro(s) gerado(s).`);
   lastRows = outputRows;
-  await chrome.storage.local.set({
-    lastAtriconResult: {
-      created_at: new Date().toISOString(),
-      rows: outputRows
-    }
-  });
+  await saveLastResult(outputRows);
   showResultSummary(outputRows);
-  await openVisualizerRows(outputRows);
+  await openResultPageRows(outputRows);
 }
 
 async function collectDeepForRow(tabId, row, output) {
@@ -711,56 +736,64 @@ async function downloadRows(rows) {
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
-async function openVisualizerRows(rows) {
+async function saveLastResult(rows) {
   if (!Array.isArray(rows) || !rows.length) return;
-  const json = JSON.stringify(rows, null, 2);
-  const dataUrl = `data:application/json;charset=utf-8,${encodeURIComponent(json)}`;
-  if (dataUrl.length > MAX_VIEWER_URL_LENGTH) {
-    log('Resultado grande demais para abrir pela URL. Abrindo visualizador e enviando dados pela extensao.');
-    await openGithubVisualizerWithRows(rows);
-    return;
-  }
 
+  const payload = {
+    created_at: new Date().toISOString(),
+    rows
+  };
   try {
-    await chrome.tabs.create({ url: dataUrl, active: false });
+    await chrome.storage.local.set({ lastAtriconResult: payload });
   } catch (error) {
-    log(`Aviso: nao foi possivel abrir aba JSON separada: ${error.message}`);
-  }
-  const viewerUrl = `${VIEWER_URL}?json=${encodeURIComponent(dataUrl)}`;
-  await chrome.tabs.create({ url: viewerUrl, active: true });
-}
-
-async function openGithubVisualizerWithRows(rows) {
-  const tab = await chrome.tabs.create({ url: `${VIEWER_URL}?extension=1`, active: true });
-  await waitForTabComplete(tab.id, 45000);
-  await sleep(700);
-
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: 'MAIN',
-      func: injectRowsIntoVisualizer,
-      args: [rows, `resultado_atricon_extensao_${timestampForFilename()}.json`]
-    });
-  } catch (error) {
-    log(`Aviso: nao foi possivel enviar dados ao visualizador GitHub: ${error.message}`);
-    await chrome.tabs.create({ url: chrome.runtime.getURL('resultado.html'), active: true });
+    log(`Aviso: resultado completo grande demais para salvar na extensao: ${error.message}`);
+    try {
+      await chrome.storage.local.set({
+        lastAtriconResult: {
+          created_at: payload.created_at,
+          is_summary: true,
+          storage_error: error.message,
+          rows: rows.map(summaryRowForStorage)
+        }
+      });
+    } catch (summaryError) {
+      log(`Aviso: nao foi possivel salvar nem o resumo na extensao: ${summaryError.message}`);
+    }
   }
 }
 
-function injectRowsIntoVisualizer(rows, sourceName) {
-  const text = JSON.stringify(rows || []);
-  if (typeof window.loadMainJsonText === 'function') {
-    window.loadMainJsonText(text, sourceName || 'resultado_atricon_extensao.json');
-    return { ok: true, method: 'direct' };
-  }
+function summaryRowForStorage(row) {
+  return {
+    orgao: row.orgao,
+    cidade: row.cidade,
+    status: row.status,
+    setor_atual: row.setor_atual,
+    data: row.data,
+    porcentagem: row.porcentagem,
+    total_evidencias_validacao: row.total_evidencias_validacao,
+    erro: row.erro || '',
+    erro_evidencias: row.erro_evidencias || ''
+  };
+}
 
-  window.postMessage({
-    type: 'ATRICON_EXTENSION_RESULT',
-    sourceName: sourceName || 'resultado_atricon_extensao.json',
-    rows: Array.isArray(rows) ? rows : []
-  }, window.location.origin);
-  return { ok: true, method: 'message' };
+async function openResultPageRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return;
+  pendingResultPayload = {
+    created_at: new Date().toISOString(),
+    rows
+  };
+  await chrome.tabs.create({ url: chrome.runtime.getURL('resultado.html'), active: true });
+  setTimeout(sendPendingResultToPage, 250);
+  setTimeout(sendPendingResultToPage, 1000);
+}
+
+function sendPendingResultToPage() {
+  if (!resultChannel || !pendingResultPayload) return;
+  resultChannel.postMessage({
+    type: 'ATRICON_RESULT_ROWS',
+    created_at: pendingResultPayload.created_at,
+    rows: pendingResultPayload.rows
+  });
 }
 
 function showResultSummary(rows) {
@@ -771,6 +804,14 @@ function showResultSummary(rows) {
 function setStatus(title, detail) {
   statusTitle.textContent = title;
   statusDetail.textContent = detail || '';
+}
+
+function updateProgressMetrics(processed, total) {
+  const safeTotal = Math.max(Number(total) || 0, 0);
+  const safeProcessed = Math.min(Math.max(Number(processed) || 0, 0), safeTotal);
+  processedCount.textContent = String(safeProcessed);
+  remainingCount.textContent = String(Math.max(safeTotal - safeProcessed, 0));
+  totalCount.textContent = String(safeTotal);
 }
 
 function log(message) {

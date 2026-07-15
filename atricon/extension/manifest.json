@@ -15,7 +15,6 @@
   ],
   "host_permissions": [
     "https://avalia.atricon.org.br/*",
-    "https://conta.atricon.org.br/*",
-    "https://hellokiw1.github.io/*"
+    "https://conta.atricon.org.br/*"
   ]
 }

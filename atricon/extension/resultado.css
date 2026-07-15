@@ -83,6 +83,7 @@ body {
 
 header,
 .table-panel,
+.notice,
 .empty {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -101,6 +102,15 @@ header {
   padding: 16px;
   background: rgba(20, 16, 13, .94);
   backdrop-filter: blur(8px);
+}
+
+.notice {
+  padding: 14px 16px;
+  border-color: var(--line-strong);
+  background: var(--panel-soft);
+  color: var(--accent-dark);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .eyebrow {

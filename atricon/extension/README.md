@@ -12,7 +12,7 @@ Extensao Manifest V3 para coletar avaliacoes do Avalia Atricon usando a sessao j
 - Le as linhas da tabela de avaliacoes.
 - Para registros com status `Validado`, abre o link do questionario e tenta ler a porcentagem.
 - Quando apenas uma cidade/avaliacao e selecionada, abre o formulario do questionario e coleta evidencias/manifestacoes de validacao.
-- Abre o `atricon/visualizador_atricon.html` diretamente com o resultado.
+- Abre a pagina interna de resultado da extensao com opcoes de copiar e baixar o JSON.
 - Mantem opcao de baixar o JSON depois.
 - Salva o ultimo resultado dentro da extensao para consulta rapida.
 
@@ -43,10 +43,8 @@ atricon/extension
 5. Escolha `Todas`, `Especificas` ou `Unica`.
 6. Marque as cidades desejadas no checklist.
 7. Clique em `Coletar avaliacoes`. Para coleta profunda, deixe apenas uma cidade marcada.
-8. Ao final, o visualizador sera aberto automaticamente.
+8. Ao final, a pagina de resultado da extensao sera aberta automaticamente.
 9. Use `Baixar JSON` no painel se quiser salvar o arquivo depois.
-
-Se o Chrome bloquear a abertura do `visualizador_atricon.html`, ative `Permitir acesso a URLs de arquivo` na extensao em `chrome://extensions`.
 
 ## Atualizar lista de cidades
 

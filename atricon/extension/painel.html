@@ -17,10 +17,9 @@
       <div>
         <span class="eyebrow">Extensao Chrome</span>
         <h1>Atricon Collector</h1>
-        <p>Seleciona cidades, faz login automatico e abre o visualizador com o resultado da coleta.</p>
+        <p>Seleciona cidades, faz login automatico e abre a pagina de resultado para copiar ou baixar a coleta.</p>
       </div>
       <div class="actions">
-        <a class="button-link secondary" href="https://hellokiw1.github.io/script/atricon/visualizador_atricon.html" target="_blank" rel="noopener">Visualizador GitHub</a>
         <button id="openAtricon" type="button" class="secondary">Abrir Atricon</button>
         <button id="collect" type="button">Coletar avaliacoes</button>
       </div>
@@ -65,6 +64,11 @@
         <span id="statusDetail">Entre no Atricon antes de coletar.</span>
       </div>
       <progress id="progress" max="100" value="0"></progress>
+      <div class="progress-metrics" aria-label="Progresso da coleta">
+        <div><span>Processados</span><strong id="processedCount">0</strong></div>
+        <div><span>Faltando</span><strong id="remainingCount">0</strong></div>
+        <div><span>Total</span><strong id="totalCount">0</strong></div>
+      </div>
     </section>
 
     <section class="log-panel is-minimized" id="logPanel">

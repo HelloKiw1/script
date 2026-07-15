@@ -411,6 +411,38 @@ progress::-webkit-progress-value {
   background: linear-gradient(90deg, #c47b00, var(--accent-dark));
 }
 
+.progress-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.progress-metrics div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #070504;
+}
+
+.progress-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.progress-metrics strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent-dark);
+  font-size: 20px;
+  line-height: 1;
+}
+
 pre {
   min-height: 220px;
   max-height: 360px;

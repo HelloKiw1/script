@@ -67,6 +67,7 @@ VALIDATION_ITEM_LABELS = {
 LOGOUT_URL = f"{BASE_URL}/logout/"
 ORGAO_KEYS = ("orgao", "orgão", "órgão")
 LOGIN_ATTEMPTS = 5
+ACCEPTED_ANALYSIS_STATUSES = {"validado", "em validacao"}
 
 
 def install_runtime_dependencies() -> int:
@@ -2139,8 +2140,8 @@ def process_account(
     result["status"] = row["status"]
     result["setor_atual"] = row["setor_atual"]
     status_norm = normalize_text(row["status"])
-    if status_norm != "validado":
-        result["erro"] = f"login ainda nao validado. Status atual: {row['status']}"
+    if status_norm not in ACCEPTED_ANALYSIS_STATUSES:
+        result["erro"] = f"status nao permite analise. Status atual: {row['status']}"
         return result
 
     result["data"] = row["data"]

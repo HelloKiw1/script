@@ -601,7 +601,7 @@
         await scaledSleep(2000);
         click('#tipo_documento > div');
         await scaledSleep(400);
-        click('#tipo_documento_6');
+        click('#tipo_documento_34');
         await scaledSleep(400);
 
         fillInput('#numero input', data.numeroDoDocumento ?? '');

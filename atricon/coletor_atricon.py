@@ -66,6 +66,7 @@ VALIDATION_ITEM_LABELS = {
 }
 LOGOUT_URL = f"{BASE_URL}/logout/"
 ORGAO_KEYS = ("orgao", "orgão", "órgão")
+LOGIN_ATTEMPTS = 5
 
 
 def install_runtime_dependencies() -> int:
@@ -1071,6 +1072,11 @@ def current_live_page(page: Page) -> Page:
     raise RuntimeError("a pagina do navegador foi fechada durante o login e nenhuma nova aba ficou aberta.")
 
 
+def is_authenticated_avalia_url(url: str) -> bool:
+    parsed = urlparse(url)
+    return parsed.netloc == "avalia.atricon.org.br" and not parsed.path.startswith("/login")
+
+
 def wait_for_avalia_redirect(page: Page, timeout_ms: int = 45_000) -> Page:
     deadline = time.monotonic() + (timeout_ms / 1000)
     last_url = ""
@@ -1080,7 +1086,7 @@ def wait_for_avalia_redirect(page: Page, timeout_ms: int = 45_000) -> Page:
         try:
             page = current_live_page(page)
             last_url = page.url
-            if re.match(r"https://avalia\.atricon\.org\.br/.*", last_url):
+            if is_authenticated_avalia_url(last_url):
                 return page
             if "conta.atricon.org.br/usuarios/login" in last_url:
                 login_message = get_explicit_login_error(page)
@@ -1108,7 +1114,7 @@ def wait_for_avalia_redirect(page: Page, timeout_ms: int = 45_000) -> Page:
 
     raise RuntimeError(
         "login nao redirecionou para o Avalia dentro do tempo esperado; "
-        "a Conta Atricon permaneceu na tela de login. "
+        "a autenticacao parece ter voltado para a tela publica de login do Avalia sem concluir a sessao. "
         f"URL atual: {last_url}. Texto atual: {visible_text[:300]}"
     )
 
@@ -1161,22 +1167,47 @@ def get_explicit_login_error(page: Page) -> str:
 
 
 def login(page: Page, account: Dict[str, Any]) -> Page:
-    start_login_flow(page)
-    if "avalia.atricon.org.br" in page.url and "/login" not in page.url:
-        return page
+    last_error = ""
 
-    if "conta.atricon.org.br" not in page.url:
+    for attempt in range(1, LOGIN_ATTEMPTS + 1):
         try:
-            page.wait_for_url(re.compile(r"https://conta\.atricon\.org\.br/.*"), timeout=45_000)
-        except PlaywrightTimeoutError as exc:
-            raise RuntimeError(f"nao houve redirecionamento para a Conta Atricon. URL atual: {page.url}") from exc
+            start_login_flow(page)
+            if is_authenticated_avalia_url(page.url):
+                return page
 
-    page = submit_credentials(page, str(account["user"]), str(account["senha"]))
-    page.goto(HOME_URL, wait_until="domcontentloaded")
-    wait_page_ready(page)
-    if "/login" in page.url or "conta.atricon.org.br" in page.url:
-        raise RuntimeError(f"login aparentemente nao foi concluido. URL atual: {page.url}")
-    return page
+            if "conta.atricon.org.br" not in page.url:
+                try:
+                    page.wait_for_url(re.compile(r"https://conta\.atricon\.org\.br/.*"), timeout=45_000)
+                except PlaywrightTimeoutError as exc:
+                    raise RuntimeError(f"nao houve redirecionamento para a Conta Atricon. URL atual: {page.url}") from exc
+
+            page = submit_credentials(page, str(account["user"]), str(account["senha"]))
+            page.goto(HOME_URL, wait_until="domcontentloaded")
+            wait_page_ready(page)
+            if "/login" in page.url or "conta.atricon.org.br" in page.url:
+                raise RuntimeError(
+                    "login aparentemente nao foi concluido: o fluxo voltou para a tela de login em vez de abrir uma pagina autenticada. "
+                    f"URL atual: {page.url}"
+                )
+            return page
+        except RuntimeError as exc:
+            last_error = str(exc)
+            retryable_error = (
+                "login aparentemente nao foi concluido" in last_error
+                or "nao houve redirecionamento para a Conta Atricon" in last_error
+                or "login nao foi aceito pela Conta Atricon" in last_error
+            )
+            if not retryable_error or attempt >= LOGIN_ATTEMPTS:
+                raise
+
+            try:
+                page.goto(LOGIN_URL, wait_until="domcontentloaded", timeout=20_000)
+                wait_page_ready(page)
+            except PlaywrightError:
+                pass
+            time.sleep(min(5, attempt))
+
+    raise RuntimeError(last_error or "login nao foi concluido.")
 
 
 def get_my_assessment_rows(page: Page) -> List[Dict[str, str]]:
@@ -2383,7 +2414,6 @@ def main() -> int:
         return 1
 
     results: List[Dict[str, Any]] = []
-    fatal_error = False
     valid_accounts_count = sum(1 for account in accounts if not account.get("_erro_validacao"))
     collect_manifestations = valid_accounts_count == 1
     if collect_manifestations:
@@ -2437,7 +2467,6 @@ def main() -> int:
                 else:
                     print(f"  OK: status={result['status']} porcentagem={result['porcentagem']}")
             except Exception as exc:
-                fatal_error = True
                 message = f"Erro no login {user}: {exc}"
                 result = empty_result(account)
                 result["erro"] = message
@@ -2458,20 +2487,18 @@ def main() -> int:
                     result
                 )
                 print(f"  ERRO: {message}", file=sys.stderr)
+                print("  Continuando para o proximo usuario...", file=sys.stderr)
             finally:
                 logout(page)
                 context.close()
                 write_results(output_path, results)
-
-            if fatal_error:
-                break
 
         browser.close()
 
     print(f"Saida salva em: {output_path}")
     if not args.no_abrir_visualizador:
         open_result_viewer(output_path)
-    return 1 if fatal_error else 0
+    return 0
 
 
 if __name__ == "__main__":

@@ -1267,6 +1267,55 @@ def extract_history_from_questionnaire_view(page: Page, url: str) -> Dict[str, A
         r"^(?P<setor>.*?)\s+Envio para Manifesta\S*\s+at\S*\s+(?P<data>\d{1,2}/\d{1,2}/\d{4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)$",
         flags=re.IGNORECASE,
     )
+    action_pattern = re.compile(
+        r"\bEnvio\s+para\s+Manifesta\S*\s+at\S*\s+(?P<data>\d{1,2}/\d{1,2}/\d{4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)",
+        flags=re.IGNORECASE,
+    )
+
+    try:
+        timeline_cards = page.locator(".timeline-card").evaluate_all(
+            """
+            cards => cards.map(card => {
+              const clean = value => String(value || '').replace(/\\s+/g, ' ').trim();
+              const movementDate = clean(card.querySelector('.text-muted.small')?.innerText || '');
+              const sector = clean(card.querySelector('.fw-semibold')?.innerText || '');
+              const actions = Array.from(card.querySelectorAll('.text-muted.small.mb-1'))
+                .map(node => clean(node.innerText || node.textContent || ''))
+                .filter(Boolean);
+              return {
+                data_tramitacao: movementDate,
+                setor: sector,
+                acoes: actions,
+                texto: clean(card.innerText || card.textContent || '')
+              };
+            })
+            """
+        )
+    except PlaywrightError:
+        timeline_cards = []
+
+    if isinstance(timeline_cards, list):
+        for card in timeline_cards:
+            if not isinstance(card, dict):
+                continue
+            setor = clean_text(str(card.get("setor") or ""))
+            movement_date, movement_value = parse_brazilian_datetime(str(card.get("data_tramitacao") or ""))
+            for action in card.get("acoes") or []:
+                action_text = clean_text(str(action or ""))
+                action_match = action_pattern.search(action_text)
+                if not action_match:
+                    continue
+                data_text, data_value = parse_brazilian_datetime(action_match.group("data"))
+                history_entries.append(
+                    {
+                        "setor": setor,
+                        "data": data_text,
+                        "data_tramitacao": movement_date,
+                        "texto": clean_text(str(card.get("texto") or action_text)),
+                        "timestamp": data_value.isoformat(sep=" ") if data_value else "",
+                        "timestamp_tramitacao": movement_value.isoformat(sep=" ") if movement_value else "",
+                    }
+                )
 
     body_text = ""
     try:
@@ -1274,24 +1323,41 @@ def extract_history_from_questionnaire_view(page: Page, url: str) -> Dict[str, A
     except PlaywrightError:
         body_text = ""
 
-    for raw_line in re.split(r"[\r\n]+", body_text):
-        line = clean_text(raw_line)
-        if not line:
-            continue
-        match = history_pattern.match(line)
-        if not match:
-            continue
+    if not history_entries:
+        last_movement_date = ""
+        last_movement_value: datetime | None = None
+        last_setor = ""
+        for raw_line in re.split(r"[\r\n]+", body_text):
+            line = clean_text(raw_line)
+            if not line:
+                continue
 
-        setor = clean_text(match.group("setor"))
-        data_text, data_value = parse_brazilian_datetime(match.group("data"))
-        history_entries.append(
-            {
-                "setor": setor,
-                "data": data_text,
-                "texto": line,
-                "timestamp": data_value.isoformat(sep=" ") if data_value else "",
-            }
-        )
+            parsed_date, parsed_value = parse_brazilian_datetime(line)
+            if parsed_date and parsed_date == line:
+                last_movement_date = parsed_date
+                last_movement_value = parsed_value
+                last_setor = ""
+                continue
+
+            action_match = action_pattern.search(line)
+            match = history_pattern.match(line)
+            if action_match:
+                setor = clean_text(match.group("setor")) if match else last_setor
+                data_text, data_value = parse_brazilian_datetime(action_match.group("data"))
+                history_entries.append(
+                    {
+                        "setor": setor,
+                        "data": data_text,
+                        "data_tramitacao": last_movement_date,
+                        "texto": line if not setor else f"{setor} {line}",
+                        "timestamp": data_value.isoformat(sep=" ") if data_value else "",
+                        "timestamp_tramitacao": last_movement_value.isoformat(sep=" ") if last_movement_value else "",
+                    }
+                )
+                continue
+
+            if last_movement_date and not last_setor:
+                last_setor = line
 
     latest_history = history_entries[0] if history_entries else {}
     return {

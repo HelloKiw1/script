@@ -1,0 +1,159 @@
+:root {
+    --av-navy:    #003a69;
+    --av-navy-dk: #00243f;
+    --av-blue:    #098dbd;
+    --av-gold:    #d4a600;
+    --av-teal:    #12a69c;
+}
+
+.navbar-header {
+    background: var(--av-navy-dk);
+}
+
+/* ── WELCOME CARD ── */
+.avalia-welcome {
+    background: linear-gradient(135deg, var(--av-navy-dk) 0%, var(--av-navy) 60%, #004a82 100%);
+    border-radius: .25rem;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Grid interno do card */
+.avalia-welcome::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(9,141,189,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(9,141,189,.06) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+}
+
+/* Círculos decorativos */
+.avalia-welcome .wc-geo {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid;
+    pointer-events: none;
+}
+.avalia-welcome .wc-geo-1 {
+    width: 260px; height: 260px;
+    border-color: rgba(9,141,189,.1);
+    bottom: -110px; right: -60px;
+}
+.avalia-welcome .wc-geo-2 {
+    width: 160px; height: 160px;
+    border-color: rgba(18,166,156,.12);
+    bottom: -50px; right: -10px;
+}
+.avalia-welcome .wc-geo-3 {
+    width: 90px; height: 90px;
+    border-color: rgba(212,166,0,.1);
+    top: -30px; right: 220px;
+}
+
+.avalia-welcome-left {
+    position: relative;
+    z-index: 1;
+}
+
+.avalia-welcome-greeting {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+    margin-bottom: 6px;
+}
+
+.avalia-welcome-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.avalia-welcome-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.avalia-welcome-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: rgba(255,255,255,.5);
+}
+
+.avalia-welcome-tag svg {
+    flex-shrink: 0;
+}
+
+.avalia-welcome-sep {
+    color: rgba(255,255,255,.2);
+    font-size: 12px;
+}
+
+.avalia-welcome-right {
+    display: flex;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap;
+}
+
+.avalia-stat {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    padding: 14px 20px;
+    text-align: center;
+    min-width: 88px;
+    backdrop-filter: blur(8px);
+    transition: all .2s ease;
+}
+
+.avalia-stat:hover {
+    background: rgba(255,255,255,.12);
+    transform: translateY(-2px);
+}
+
+.avalia-stat-val {
+    font-family: 'Sora', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+
+.avalia-stat-lbl {
+    font-size: 10px;
+    color: rgba(255,255,255,.38);
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    display: block;
+}
+
+.avalia-stat.avalia-stat-hl {
+    border-color: rgba(212,166,0,.35);
+    background: rgba(212,166,0,.12);
+}
+
+.avalia-stat.avalia-stat-hl .avalia-stat-val {
+    color: var(--av-gold);
+}

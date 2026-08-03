@@ -172,10 +172,14 @@ def empty_result(account: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "orgão": first_value(account, ORGAO_KEYS),
         "cidade": first_value(account, ("cidade",)),
+        "user": first_value(account, ("user",)),
         "status": "",
         "setor_atual": "",
         "data": "",
         "porcentagem": "",
+        "manifestacao_data": "",
+        "manifestacao_historico": [],
+        "manifestacao_historico_texto": "",
     }
 
 
@@ -1251,13 +1255,55 @@ def get_my_assessment_rows(page: Page) -> List[Dict[str, str]]:
     return rows
 
 
-def extract_percentage_from_questionnaire(page: Page, url: str, fallback: str = "") -> str:
+def extract_history_from_questionnaire_view(page: Page, url: str) -> Dict[str, Any]:
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=45_000)
         wait_page_ready(page)
     except PlaywrightTimeoutError as exc:
         raise RuntimeError(f"questionario nao carregou: {url}") from exc
 
+    history_entries: List[Dict[str, str]] = []
+    history_pattern = re.compile(
+        r"^(?P<setor>.*?)\s+Envio para Manifesta\S*\s+at\S*\s+(?P<data>\d{1,2}/\d{1,2}/\d{4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)$",
+        flags=re.IGNORECASE,
+    )
+
+    body_text = ""
+    try:
+        body_text = page.locator("body").inner_text(timeout=10_000)
+    except PlaywrightError:
+        body_text = ""
+
+    for raw_line in re.split(r"[\r\n]+", body_text):
+        line = clean_text(raw_line)
+        if not line:
+            continue
+        match = history_pattern.match(line)
+        if not match:
+            continue
+
+        setor = clean_text(match.group("setor"))
+        data_text, data_value = parse_brazilian_datetime(match.group("data"))
+        history_entries.append(
+            {
+                "setor": setor,
+                "data": data_text,
+                "texto": line,
+                "timestamp": data_value.isoformat(sep=" ") if data_value else "",
+            }
+        )
+
+    latest_history = history_entries[0] if history_entries else {}
+    return {
+        "manifestacao_data": str(latest_history.get("data", "") or ""),
+        "manifestacao_historico": history_entries,
+        "manifestacao_historico_texto": "; ".join(
+            f"{item['setor']} -> {item['data']}" for item in history_entries
+        ),
+    }
+
+
+def extract_percentage_from_loaded_questionnaire(page: Page, fallback: str = "") -> str:
     percentage_boxes = page.locator("div.display-6.fw-bold")
     try:
         for index in range(percentage_boxes.count()):
@@ -1267,9 +1313,19 @@ def extract_percentage_from_questionnaire(page: Page, url: str, fallback: str = 
     except PlaywrightError:
         pass
 
+    return fallback.strip()
+
+
+def extract_percentage_from_questionnaire(page: Page, url: str, fallback: str = "") -> str:
+    try:
+        page.goto(url, wait_until="domcontentloaded", timeout=45_000)
+        wait_page_ready(page)
+    except PlaywrightTimeoutError as exc:
+        raise RuntimeError(f"questionario nao carregou: {url}") from exc
+
     # Fallback seguro: coluna "Indice" da tabela Minhas Avaliacoes. Nao varre outros
     # componentes com porcentagem dentro do questionario.
-    return fallback.strip()
+    return extract_percentage_from_loaded_questionnaire(page, fallback)
 
 
 def questionnaire_form_url(row: Dict[str, str]) -> str:
@@ -2125,6 +2181,7 @@ def process_account(
     collect_manifestations: bool,
 ) -> Dict[str, Any]:
     result = empty_result(account)
+    result["user"] = str(account.get("user", "") or "").strip()
 
     page = login(page, account)
     rows = get_my_assessment_rows(page)
@@ -2139,16 +2196,14 @@ def process_account(
 
     result["status"] = row["status"]
     result["setor_atual"] = row["setor_atual"]
-    status_norm = normalize_text(row["status"])
-    if status_norm not in ACCEPTED_ANALYSIS_STATUSES:
-        result["erro"] = f"status nao permite analise. Status atual: {row['status']}"
-        return result
 
     result["data"] = row["data"]
     result["questionario_id"] = row["questionario_id"]
     if not row["link"]:
         raise RuntimeError(f"nao foi possivel localizar o link do questionario para {account['user']}.")
-    result["porcentagem"] = extract_percentage_from_questionnaire(page, row["link"], row["indice"])
+    history_result = extract_history_from_questionnaire_view(page, row["link"])
+    result.update(history_result)
+    result["porcentagem"] = extract_percentage_from_loaded_questionnaire(page, row["indice"])
     if not result["porcentagem"]:
         result["erro"] = "porcentagem nao encontrada no questionario."
 

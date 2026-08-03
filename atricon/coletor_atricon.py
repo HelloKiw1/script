@@ -110,7 +110,17 @@ def normalize_text(value: str) -> str:
 
 def normalize_percentage_text(value: str) -> str:
     match = re.search(r"\b(\d{1,3}(?:[,.]\d+)?)\s*%", value or "")
-    return f"{match.group(1).strip()}%" if match else ""
+    if not match:
+        return ""
+
+    raw_number = match.group(1).strip()
+    try:
+        number = float(raw_number.replace(",", "."))
+    except ValueError:
+        return ""
+    if not 0 <= number <= 100:
+        return ""
+    return f"{raw_number}%"
 
 
 def first_value(data: Dict[str, Any], keys: Iterable[str]) -> str:
@@ -1359,6 +1369,13 @@ def extract_history_from_questionnaire_view(page: Page, url: str) -> Dict[str, A
             if last_movement_date and not last_setor:
                 last_setor = line
 
+    # A tela costuma vir da movimentacao mais nova para a mais antiga, mas nao
+    # dependemos dessa ordem: o prazo vigente e o vinculado ao envio para
+    # manifestacao mais recente.
+    history_entries.sort(
+        key=lambda item: item.get("timestamp_tramitacao", ""),
+        reverse=True,
+    )
     latest_history = history_entries[0] if history_entries else {}
     return {
         "manifestacao_data": str(latest_history.get("data", "") or ""),
@@ -1370,7 +1387,14 @@ def extract_history_from_questionnaire_view(page: Page, url: str) -> Dict[str, A
 
 
 def extract_percentage_from_loaded_questionnaire(page: Page, fallback: str = "") -> str:
-    percentage_boxes = page.locator("div.display-6.fw-bold")
+    # O detalhe pode ganhar outros cards numericos. Primeiro procuramos o valor
+    # do card rotulado "Indice de Transparencia" e so depois usamos o seletor
+    # legado, evitando capturar um percentual alheio ao resultado da avaliacao.
+    percentage_boxes = page.locator(
+        "xpath=//*[contains(normalize-space(.), 'ndice de Transpar') and not(*)]"
+        "/ancestor::div[contains(@class, 'text-end')][1]"
+        "//div[contains(@class, 'display-6') and contains(@class, 'fw-bold')]"
+    )
     try:
         for index in range(percentage_boxes.count()):
             percentage = normalize_percentage_text(percentage_boxes.nth(index).inner_text(timeout=10_000))
@@ -1379,7 +1403,16 @@ def extract_percentage_from_loaded_questionnaire(page: Page, fallback: str = "")
     except PlaywrightError:
         pass
 
-    return fallback.strip()
+    legacy_boxes = page.locator("div.display-6.fw-bold")
+    try:
+        for index in range(legacy_boxes.count()):
+            percentage = normalize_percentage_text(legacy_boxes.nth(index).inner_text(timeout=10_000))
+            if percentage:
+                return percentage
+    except PlaywrightError:
+        pass
+
+    return normalize_percentage_text(fallback)
 
 
 def extract_percentage_from_questionnaire(page: Page, url: str, fallback: str = "") -> str:

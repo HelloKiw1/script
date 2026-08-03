@@ -3375,14 +3375,19 @@
 
     function buildValidationReportHtml(rows) {
       const sortedRows = [...rows].sort((left, right) => {
-        const leftValidated = isValidatedStatus(left.status) ? 0 : 1;
-        const rightValidated = isValidatedStatus(right.status) ? 0 : 1;
-        if (leftValidated !== rightValidated) return leftValidated - rightValidated;
+        const leftDeadlineRank = validationReportDeadline(left) ? 0 : 1;
+        const rightDeadlineRank = validationReportDeadline(right) ? 0 : 1;
+        if (leftDeadlineRank !== rightDeadlineRank) return leftDeadlineRank - rightDeadlineRank;
+        const leftRank = validationReportStatusRank(left.status);
+        const rightRank = validationReportStatusRank(right.status);
+        if (leftRank !== rightRank) return leftRank - rightRank;
         return normalize(`${left.orgao} ${left.cidade} ${left.user}`).localeCompare(normalize(`${right.orgao} ${right.cidade} ${right.user}`));
       });
+      const internalControlRows = sortedRows.filter((row) => isInternalControlManifestation(row));
+      const otherRows = sortedRows.filter((row) => !isInternalControlManifestation(row));
 
       const stats = buildValidationStats(rows);
-      const title = 'Relatório de validação - Usuários e porcentagem atual';
+      const title = 'Relatório de validação';
       const headerLogo = new URL('assets/logo-da-empresa.png', window.location.href).href;
 
       return `<!doctype html>
@@ -3393,7 +3398,7 @@
   <title>${escapeHtml(title)}</title>
   <link rel="icon" type="image/png" href="${escapeAttr(headerLogo)}">
   <style>
-    @page { size: A4; margin: 14mm; }
+    @page { size: A4; margin: 0; }
     :root {
       --brand: #0b62c4;
       --brand-dark: #082f63;
@@ -3413,8 +3418,9 @@
       margin: 0;
       color: var(--text);
       font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
       background: #eef4fb;
-      line-height: 1.45;
+      line-height: 1.35;
     }
     .print-toolbar {
       position: sticky;
@@ -3435,13 +3441,14 @@
       border-radius: 6px;
       background: var(--brand);
       color: #ffffff;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
     }
     .document {
       width: min(1080px, calc(100% - 28px));
       margin: 18px auto 36px;
-      padding: 24px 28px 32px;
+      padding: 18px 20px 24px;
       background: #ffffff;
       box-shadow: 0 14px 32px rgba(15, 23, 42, .12);
     }
@@ -3449,88 +3456,53 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
-      padding-bottom: 14px;
-      margin-bottom: 18px;
+      gap: 10px;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
       border-bottom: 2px solid var(--brand);
     }
     .head img {
-      width: 42px;
-      height: 42px;
+      width: 34px;
+      height: 34px;
       object-fit: contain;
     }
     h1 {
       margin: 0;
       color: var(--brand-dark);
-      font-size: 24px;
+      font-size: 18px;
       line-height: 1.2;
     }
     .subtitle {
-      margin: 6px 0 0;
+      margin: 4px 0 0;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 10px;
     }
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin: 18px 0 20px;
+      gap: 7px;
+      margin: 10px 0 12px;
     }
     .summary-card {
-      padding: 14px 16px;
+      padding: 8px 10px;
       border: 1px solid var(--brand-line);
-      border-radius: 10px;
+      border-radius: 7px;
       background: linear-gradient(180deg, #ffffff, var(--brand-soft));
     }
     .summary-card span {
       display: block;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .04em;
     }
     .summary-card strong {
       display: block;
-      margin-top: 6px;
+      margin-top: 3px;
       color: var(--brand-dark);
-      font-size: 24px;
+      font-size: 17px;
       line-height: 1.1;
-    }
-    .status-groups {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin: 0 0 20px;
-    }
-    .status-card {
-      padding: 14px 16px;
-      border-radius: 10px;
-      border: 1px solid transparent;
-    }
-    .status-card strong {
-      display: block;
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-    .status-card span {
-      color: inherit;
-      font-size: 13px;
-    }
-    .status-card.validado {
-      background: var(--success-bg);
-      border-color: #abefc6;
-      color: var(--success);
-    }
-    .status-card.validando {
-      background: var(--warning-bg);
-      border-color: #fedf89;
-      color: var(--warning);
-    }
-    .status-card.outros {
-      background: var(--danger-bg);
-      border-color: #fecdca;
-      color: var(--danger);
     }
     table {
       width: 100%;
@@ -3540,43 +3512,29 @@
     th,
     td {
       border: 1px solid var(--brand-line);
-      padding: 9px 10px;
+      padding: 5px 6px;
       text-align: left;
       vertical-align: top;
-      font-size: 13px;
+      font-size: 9px;
       word-break: break-word;
     }
     th {
       background: #eaf3ff;
       color: var(--brand-dark);
-      font-size: 11px;
+      font-size: 8px;
       text-transform: uppercase;
       letter-spacing: .04em;
     }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      border: 1px solid transparent;
-      white-space: nowrap;
-    }
-    .badge.ok { color: var(--success); background: var(--success-bg); border-color: #abefc6; }
-    .badge.warn { color: var(--warning); background: var(--warning-bg); border-color: #fedf89; }
-    .badge.error { color: var(--danger); background: var(--danger-bg); border-color: #fecdca; }
     .history-pill {
       display: inline-flex;
       align-items: center;
-      min-height: 22px;
-      padding: 2px 8px;
+      min-height: 16px;
+      padding: 1px 5px;
       border-radius: 999px;
       border: 1px solid #d8e0ea;
       background: #f8fafc;
       color: #334155;
-      font-size: 12px;
+      font-size: 8px;
       font-weight: 700;
       line-height: 1.2;
       white-space: nowrap;
@@ -3587,28 +3545,62 @@
       color: #b42318;
     }
     .muted { color: var(--muted); }
-    .validated-row td {
+    .report-table-section {
+      margin-top: 13px;
+    }
+    .report-table-section + .report-table-section {
+      margin-top: 18px;
+      padding-top: 13px;
+      border-top: 2px solid var(--brand-line);
+    }
+    .report-table-title {
+      margin: 0 0 4px;
+      color: var(--brand-dark);
+      font-size: 13px;
+      line-height: 1.25;
+    }
+    .status-green-row td {
       background: #f0fdf4;
     }
-    .summary-note {
-      margin: 0 0 14px;
+    .status-yellow-row td {
+      background: var(--warning-bg);
+    }
+    .status-red-row td {
+      background: var(--danger-bg);
+    }
+    .empty-table {
+      padding: 12px;
       color: var(--muted);
-      font-size: 12px;
+      text-align: center;
+      font-style: italic;
+    }
+    .summary-note {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 9px;
     }
     @media (max-width: 900px) {
-      .summary-grid,
-      .status-groups {
+      .summary-grid {
         grid-template-columns: 1fr;
       }
     }
     @media print {
-      body { background: #ffffff; }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+      }
       .print-toolbar { display: none; }
       .document {
         width: 100%;
         margin: 0;
-        padding: 0;
+        padding: 8mm;
         box-shadow: none;
+      }
+      .summary-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 5px;
       }
     }
   </style>
@@ -3621,7 +3613,6 @@
     <header class="head">
       <div>
         <h1>${escapeHtml(title)}</h1>
-        <p class="subtitle">Resumo geral dos registros carregados, com destaque para quem já está validado e a porcentagem atual.</p>
       </div>
       <img src="${escapeAttr(headerLogo)}" alt="Logo da empresa">
     </header>
@@ -3633,56 +3624,73 @@
       <div class="summary-card"><span>Com porcentagem</span><strong>${stats.withPercentage}</strong></div>
     </section>
 
-    <section class="status-groups" aria-label="Distribuição por status">
-      <div class="status-card validado">
-        <strong>${stats.validatedRate}</strong>
-        <span>do total já está validado</span>
-      </div>
-      <div class="status-card validando">
-        <strong>${stats.averagePercentage}</strong>
-        <span>percentual médio entre os registros com porcentagem</span>
-      </div>
-      <div class="status-card outros">
-        <strong>${stats.pending}</strong>
-        <span>registros com outro status ou sem informação</span>
-      </div>
+    <section class="report-table-section">
+      <h2 class="report-table-title">Controle Interno Envio para Manifestação até</h2>
+      ${buildValidationReportTable(internalControlRows)}
     </section>
 
-    <p class="summary-note">A lista abaixo traz o usuário quando esse dado estiver presente no JSON de saída do coletor.</p>
+    <section class="report-table-section">
+      <h2 class="report-table-title">Outros</h2>
+      ${buildValidationReportTable(otherRows)}
+    </section>
+  </article>
+</body>
+</html>`;
+    }
 
-    <table>
-      <thead>
-        <tr>
-          <th>Orgão</th>
-          <th>Cidade</th>
-          <th>Status</th>
-          <th>Data manifestação</th>
-          <th>Setor atual</th>
-          <th>Porcentagem</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${sortedRows.map((row) => {
-          const statusClass = isValidatedStatus(row.status) ? 'ok' : isValidatingStatus(row.status) ? 'warn' : 'error';
-          const statusText = row.status || 'Sem status';
-          const manifestacaoData = row.manifestacao_data || row.manifestacao_prazo || '';
+    function buildValidationReportTable(rows) {
+      const bodyHtml = rows.length
+        ? rows.map((row) => {
+          const manifestacaoData = validationReportDeadline(row);
           const manifestacaoDataHtml = manifestacaoData
             ? `<span class="history-pill ${row.manifestacao_vencida ? 'expired' : ''}">${escapeHtml(manifestacaoData)}</span>`
             : '<span class="muted">-</span>';
-          return `<tr class="${isValidatedStatus(row.status) ? 'validated-row' : ''}">
+          return `<tr class="${validationReportStatusClass(row.status)}">
             <td>${escapeHtml(row.orgao) || '<span class="muted">-</span>'}</td>
             <td>${escapeHtml(row.cidade) || '<span class="muted">-</span>'}</td>
-            <td><span class="badge ${statusClass}">${escapeHtml(statusText)}</span></td>
             <td>${manifestacaoDataHtml}</td>
             <td>${escapeHtml(row.setor_atual) || '<span class="muted">-</span>'}</td>
             <td>${escapeHtml(row.porcentagem) || '<span class="muted">-</span>'}</td>
           </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-  </article>
-</body>
-</html>`;
+        }).join('')
+        : '<tr><td class="empty-table" colspan="5">Nenhum registro nesta categoria.</td></tr>';
+
+      return `<table>
+        <thead>
+          <tr>
+            <th>Orgão</th>
+            <th>Cidade</th>
+            <th>Prazo para manifestação</th>
+            <th>Setor atual</th>
+            <th>Porcentagem</th>
+          </tr>
+        </thead>
+        <tbody>${bodyHtml}</tbody>
+      </table>`;
+    }
+
+    function isInternalControlManifestation(row) {
+      return normalize(row.setor_atual).startsWith('controle interno envio para manifestacao ate');
+    }
+
+    function validationReportDeadline(row) {
+      return String(row.manifestacao_prazo || row.manifestacao_data || '').trim();
+    }
+
+    function validationReportStatusClass(status) {
+      const text = normalize(status);
+      if (isValidatedStatus(status) || text.includes('finalizado ug')) return 'status-green-row';
+      if (text.includes('aguardando validacao')) return 'status-red-row';
+      if (text.includes('em validacao') || text.includes('validando')) return 'status-yellow-row';
+      return '';
+    }
+
+    function validationReportStatusRank(status) {
+      const className = validationReportStatusClass(status);
+      if (className === 'status-green-row') return 0;
+      if (className === 'status-yellow-row') return 1;
+      if (className === 'status-red-row') return 2;
+      return 3;
     }
 
     function buildValidationStats(rows) {
@@ -3690,18 +3698,12 @@
       const validated = rows.filter((row) => isValidatedStatus(row.status)).length;
       const validating = rows.filter((row) => isValidatingStatus(row.status)).length;
       const withPercentage = rows.filter((row) => String(row.porcentagem || '').trim()).length;
-      const pending = Math.max(0, total - validated - validating);
-      const validatedRate = total ? `${formatRatio(validated / total)}%` : '0%';
-      const averagePercentage = formatAveragePercentage(rows.map((row) => row.porcentagem));
 
       return {
         total,
         validated,
         validating,
-        withPercentage,
-        pending,
-        validatedRate,
-        averagePercentage
+        withPercentage
       };
     }
 
@@ -3715,26 +3717,6 @@
       return text.includes('validacao') || text.includes('validando');
     }
 
-    function formatRatio(value) {
-      return Number(value * 100).toFixed(1).replace(/\.0$/, '');
-    }
-
-    function formatAveragePercentage(values) {
-      const numericValues = values
-        .map((value) => parsePercentageNumber(value))
-        .filter((value) => Number.isFinite(value));
-
-      if (!numericValues.length) return '-';
-      const average = numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
-      return `${average.toFixed(1).replace(/\.0$/, '')}%`;
-    }
-
-    function parsePercentageNumber(value) {
-      const text = String(value || '').replace(',', '.');
-      const match = text.match(/(\d{1,3}(?:\.\d+)?)\s*%/);
-      return match ? Number(match[1]) : Number.NaN;
-    }
-
     function renderReportAccount(row, index) {
       const evidences = getEvidences(row);
       const grouped = groupByChapter(evidences);
@@ -3742,8 +3724,8 @@
       const statusText = row.status || (row.erro ? 'Erro' : 'Sem status');
       const manifestacaoData = row.manifestacao_data || row.manifestacao_prazo || '';
       const manifestacaoBadge = manifestacaoData
-        ? `<span class="report-date-pill ${row.manifestacao_vencida ? 'expired' : ''}">Data de manifestação: ${escapeHtml(manifestacaoData)}${row.manifestacao_vencida ? ' (vencida)' : ''}</span>`
-        : '<span class="report-date-pill">Data de manifestação: não informada</span>';
+        ? `<span class="report-date-pill ${row.manifestacao_vencida ? 'expired' : ''}">Prazo para manifestação: ${escapeHtml(manifestacaoData)}${row.manifestacao_vencida ? ' (vencido)' : ''}</span>`
+        : '<span class="report-date-pill">Prazo para manifestação: não informado</span>';
       const entidade = [row.orgao, row.cidade].filter(Boolean).join(' de ');
 
       return `<section class="section">

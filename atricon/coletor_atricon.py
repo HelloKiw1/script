@@ -179,10 +179,21 @@ def expected_entity(account: Dict[str, Any]) -> str:
 
 
 def empty_result(account: Dict[str, Any]) -> Dict[str, Any]:
+    orgao = first_value(account, ORGAO_KEYS)
+    cidade = first_value(account, ("cidade",))
+    sem_acesso = bool(
+        orgao
+        and cidade
+        and (
+            not has_value(account.get("user"))
+            or not has_value(account.get("senha"))
+        )
+    )
     return {
-        "orgão": first_value(account, ORGAO_KEYS),
-        "cidade": first_value(account, ("cidade",)),
+        "orgão": orgao,
+        "cidade": cidade,
         "user": first_value(account, ("user",)),
+        "sem_acesso": sem_acesso,
         "status": "",
         "setor_atual": "",
         "data": "",

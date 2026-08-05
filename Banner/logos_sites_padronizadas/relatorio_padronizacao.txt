@@ -1,0 +1,55 @@
+LOGOS PADRONIZADAS EM 500x162 PX
+O conteúdo visível foi recortado, redimensionado proporcionalmente e alinhado à direita e abaixo.
+
+arquivo | original | conteúdo visível original | conteúdo na cópia
+cm_ananas.png | 500x162 | 462x142 | 500x154
+cm_aparecida_do_rio_negro.png | 500x162 | 497x107 | 500x108
+cm_araguacu.png | 500x162 | 392x162 | 392x162
+cm_araguana.png | 500x162 | 469x156 | 487x162
+cm_carmolandia.png | 928x203 | 926x203 | 500x110
+cm_centenario.png | 500x180 | 494x160 | 500x162
+cm_colmeia.png | 500x162 | 500x134 | 500x134
+cm_duere.png | 500x162 | 495x128 | 500x129
+cm_envira.png | 500x162 | 400x131 | 495x162
+cm_itaguatins.png | 500x162 | 500x140 | 500x140
+cm_lajeado.png | 500x162 | 450x134 | 500x149
+cm_lizarda.png | 500x180 | 496x154 | 500x155
+cm_luzinopolis.png | 500x162 | 500x107 | 500x107
+cm_mateiros.png | 912x273 | 910x273 | 500x150
+cm_miranorte.png | 5113x1431 | 5113x1431 | 500x140
+cm_nazare.png | 500x180 | 491x156 | 500x159
+cm_nova_olinda.png | 500x162 | 500x147 | 500x147
+cm_novo_acordo.png | 500x162 | 491x136 | 500x138
+cm_palmeirante.png | 500x162 | 499x156 | 500x156
+cm_palmeiras_do_tocantins.png | 500x162 | 496x136 | 500x137
+cm_pau_d_arco.png | 500x162 | 454x135 | 500x149
+cm_pindorama_do_tocantins.png | 500x162 | 497x128 | 500x129
+cm_recursolandia.png | 500x180 | 454x173 | 425x162
+cm_riachinho.png | 500x162 | 498x145 | 500x146
+cm_rio_sono.png | 1280x294 | 1280x294 | 500x115
+cm_santa_maria_do_tocantins.png | 500x162 | 500x145 | 500x145
+cm_sao_bento_do_tocantins.png | 500x162 | 500x148 | 500x148
+cm_sao_felix_do_tocantins.png | 500x162 | 495x154 | 500x156
+cm_silvanopolis.png | 947x252 | 945x252 | 500x133
+cm_tabocao.png | 500x162 | 500x145 | 500x145
+pm_aparecida_do_rio_negro.png | 500x162 | 271x145 | 303x162
+pm_babaculandia.png | 400x111 | 400x111 | 500x139
+pm_carmolandia.png | 500x162 | 374x162 | 374x162
+pm_centenario.png | 500x162 | 495x138 | 500x139
+pm_divinopolis_do_tocantins.png | 500x162 | 461x142 | 500x154
+pm_filadelfia.png | 500x162 | 500x112 | 500x112
+pm_lagoa_da_confusao.png | 1380x460 | 928x447 | 336x162
+pm_lajeado.png | 517x172 | 500x120 | 500x120
+pm_mateiros.png | 500x162 | 490x138 | 500x141
+pm_miranorte.png | 486x162 | 458x159 | 467x162
+pm_monte_do_carmo.png | 2366x509 | 2365x505 | 500x107
+pm_nazare.png | 500x162 | 500x162 | 500x162
+pm_piraque.png | 500x162 | 479x99 | 500x103
+pm_ponte_alta_do_tocantins.png | 500x162 | 500x162 | 500x162
+pm_pugmil.png | 5147x1433 | 5147x1433 | 500x139
+pm_recursolandia.png | 500x180 | 482x163 | 479x162
+pm_santa_fe_do_araguaia.png | 500x162 | 499x160 | 500x160
+pm_santa_maria_do_tocantins.png | 500x162 | 462x159 | 471x162
+pm_silvanopolis.png | 500x162 | 496x152 | 500x153
+pm_tocantinopolis.png | 500x162 | 484x115 | 500x119
+pm_tupirama.png | 500x180 | 497x132 | 500x133

@@ -304,6 +304,12 @@
 
     .btn:hover { transform: translateY(-1px); }
 
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+    }
+
     .btn-primary {
       background: linear-gradient(180deg, #ebb11f 0%, #d18f00 100%);
       color: white;
@@ -667,6 +673,7 @@
 
         <div class="actions">
           <button class="btn btn-primary" id="templateRenderBtn" type="button">Gerar imagem</button>
+          <button class="btn btn-secondary" id="templateDownloadAllBtn" type="button" disabled>Baixar todas (.zip)</button>
         </div>
 
         <div class="status" id="templateStatus">Aguardando informacoes.</div>

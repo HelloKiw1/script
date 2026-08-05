@@ -1,16 +1,64 @@
 (() => {
   const CANVAS_SIZE = 1080;
   const INITIAL_NOTES_PATH = './nota_avalia.json';
+  const LOGO_PATH = './logos_sites_padronizadas';
   const SEAL_YEAR = 2025;
   const SEAL_SIZE = 498;
   const SEAL_LEFT = 628;
   const SEAL_BOTTOM = 612;
   const SEAL_ANGLE = 10 * Math.PI / 180;
-  const LOGO_RIGHT = 22;
-  const LOGO_BOTTOM = 30;
-  const TEXT_LEFT = 45;
-  const TEXT_RIGHT = 487;
-  const TEXT_BOTTOM = 699;
+  const LOGO_WIDTH = 400;
+  const LOGO_RIGHT = 9;
+  const LOGO_BOTTOM = 4;
+  const LOGO_OUTLINE_COLOR = 'rgba(255, 255, 255, 0.95)';
+  const LOGO_OUTLINE_BLUR = 2;
+  const TEXT_LEFT = 49;
+  const TEXT_RIGHT = 488;
+  const TEXT_BOTTOM = 691;
+
+  const CITY_NAMES = Object.freeze({
+    ananas: 'Ananás',
+    aparecida_do_rio_negro: 'Aparecida do Rio Negro',
+    araguacu: 'Araguaçu',
+    araguana: 'Araguanã',
+    babaculandia: 'Babaçulândia',
+    carmolandia: 'Carmolândia',
+    centenario: 'Centenário',
+    colmeia: 'Colméia',
+    divinopolis_do_tocantins: 'Divinópolis do Tocantins',
+    duere: 'Dueré',
+    envira: 'Envira',
+    filadelfia: 'Filadélfia',
+    itaguatins: 'Itaguatins',
+    lagoa_da_confusao: 'Lagoa da Confusão',
+    lajeado: 'Lajeado',
+    lizarda: 'Lizarda',
+    luzinopolis: 'Luzinópolis',
+    mateiros: 'Mateiros',
+    miranorte: 'Miranorte',
+    monte_do_carmo: 'Monte do Carmo',
+    nazare: 'Nazaré',
+    nova_olinda: 'Nova Olinda',
+    novo_acordo: 'Novo Acordo',
+    palmeirante: 'Palmeirante',
+    palmeiras_do_tocantins: 'Palmeiras do Tocantins',
+    pau_d_arco: "Pau D'Arco",
+    pindorama_do_tocantins: 'Pindorama do Tocantins',
+    piraque: 'Piraquê',
+    ponte_alta_do_tocantins: 'Ponte Alta do Tocantins',
+    pugmil: 'Pugmil',
+    recursolandia: 'Recursolândia',
+    riachinho: 'Riachinho',
+    rio_sono: 'Rio Sono',
+    santa_fe_do_araguaia: 'Santa Fé do Araguaia',
+    santa_maria_do_tocantins: 'Santa Maria do Tocantins',
+    sao_bento_do_tocantins: 'São Bento do Tocantins',
+    sao_felix_do_tocantins: 'São Félix do Tocantins',
+    silvanopolis: 'Silvanópolis',
+    tabocao: 'Tabocão',
+    tocantinopolis: 'Tocantinópolis',
+    tupirama: 'Tupirama',
+  });
 
   const LOGO_FILES = [
     'cm_ananas.png',
@@ -78,6 +126,7 @@
     logoFile: document.getElementById('templateLogoFile'),
     renderBtn: document.getElementById('templateRenderBtn'),
     downloadBtn: document.getElementById('templateDownloadBtn'),
+    downloadAllBtn: document.getElementById('templateDownloadAllBtn'),
     status: document.getElementById('templateStatus'),
     sealName: document.getElementById('templateSealName'),
   };
@@ -86,7 +135,24 @@
     records: [],
     renderedBlob: null,
     manualLogoUrl: '',
+    isBatchDownloading: false,
   };
+
+  const CRC32_TABLE = (() => {
+    const table = new Uint32Array(256);
+
+    for (let index = 0; index < 256; index += 1) {
+      let value = index;
+
+      for (let bit = 0; bit < 8; bit += 1) {
+        value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+      }
+
+      table[index] = value >>> 0;
+    }
+
+    return table;
+  })();
 
   function setStatus(message) {
     elements.status.textContent = message;
@@ -119,8 +185,13 @@
 
   function titleCaseSlug(slug) {
     const lowercaseWords = new Set(['da', 'de', 'do', 'das', 'dos']);
+    const normalizedSlug = String(slug || '').toLowerCase();
 
-    return String(slug || '')
+    if (CITY_NAMES[normalizedSlug]) {
+      return CITY_NAMES[normalizedSlug];
+    }
+
+    return normalizedSlug
       .split('_')
       .filter(Boolean)
       .map((word, index) => {
@@ -362,6 +433,7 @@
     }
 
     state.records = records;
+    elements.downloadAllBtn.disabled = !records.length;
     populateRecordSelect(records);
     populateCitySelect(records);
 
@@ -394,20 +466,47 @@
     }
   }
 
-  function fitText(ctx, text, maxWidth, startSize) {
-    let size = startSize;
+  function fitText(ctx, text, targetWidth, referenceSize) {
+    ctx.font = `800 ${referenceSize}px "Segoe UI", Tahoma, sans-serif`;
+    const measuredWidth = ctx.measureText(text).width;
 
-    while (size > 18) {
-      ctx.font = `800 ${size}px "Segoe UI", Tahoma, sans-serif`;
-
-      if (ctx.measureText(text).width <= maxWidth) {
-        return size;
-      }
-
-      size -= 2;
+    if (!measuredWidth) {
+      return referenceSize;
     }
 
-    return size;
+    return referenceSize * (targetWidth / measuredWidth);
+  }
+
+  function drawSkipInkUnderline(ctx, text, x, baselineY, width, fontSize) {
+    const layer = document.createElement('canvas');
+    layer.width = CANVAS_SIZE;
+    layer.height = CANVAS_SIZE;
+
+    const layerCtx = layer.getContext('2d');
+    const thickness = Math.max(2, Math.min(5, fontSize * 0.05));
+    const offset = Math.max(3, Math.min(7, fontSize * 0.06));
+    const underlineY = baselineY + offset;
+
+    layerCtx.beginPath();
+    layerCtx.moveTo(x, underlineY);
+    layerCtx.lineTo(x + width, underlineY);
+    layerCtx.lineWidth = thickness;
+    layerCtx.lineCap = 'round';
+    layerCtx.strokeStyle = '#ffffff';
+    layerCtx.stroke();
+
+    layerCtx.globalCompositeOperation = 'destination-out';
+    layerCtx.font = ctx.font;
+    layerCtx.textAlign = 'left';
+    layerCtx.textBaseline = 'alphabetic';
+    layerCtx.lineJoin = 'round';
+    layerCtx.lineWidth = thickness + 4;
+    layerCtx.strokeStyle = '#000000';
+    layerCtx.fillStyle = '#000000';
+    layerCtx.strokeText(text, x, baselineY);
+    layerCtx.fillText(text, x, baselineY);
+
+    ctx.drawImage(layer, 0, 0);
   }
 
   function drawCityName(ctx, city) {
@@ -418,24 +517,28 @@
     }
 
     const maxWidth = CANVAS_SIZE - TEXT_LEFT - TEXT_RIGHT;
-    const fontSize = fitText(ctx, text.toUpperCase(), maxWidth, 56);
+    const cityName = text.toUpperCase();
+    const fontSize = fitText(ctx, cityName, maxWidth, 56);
     const x = TEXT_LEFT;
-    const y = CANVAS_SIZE - TEXT_BOTTOM;
+    const visibleBottomY = CANVAS_SIZE - TEXT_BOTTOM;
 
     ctx.save();
     ctx.font = `800 ${fontSize}px "Segoe UI", Tahoma, sans-serif`;
     ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'alphabetic';
+    const metrics = ctx.measureText(cityName);
+    const y = visibleBottomY - (metrics.actualBoundingBoxDescent || 0);
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
     ctx.shadowBlur = 5;
     ctx.shadowOffsetY = 2;
-    ctx.fillText(text.toUpperCase(), x, y, maxWidth);
+    ctx.fillText(cityName, x, y);
+    drawSkipInkUnderline(ctx, cityName, x, y, metrics.width, fontSize);
     ctx.restore();
   }
 
-  async function getLogoImage(city, agencyCode) {
-    if (state.manualLogoUrl) {
+  async function getLogoImage(city, agencyCode, useManualLogo = true) {
+    if (useManualLogo && state.manualLogoUrl) {
       return {
         image: await loadImageFromPath(state.manualLogoUrl),
         label: 'logo manual',
@@ -449,7 +552,7 @@
     }
 
     return {
-      image: await loadImageFromPath(`./logos_sites/${fileName}`),
+      image: await loadImageFromPath(`${LOGO_PATH}/${fileName}`),
       label: fileName,
     };
   }
@@ -459,9 +562,22 @@
       return;
     }
 
-    const x = CANVAS_SIZE - LOGO_RIGHT - logoImage.width;
-    const y = CANVAS_SIZE - LOGO_BOTTOM - logoImage.height;
-    ctx.drawImage(logoImage, x, y);
+    const width = LOGO_WIDTH;
+    const height = logoImage.height * (width / logoImage.width);
+    const x = CANVAS_SIZE - LOGO_RIGHT - width;
+    const y = CANVAS_SIZE - LOGO_BOTTOM - height;
+
+    ctx.save();
+    ctx.shadowColor = LOGO_OUTLINE_COLOR;
+    ctx.shadowBlur = LOGO_OUTLINE_BLUR;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.drawImage(logoImage, x, y, width, height);
+
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.drawImage(logoImage, x, y, width, height);
+    ctx.restore();
   }
 
   function drawRotatedImage(ctx, image, x, y, width, height, angle) {
@@ -470,6 +586,69 @@
     ctx.rotate(angle);
     ctx.drawImage(image, -width / 2, -height / 2, width, height);
     ctx.restore();
+  }
+
+  function canvasToPngBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+
+        reject(new Error('Nao foi possivel gerar o arquivo PNG.'));
+      }, 'image/png');
+    });
+  }
+
+  async function renderRecordToPng(record) {
+    const city = String(getCity(record) || '').trim();
+    const agencyCode = getAgencyCode(getAgencyText(record));
+    const score = getScoreFromRecord(record);
+    const baseTemplate = getBaseTemplate(score, agencyCode);
+    const sealTemplate = getSealTemplate(score);
+
+    if (!city) {
+      throw new Error('registro sem cidade');
+    }
+
+    if (!baseTemplate) {
+      throw new Error('nota abaixo de 75, vazia ou invalida');
+    }
+
+    const [baseImage, sealImage, logo] = await Promise.all([
+      loadImageFromPath(baseTemplate.path),
+      sealTemplate ? loadImageFromPath(sealTemplate.path) : Promise.resolve(null),
+      getLogoImage(city, agencyCode, false).catch(() => null),
+    ]);
+    const canvas = document.createElement('canvas');
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(baseImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    if (sealImage) {
+      drawRotatedImage(
+        ctx,
+        sealImage,
+        SEAL_LEFT,
+        CANVAS_SIZE - SEAL_BOTTOM - SEAL_SIZE,
+        SEAL_SIZE,
+        SEAL_SIZE,
+        SEAL_ANGLE,
+      );
+    }
+
+    drawLogo(ctx, logo?.image);
+    drawCityName(ctx, city);
+
+    return {
+      agencyCode,
+      blob: await canvasToPngBlob(canvas),
+      city,
+      hasLogo: Boolean(logo),
+    };
   }
 
   async function renderTemplate() {
@@ -557,6 +736,179 @@
     setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
   }
 
+  function calculateCrc32(bytes) {
+    let crc = 0xffffffff;
+
+    bytes.forEach((byte) => {
+      crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+    });
+
+    return (crc ^ 0xffffffff) >>> 0;
+  }
+
+  function getZipTimestamp(date = new Date()) {
+    const year = Math.max(1980, Math.min(2107, date.getFullYear()));
+
+    return {
+      date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+      time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+    };
+  }
+
+  async function createZipBlob(files) {
+    const encoder = new TextEncoder();
+    const timestamp = getZipTimestamp();
+    const localParts = [];
+    const centralParts = [];
+    let localOffset = 0;
+    let centralSize = 0;
+
+    for (const file of files) {
+      const nameBytes = encoder.encode(file.name);
+      const data = new Uint8Array(await file.blob.arrayBuffer());
+      const crc = calculateCrc32(data);
+      const localHeader = new Uint8Array(30 + nameBytes.length);
+      const localView = new DataView(localHeader.buffer);
+
+      localView.setUint32(0, 0x04034b50, true);
+      localView.setUint16(4, 20, true);
+      localView.setUint16(6, 0x0800, true);
+      localView.setUint16(8, 0, true);
+      localView.setUint16(10, timestamp.time, true);
+      localView.setUint16(12, timestamp.date, true);
+      localView.setUint32(14, crc, true);
+      localView.setUint32(18, data.length, true);
+      localView.setUint32(22, data.length, true);
+      localView.setUint16(26, nameBytes.length, true);
+      localView.setUint16(28, 0, true);
+      localHeader.set(nameBytes, 30);
+
+      const centralHeader = new Uint8Array(46 + nameBytes.length);
+      const centralView = new DataView(centralHeader.buffer);
+
+      centralView.setUint32(0, 0x02014b50, true);
+      centralView.setUint16(4, 20, true);
+      centralView.setUint16(6, 20, true);
+      centralView.setUint16(8, 0x0800, true);
+      centralView.setUint16(10, 0, true);
+      centralView.setUint16(12, timestamp.time, true);
+      centralView.setUint16(14, timestamp.date, true);
+      centralView.setUint32(16, crc, true);
+      centralView.setUint32(20, data.length, true);
+      centralView.setUint32(24, data.length, true);
+      centralView.setUint16(28, nameBytes.length, true);
+      centralView.setUint16(30, 0, true);
+      centralView.setUint16(32, 0, true);
+      centralView.setUint16(34, 0, true);
+      centralView.setUint16(36, 0, true);
+      centralView.setUint32(38, 0, true);
+      centralView.setUint32(42, localOffset, true);
+      centralHeader.set(nameBytes, 46);
+
+      localParts.push(localHeader, data);
+      centralParts.push(centralHeader);
+      localOffset += localHeader.length + data.length;
+      centralSize += centralHeader.length;
+    }
+
+    const endRecord = new Uint8Array(22);
+    const endView = new DataView(endRecord.buffer);
+
+    endView.setUint32(0, 0x06054b50, true);
+    endView.setUint16(4, 0, true);
+    endView.setUint16(6, 0, true);
+    endView.setUint16(8, files.length, true);
+    endView.setUint16(10, files.length, true);
+    endView.setUint32(12, centralSize, true);
+    endView.setUint32(16, localOffset, true);
+    endView.setUint16(20, 0, true);
+
+    return new Blob([...localParts, ...centralParts, endRecord], { type: 'application/zip' });
+  }
+
+  async function downloadAllTemplates() {
+    if (state.isBatchDownloading) {
+      return;
+    }
+
+    if (!state.records.length) {
+      setStatus('Carregue um JSON com entidades antes de gerar o ZIP.');
+      return;
+    }
+
+    state.isBatchDownloading = true;
+    elements.downloadAllBtn.disabled = true;
+    const originalLabel = elements.downloadAllBtn.textContent;
+    const files = [];
+    const skipped = [];
+    const withoutLogo = [];
+    const usedNames = new Map();
+
+    try {
+      for (let index = 0; index < state.records.length; index += 1) {
+        const progress = `${index + 1}/${state.records.length}`;
+        elements.downloadAllBtn.textContent = `Gerando ${progress}...`;
+        setStatus(`Gerando entidade ${progress} para o ZIP...`);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        try {
+          const result = await renderRecordToPng(state.records[index]);
+          const stem = `template-2026-${result.agencyCode}-${sanitizeFilePart(result.city)}`;
+          const occurrence = usedNames.get(stem) || 0;
+          usedNames.set(stem, occurrence + 1);
+          const suffix = occurrence ? `-${occurrence + 1}` : '';
+
+          files.push({
+            blob: result.blob,
+            name: `${stem}${suffix}.png`,
+          });
+
+          if (!result.hasLogo) {
+            withoutLogo.push(result.city);
+          }
+        } catch (error) {
+          skipped.push(`${getRecordLabel(state.records[index], index)}: ${error.message}`);
+        }
+      }
+
+      if (!files.length) {
+        throw new Error('Nenhuma entidade possui uma nota valida entre 75 e 100.');
+      }
+
+      elements.downloadAllBtn.textContent = 'Compactando...';
+      setStatus(`Compactando ${files.length} imagem(ns) em um arquivo ZIP...`);
+      const zipBlob = await createZipBlob(files);
+      const objectUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+
+      link.href = objectUrl;
+      link.download = `templates-2026-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+      const details = [`ZIP gerado com ${files.length} entidade(s).`];
+
+      if (skipped.length) {
+        details.push(`${skipped.length} registro(s) ignorado(s) por nota ausente ou invalida.`);
+      }
+
+      if (withoutLogo.length) {
+        details.push(`${withoutLogo.length} imagem(ns) gerada(s) sem logo automatica.`);
+      }
+
+      setStatus(details.join('\n'));
+    } catch (error) {
+      console.error(error);
+      setStatus(error.message || 'Nao foi possivel gerar o arquivo ZIP.');
+    } finally {
+      state.isBatchDownloading = false;
+      elements.downloadAllBtn.disabled = !state.records.length;
+      elements.downloadAllBtn.textContent = originalLabel;
+    }
+  }
+
   elements.tabButtons.forEach((button) => {
     button.addEventListener('click', () => activateTab(button.dataset.tabTarget));
   });
@@ -609,6 +961,7 @@
 
   elements.renderBtn.addEventListener('click', renderTemplate);
   elements.downloadBtn.addEventListener('click', downloadTemplate);
+  elements.downloadAllBtn.addEventListener('click', downloadAllTemplates);
 
   activateTab('banner');
   populateCitySelect([]);

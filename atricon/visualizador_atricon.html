@@ -447,7 +447,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(150px, 210px)) auto;
+      grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(150px, 210px)) minmax(160px, auto) auto;
       gap: 12px;
       align-items: end;
       background: var(--panel);
@@ -510,6 +510,17 @@
     .secondary-button:hover {
       background: var(--accent-soft);
       border-color: var(--accent);
+    }
+
+    .deadline-filter-button[aria-pressed="true"] {
+      background: var(--ok-bg);
+      color: var(--ok);
+      border-color: var(--ok-line);
+    }
+
+    .deadline-filter-button[aria-pressed="true"]:hover {
+      background: var(--ok-bg);
+      border-color: var(--ok);
     }
 
     .summary {
@@ -1111,6 +1122,7 @@
           <option value="com_erro">Com erro</option>
         </select>
       </label>
+      <button id="unexpiredDeadlineFilter" class="secondary-button deadline-filter-button" type="button" aria-pressed="false" title="Exibir somente os prazos que ainda não venceram">Prazos não vencidos</button>
       <button id="clearFilters" class="secondary-button" type="button">Limpar</button>
     </section>
 
@@ -1244,6 +1256,7 @@
       compareRows: [],
       comparisons: [],
       collectorAccounts: [],
+      onlyUnexpiredDeadlines: false,
       sortKey: 'manifestacao_sort',
       sortDir: 'asc'
     };
@@ -1266,6 +1279,7 @@
     const manifestationFilter = document.getElementById('manifestationFilter');
     const cityFilter = document.getElementById('cityFilter');
     const errorFilter = document.getElementById('errorFilter');
+    const unexpiredDeadlineFilter = document.getElementById('unexpiredDeadlineFilter');
     const clearFilters = document.getElementById('clearFilters');
     const emptyState = document.getElementById('emptyState');
     const tableShell = document.getElementById('tableShell');
@@ -1319,6 +1333,10 @@
     manifestationFilter.addEventListener('change', applyFilters);
     cityFilter.addEventListener('change', applyFilters);
     errorFilter.addEventListener('change', applyFilters);
+    unexpiredDeadlineFilter.addEventListener('click', () => {
+      setUnexpiredDeadlineFilter(!state.onlyUnexpiredDeadlines);
+      applyFilters();
+    });
     metricsDrawerToggle.addEventListener('click', () => {
       setMetricsDrawerOpen(!metricsDrawer.classList.contains('is-open'));
     });
@@ -1328,6 +1346,7 @@
       manifestationFilter.value = '';
       cityFilter.value = '';
       errorFilter.value = '';
+      setUnexpiredDeadlineFilter(false);
       applyFilters();
     });
     clearCompare.addEventListener('click', clearComparison);
@@ -1854,10 +1873,18 @@
     }
 
     function normalizeRow(row) {
+      const user = value(row.user);
+      const erro = value(row.erro);
+      const normalizedError = normalize(erro);
       const normalized = {
         orgao: value(row['orgão'] ?? row['órgão'] ?? row.orgao),
         cidade: value(row.cidade),
-        user: value(row.user),
+        user,
+        sem_acesso: row.sem_acesso === true || (
+          !user.trim()
+          && normalizedError.includes('sem campos obrigatorios')
+          && (normalizedError.includes('user') || normalizedError.includes('senha'))
+        ),
         status: value(row.status),
         setor_atual: value(row.setor_atual ?? row['setor atual']),
         data: value(row.data),
@@ -1865,13 +1892,14 @@
         manifestacao_data: value(row.manifestacao_data),
         manifestacao_historico: Array.isArray(row.manifestacao_historico) ? row.manifestacao_historico : [],
         manifestacao_historico_texto: value(row.manifestacao_historico_texto),
-        erro: value(row.erro),
+        erro,
         debug_html: value(row.debug_html),
         debug_screenshot: value(row.debug_screenshot),
         raw: row
       };
       const criterio = manifestationCriterion(normalized);
       const manifestacao = mainManifestationInfo(normalized);
+      const manifestacaoLimite = manifestacao.deadlineTime ?? parseDeadlineTime(normalized.manifestacao_data);
       return {
         ...normalized,
         criterio: criterio.label,
@@ -1880,7 +1908,7 @@
         manifestacao: manifestacao.label,
         manifestacao_class: manifestacao.className,
         manifestacao_prazo: manifestacao.prazo,
-        manifestacao_limite: manifestacao.deadlineTime,
+        manifestacao_limite: manifestacaoLimite,
         manifestacao_setor: manifestacao.setor,
         manifestacao_sort: manifestacao.sortValue,
         em_manifestacao: manifestacao.isActive,
@@ -1997,6 +2025,12 @@
       cityFilter.value = '';
       manifestationFilter.value = '';
       errorFilter.value = DEFAULT_ERROR_FILTER;
+      setUnexpiredDeadlineFilter(false);
+    }
+
+    function setUnexpiredDeadlineFilter(enabled) {
+      state.onlyUnexpiredDeadlines = Boolean(enabled);
+      unexpiredDeadlineFilter.setAttribute('aria-pressed', String(state.onlyUnexpiredDeadlines));
     }
 
     function setOptions(select, options, firstLabel) {
@@ -2021,6 +2055,7 @@
       const manifestacao = manifestationFilter.value;
       const cidade = cityFilter.value;
       const errorMode = errorFilter.value;
+      const now = Date.now();
 
       state.filtered = state.rows.filter((row) => {
         const searchable = normalize(Object.values({
@@ -2043,6 +2078,10 @@
         if (cidade && row.cidade !== cidade) return false;
         if (errorMode === 'com_erro' && !row.erro) return false;
         if (errorMode === 'sem_erro' && row.erro) return false;
+        if (
+          state.onlyUnexpiredDeadlines
+          && (!Number.isFinite(row.manifestacao_limite) || row.manifestacao_limite < now)
+        ) return false;
         return true;
       });
 
@@ -3383,10 +3422,11 @@
         if (leftRank !== rightRank) return leftRank - rightRank;
         return normalize(`${left.orgao} ${left.cidade} ${left.user}`).localeCompare(normalize(`${right.orgao} ${right.cidade} ${right.user}`));
       });
-      const internalControlRows = sortedRows.filter((row) => isInternalControlManifestation(row));
-      const otherRows = sortedRows.filter((row) => !isInternalControlManifestation(row));
+      const noAccessRows = sortedRows.filter((row) => isNoAccessRow(row));
+      const sectorGroups = buildValidationSectorGroups(
+        sortedRows.filter((row) => !isNoAccessRow(row))
+      );
 
-      const stats = buildValidationStats(rows);
       const title = 'Relatório de validação';
       const headerLogo = new URL('assets/logo-da-empresa.png', window.location.href).href;
 
@@ -3467,42 +3507,59 @@
       object-fit: contain;
     }
     h1 {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       margin: 0;
       color: var(--brand-dark);
       font-size: 18px;
       line-height: 1.2;
     }
+    .report-total-counter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 7px;
+      border: 1px solid var(--brand-line);
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .status-color-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 12px;
+      margin: 0 0 10px;
+      padding: 6px 8px;
+      border: 1px solid var(--brand-line);
+      border-radius: 6px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 8px;
+    }
+    .status-color-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-color-swatch {
+      width: 10px;
+      height: 10px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+    }
+    .status-color-swatch.green { background: #dcfce7; border-color: #86d9a2; }
+    .status-color-swatch.yellow { background: #fef3c7; border-color: #e8c861; }
+    .status-color-swatch.red { background: #fee2e2; border-color: #ef9a9a; }
     .subtitle {
       margin: 4px 0 0;
       color: var(--muted);
       font-size: 10px;
-    }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 7px;
-      margin: 10px 0 12px;
-    }
-    .summary-card {
-      padding: 8px 10px;
-      border: 1px solid var(--brand-line);
-      border-radius: 7px;
-      background: linear-gradient(180deg, #ffffff, var(--brand-soft));
-    }
-    .summary-card span {
-      display: block;
-      color: var(--muted);
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-    .summary-card strong {
-      display: block;
-      margin-top: 3px;
-      color: var(--brand-dark);
-      font-size: 17px;
-      line-height: 1.1;
     }
     table {
       width: 100%;
@@ -3554,10 +3611,34 @@
       border-top: 2px solid var(--brand-line);
     }
     .report-table-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       margin: 0 0 4px;
       color: var(--brand-dark);
       font-size: 13px;
       line-height: 1.25;
+    }
+    .report-table-counter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border: 1px solid var(--brand-line);
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      font-size: 8px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .report-table-description {
+      margin: -1px 0 6px;
+      color: var(--muted);
+      font-size: 8px;
+      font-style: italic;
     }
     .status-green-row td {
       background: #f0fdf4;
@@ -3579,12 +3660,11 @@
       color: var(--muted);
       font-size: 9px;
     }
-    @media (max-width: 900px) {
-      .summary-grid {
-        grid-template-columns: 1fr;
-      }
-    }
     @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       html,
       body {
         margin: 0;
@@ -3598,9 +3678,17 @@
         padding: 8mm;
         box-shadow: none;
       }
-      .summary-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 5px;
+      .status-green-row td {
+        background-color: #dcfce7 !important;
+        border-color: #86d9a2 !important;
+      }
+      .status-yellow-row td {
+        background-color: #fef3c7 !important;
+        border-color: #e8c861 !important;
+      }
+      .status-red-row td {
+        background-color: #fee2e2 !important;
+        border-color: #ef9a9a !important;
       }
     }
   </style>
@@ -3612,26 +3700,23 @@
   <article class="document">
     <header class="head">
       <div>
-        <h1>${escapeHtml(title)}</h1>
+        <h1>${escapeHtml(title)} <span class="report-total-counter" title="Total de usuários" aria-label="Total de usuários: ${rows.length}">${rows.length}</span></h1>
       </div>
       <img src="${escapeAttr(headerLogo)}" alt="Logo da empresa">
     </header>
 
-    <section class="summary-grid" aria-label="Resumo">
-      <div class="summary-card"><span>Total de usuários</span><strong>${stats.total}</strong></div>
-      <div class="summary-card"><span>Validados</span><strong>${stats.validated}</strong></div>
-      <div class="summary-card"><span>Em validação</span><strong>${stats.validating}</strong></div>
-      <div class="summary-card"><span>Com porcentagem</span><strong>${stats.withPercentage}</strong></div>
-    </section>
+    <aside class="status-color-legend" aria-label="Legenda das cores">
+      <span><i class="status-color-swatch green"></i>Verde: Validado ou Finalizado UG</span>
+      <span><i class="status-color-swatch yellow"></i>Amarelo: Em validação</span>
+      <span><i class="status-color-swatch red"></i>Vermelho: Aguardando Validação</span>
+    </aside>
+
+    ${buildValidationSectorSections(sectorGroups)}
 
     <section class="report-table-section">
-      <h2 class="report-table-title">Controle Interno Envio para Manifestação até</h2>
-      ${buildValidationReportTable(internalControlRows)}
-    </section>
-
-    <section class="report-table-section">
-      <h2 class="report-table-title">Outros</h2>
-      ${buildValidationReportTable(otherRows)}
+      <h2 class="report-table-title">Sem Acesso <span class="report-table-counter">${noAccessRows.length}</span></h2>
+      <p class="report-table-description">Não temos acesso</p>
+      ${buildValidationReportTable(noAccessRows)}
     </section>
   </article>
 </body>
@@ -3669,8 +3754,74 @@
       </table>`;
     }
 
-    function isInternalControlManifestation(row) {
-      return normalize(row.setor_atual).startsWith('controle interno envio para manifestacao ate');
+    function buildValidationSectorGroups(rows) {
+      const groups = new Map();
+      rows.forEach((row) => {
+        const name = validationSectorName(row);
+        const key = normalize(name);
+        if (!groups.has(key)) groups.set(key, { name, rows: [] });
+        groups.get(key).rows.push(row);
+      });
+
+      return [...groups.values()].sort((left, right) => {
+        const leftRank = validationSectorRank(left.name);
+        const rightRank = validationSectorRank(right.name);
+        if (leftRank !== rightRank) return leftRank - rightRank;
+        return left.name.localeCompare(right.name, 'pt-BR');
+      });
+    }
+
+    function buildValidationSectorSections(groups) {
+      return groups.map((group) => {
+        const description = validationSectorDescription(group.name);
+        const descriptionHtml = description
+          ? `<p class="report-table-description">${escapeHtml(description)}</p>`
+          : '';
+        return `<section class="report-table-section">
+          <h2 class="report-table-title">${escapeHtml(group.name)} <span class="report-table-counter">${group.rows.length}</span></h2>
+          ${descriptionHtml}
+          ${buildValidationReportTable(group.rows)}
+        </section>`;
+      }).join('');
+    }
+
+    function validationSectorName(row) {
+      const sector = String(row.setor_atual || '').replace(/\s+/g, ' ').trim();
+      const text = normalize(sector);
+      if (text.includes('controle interno') && text.includes('envio para manifestacao ate')) {
+        return 'Controle Interno Envio para Manifestação até';
+      }
+      if (text.includes('tribunal de contas') && text.includes('envio para analise da manifestacao')) {
+        return 'Tribunal de Contas Envio para Análise da Manifestação';
+      }
+      if (text.includes('garantia da qualidade')) {
+        return 'Garantia da Qualidade';
+      }
+      if (text.includes('tribunal de contas')) {
+        return 'Tribunal de Contas';
+      }
+      return sector || 'Sem setor atual';
+    }
+
+    function validationSectorRank(name) {
+      const text = normalize(name);
+      if (text === 'controle interno envio para manifestacao ate') return 0;
+      if (text === 'tribunal de contas envio para analise da manifestacao') return 1;
+      if (text === 'garantia da qualidade') return 2;
+      if (text === 'tribunal de contas') return 3;
+      if (text === 'sem setor atual') return 5;
+      return 4;
+    }
+
+    function validationSectorDescription(name) {
+      const text = normalize(name);
+      if (text === 'controle interno envio para manifestacao ate') return 'Com o Órgão';
+      if (text === 'tribunal de contas envio para analise da manifestacao') {
+        return 'Analisando a manifestação/correção do Órgão';
+      }
+      if (text === 'garantia da qualidade') return 'Já avaliado pelo Tribunal';
+      if (text === 'tribunal de contas') return 'Ainda não foi avaliado';
+      return '';
     }
 
     function validationReportDeadline(row) {
@@ -3679,7 +3830,7 @@
 
     function validationReportStatusClass(status) {
       const text = normalize(status);
-      if (isValidatedStatus(status) || text.includes('finalizado ug')) return 'status-green-row';
+      if (isValidatedStatus(status) || isFinalizedUgStatus(status)) return 'status-green-row';
       if (text.includes('aguardando validacao')) return 'status-red-row';
       if (text.includes('em validacao') || text.includes('validando')) return 'status-yellow-row';
       return '';
@@ -3693,28 +3844,17 @@
       return 3;
     }
 
-    function buildValidationStats(rows) {
-      const total = rows.length;
-      const validated = rows.filter((row) => isValidatedStatus(row.status)).length;
-      const validating = rows.filter((row) => isValidatingStatus(row.status)).length;
-      const withPercentage = rows.filter((row) => String(row.porcentagem || '').trim()).length;
-
-      return {
-        total,
-        validated,
-        validating,
-        withPercentage
-      };
-    }
-
     function isValidatedStatus(status) {
       const text = normalize(status);
       return text === 'validado' || text.startsWith('validado ');
     }
 
-    function isValidatingStatus(status) {
-      const text = normalize(status);
-      return text.includes('validacao') || text.includes('validando');
+    function isFinalizedUgStatus(status) {
+      return normalize(status).includes('finalizado ug');
+    }
+
+    function isNoAccessRow(row) {
+      return row.sem_acesso === true;
     }
 
     function renderReportAccount(row, index) {

@@ -77,4 +77,5 @@ downloads/
 *.exe
 *.msi
 *.zip
+!candidato/dados/consulta_cand_2026.zip
 .resultado

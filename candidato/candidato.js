@@ -77,6 +77,17 @@
     return `${TSE_DATA_BASE}/consulta_cand_${encodeURIComponent(year)}.zip`;
   }
 
+  function bundledArchive(year) {
+    return globalThis.CANDIDATRON_BUNDLED_ZIPS?.[year] || null;
+  }
+
+  function decodeBase64(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return bytes;
+  }
+
   function updateDownloadLink() {
     const year = elements.year.value.trim() || '2026';
     elements.zipDownloadLink.href = archiveUrl(year);
@@ -87,6 +98,13 @@
     if (archiveCache.has(year)) return archiveCache.get(year);
 
     const request = (async () => {
+      const bundled = bundledArchive(year);
+      if (bundled?.base64) {
+        setApiState('loading', `Lendo base interna de ${year}…`);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        return decodeBase64(bundled.base64);
+      }
+
       const response = await fetch(archiveUrl(year), { mode: 'cors', cache: 'no-cache' });
       if (!response.ok) {
         if (response.status === 404) throw new Error(`A base de candidatos de ${year} ainda não está disponível no TSE.`);
@@ -309,9 +327,9 @@
     const selectedRole = elements.role.value;
 
     clearMessage();
-    if (location.protocol === 'file:' && !archiveCache.has(year)) {
-      setApiState('error', 'Importe a base ou use a extensão');
-      showMessage(`<strong>A busca automática precisa ser aberta pela extensão.</strong> Se preferir continuar no HTML, <a href="${escapeHtml(archiveUrl(year))}" target="_blank" rel="noopener noreferrer">baixe o ZIP oficial de ${escapeHtml(year)}</a> e clique em “Importar ZIP/JSON”.`);
+    if (location.protocol === 'file:' && !archiveCache.has(year) && !bundledArchive(year)) {
+      setApiState('error', 'Base interna não encontrada');
+      showMessage(`<strong>Não existe uma base interna para ${escapeHtml(year)}.</strong> <a href="${escapeHtml(archiveUrl(year))}" target="_blank" rel="noopener noreferrer">Baixe o ZIP oficial</a> e clique em “Importar ZIP/JSON”.`);
       return;
     }
     setLoading(true);
@@ -320,7 +338,7 @@
     try {
       const result = await loadCandidates(year, uf, selectedRole);
       state.candidates = deduplicate(result.candidates);
-      state.source = 'Dados Abertos TSE';
+      state.source = bundledArchive(year) ? 'Base interna TSE' : 'Dados Abertos TSE';
       state.query = { year, uf, selectedRole };
       state.generatedAt = result.generatedAt;
       resetFilters();

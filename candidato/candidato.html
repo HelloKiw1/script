@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Pesquisa e exportação de candidaturas oficiais do DivulgaCandContas/TSE.">
+  <title>Candidatron — Pesquisa de candidatos</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicons/candidato.svg">
+  <link rel="stylesheet" href="../assets/script-shell.css">
+  <link rel="stylesheet" href="candidato.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="../index.html" aria-label="Voltar para Script Tools">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h.01M11 8h5M8 13h.01M11 13h5m-8 4 1 1 2-2"/></svg>
+        </span>
+        <span>
+          <span class="eyebrow">Dados eleitorais oficiais</span>
+          <strong>Candidatron</strong>
+        </span>
+      </a>
+      <div class="api-state" id="apiState" data-state="idle" role="status" aria-live="polite">
+        <span class="state-dot" aria-hidden="true"></span>
+        <span id="apiStateText">Pronto para consultar</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-copy">
+        <span class="hero-kicker">ELEIÇÕES GERAIS · TSE</span>
+        <h1 id="pageTitle">Encontre candidaturas.<br><em>Organize a pesquisa.</em></h1>
+        <p>Consulte Presidente, Governador, Senador, Deputado Federal e Deputado Estadual em uma única busca. Os resultados vêm do DivulgaCandContas.</p>
+      </div>
+      <div class="hero-stamp" aria-label="Fonte dos dados: Tribunal Superior Eleitoral">
+        <span>FONTE</span>
+        <strong>TSE</strong>
+        <small>DivulgaCandContas</small>
+      </div>
+    </section>
+
+    <section class="search-panel" aria-labelledby="searchTitle">
+      <div class="panel-heading">
+        <div>
+          <span class="section-number">01</span>
+          <div>
+            <h2 id="searchTitle">Defina a consulta</h2>
+            <p>Para Presidente, a unidade eleitoral é automaticamente Brasil.</p>
+          </div>
+        </div>
+        <a class="tse-link" href="https://divulgacandcontas.tse.jus.br/divulga/#/home" target="_blank" rel="noopener noreferrer">
+          Abrir portal do TSE
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </a>
+      </div>
+
+      <form id="searchForm" class="search-form">
+        <label class="field field-year">
+          <span>Ano</span>
+          <input id="yearInput" name="ano" type="number" min="2004" max="2100" value="2026" inputmode="numeric" required>
+        </label>
+        <input id="electionInput" name="eleicao" type="hidden" value="20322002026">
+        <label class="field field-state">
+          <span>Estado</span>
+          <select id="stateSelect" name="uf" required aria-describedby="stateHint">
+            <option value="AC">Acre</option><option value="AL">Alagoas</option><option value="AP">Amapá</option>
+            <option value="AM">Amazonas</option><option value="BA">Bahia</option><option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option><option value="GO">Goiás</option>
+            <option value="MA">Maranhão</option><option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option><option value="PA">Pará</option><option value="PB">Paraíba</option>
+            <option value="PR">Paraná</option><option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option><option value="RS">Rio Grande do Sul</option>
+            <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option><option value="SE">Sergipe</option><option value="TO" selected>Tocantins</option>
+          </select>
+        </label>
+        <label class="field field-role">
+          <span>Cargo</span>
+          <select id="roleSelect" name="cargo">
+            <option value="all" selected>Todos os 5 cargos</option>
+            <option value="1">Presidente</option>
+            <option value="3">Governador</option>
+            <option value="5">Senador</option>
+            <option value="6">Deputado Federal</option>
+            <option value="7">Deputado Estadual</option>
+          </select>
+        </label>
+        <button class="primary-button" id="searchButton" type="submit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <span>Buscar candidatos</span>
+        </button>
+      </form>
+
+      <div class="helper-row">
+        <p><strong>Dica:</strong> “Todos os 5 cargos” reúne a consulta nacional de Presidente com os cargos do estado escolhido.</p>
+        <label class="import-button" for="jsonInput" title="Use um ou mais arquivos JSON baixados da API do TSE">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-5 5 5-5 5 5M5 20h14"/></svg>
+          Importar JSON
+        </label>
+        <input id="jsonInput" type="file" accept=".json,application/json" multiple hidden>
+      </div>
+    </section>
+
+    <section id="messageBox" class="message-box" hidden aria-live="polite"></section>
+
+    <section id="resultsSection" class="results-section" hidden aria-labelledby="resultsTitle">
+      <div class="results-heading">
+        <div class="title-block">
+          <span class="section-number">02</span>
+          <div>
+            <h2 id="resultsTitle">Candidaturas encontradas</h2>
+            <p id="resultContext">Resultado da consulta</p>
+          </div>
+        </div>
+        <div class="results-actions">
+          <button type="button" class="secondary-button" id="copyButton">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
+            Copiar nomes
+          </button>
+          <button type="button" class="secondary-button" id="csvButton">Exportar CSV</button>
+          <button type="button" class="secondary-button" id="jsonButton">Exportar JSON</button>
+        </div>
+      </div>
+
+      <div class="metrics" aria-label="Resumo da consulta">
+        <article><span>Total exibido</span><strong id="totalMetric">0</strong><small id="totalDetail">candidaturas</small></article>
+        <article><span>Partidos</span><strong id="partyMetric">0</strong><small>siglas diferentes</small></article>
+        <article><span>Cargos</span><strong id="roleMetric">0</strong><small>na lista atual</small></article>
+        <article><span>Última consulta</span><strong id="timeMetric">—</strong><small id="sourceMetric">Fonte: TSE</small></article>
+      </div>
+
+      <div class="filter-bar">
+        <label class="filter-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input id="textFilter" type="search" placeholder="Filtrar por nome, número ou coligação…" autocomplete="off">
+        </label>
+        <label>
+          <span class="sr-only">Filtrar por cargo</span>
+          <select id="roleFilter"><option value="">Todos os cargos</option></select>
+        </label>
+        <label>
+          <span class="sr-only">Filtrar por partido</span>
+          <select id="partyFilter"><option value="">Todos os partidos</option></select>
+        </label>
+        <label>
+          <span class="sr-only">Filtrar por situação</span>
+          <select id="statusFilter"><option value="">Todas as situações</option></select>
+        </label>
+        <button class="clear-button" id="clearFilters" type="button">Limpar filtros</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="number-column">Nº</th>
+              <th>Candidato</th>
+              <th>Cargo</th>
+              <th>Partido</th>
+              <th>Situação</th>
+              <th>Coligação / Federação</th>
+            </tr>
+          </thead>
+          <tbody id="candidateRows"></tbody>
+        </table>
+        <div id="emptyResults" class="empty-results" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 16v-4m5 4V8m5 8v-2"/></svg>
+          <strong>Nenhum resultado para estes filtros</strong>
+          <span>Altere ou limpe os filtros para ver as candidaturas.</span>
+        </div>
+      </div>
+      <p class="data-note">Os registros refletem a situação informada pelo TSE no momento da consulta e podem ser atualizados pelo órgão.</p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="candidato.js"></script>
+  <script src="../assets/script-shell.js"></script>
+</body>
+</html>

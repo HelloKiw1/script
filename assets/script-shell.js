@@ -2,6 +2,7 @@
   const pages = [
     { id: 'home', label: 'Inicio', icon: 'home', href: 'index.html' },
     { id: 'atricon', label: 'Atricon', icon: 'chart', href: 'atricon/visualizador_atricon.html' },
+    { id: 'candidatron', label: 'Candidatron', icon: 'ballot', href: 'candidato/candidato.html' },
     { id: 'extractron', label: 'Extractron', icon: 'file-search', href: 'extractron/extractron.html' },
     { id: 'sizetron', label: 'Sizetron', icon: 'compress', href: 'sizetron/sizetron.html' },
     { id: 'imagetron', label: 'Imagetron', icon: 'image', href: 'imagetron/imagetron.html' },
@@ -35,6 +36,7 @@
     const path = window.location.pathname.replace(/\\/g, '/').toLowerCase();
     if (path.endsWith('/index.html') || /\/script\/?$/.test(path)) return 'home';
     if (path.includes('/atricon/')) return 'atricon';
+    if (path.includes('/candidato/')) return 'candidatron';
     if (path.includes('/extractron/extractron_noticias')) return 'noticias-js';
     if (path.includes('/extractron/')) return 'extractron';
     if (path.includes('/sizetron/')) return 'sizetron';
@@ -126,6 +128,7 @@
     const icons = {
       home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/>',
       chart: '<path d="M4 19V5"/><path d="M4 19h17"/><path d="M8 16v-5"/><path d="M13 16V8"/><path d="M18 16v-3"/>',
+      ballot: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h.01"/><path d="M11 8h5"/><path d="M8 13h.01"/><path d="M11 13h5"/><path d="m8 17 1 1 2-2"/>',
       'file-search': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="11" cy="14" r="3"/><path d="m13.2 16.2 2.3 2.3"/>',
       compress: '<path d="M8 3v5H3"/><path d="M16 3v5h5"/><path d="M3 16h5v5"/><path d="M21 16h-5v5"/><path d="M8 8 3 3"/><path d="m16 8 5-5"/><path d="m8 16-5 5"/><path d="m16 16 5 5"/>',
       image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="10" r="2"/><path d="m21 16-5-5L5 19"/>',

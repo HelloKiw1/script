@@ -1,6 +1,7 @@
 (() => {
   const CANVAS_SIZE = 1080;
   const INITIAL_NOTES_PATH = './nota_avalia.json';
+  const BATCH_DOWNLOAD_LABEL = 'Baixar todas (.zip)';
   const LOGO_PATH = './logos_sites_padronizadas';
   const SEAL_YEAR = 2025;
   const SEAL_SIZE = 498;
@@ -258,6 +259,26 @@
     return parseScore(getRecordValue(record, ['nota_2026', 'nota', 'nota_2025', 'nota_2024', 'nota_2023', 'nota_2022']));
   }
 
+  function getBatchEligibleCount(records = state.records) {
+    return records.filter((record) => {
+      const score = getScoreFromRecord(record);
+      const agencyCode = getAgencyCode(getAgencyText(record));
+      return Boolean(getBaseTemplate(score, agencyCode));
+    }).length;
+  }
+
+  function updateBatchDownloadButton() {
+    const eligibleCount = getBatchEligibleCount();
+    elements.downloadAllBtn.disabled = state.isBatchDownloading || eligibleCount === 0;
+    elements.downloadAllBtn.textContent = eligibleCount
+      ? `Baixar todas (${eligibleCount}) (.zip)`
+      : BATCH_DOWNLOAD_LABEL;
+    elements.downloadAllBtn.title = eligibleCount
+      ? `${eligibleCount} entidade(s) com nota valida entre 75 e 100`
+      : 'Nenhuma entidade possui nota valida entre 75 e 100';
+    return eligibleCount;
+  }
+
   function getSealType(score) {
     if (score >= 95 && score <= 100) {
       return 'diamante';
@@ -433,9 +454,9 @@
     }
 
     state.records = records;
-    elements.downloadAllBtn.disabled = !records.length;
     populateRecordSelect(records);
     populateCitySelect(records);
+    const eligibleCount = updateBatchDownloadButton();
 
     if (!records.length) {
       setStatus(`JSON carregado de ${sourceLabel}, mas sem registros.`);
@@ -445,7 +466,10 @@
     elements.recordSelect.value = '0';
     applyRecord(0);
     await renderTemplate();
-    setStatus(`JSON carregado de ${sourceLabel}. ${records.length} registro(s) disponivel(is).`);
+    setStatus(
+      `JSON carregado de ${sourceLabel}. ${records.length} registro(s) disponivel(is); `
+      + `${eligibleCount} apto(s) para o ZIP.`,
+    );
   }
 
   async function loadInitialNotes() {
@@ -836,9 +860,16 @@
       return;
     }
 
+    if (!getBatchEligibleCount()) {
+      setStatus(
+        'O JSON carregado nao possui notas validas entre 75 e 100. '
+        + 'Carregue um arquivo com notas preenchidas, como nota_avalia_exemplo.json.',
+      );
+      return;
+    }
+
     state.isBatchDownloading = true;
     elements.downloadAllBtn.disabled = true;
-    const originalLabel = elements.downloadAllBtn.textContent;
     const files = [];
     const skipped = [];
     const withoutLogo = [];
@@ -883,10 +914,13 @@
 
       link.href = objectUrl;
       link.download = `templates-2026-${new Date().toISOString().slice(0, 10)}.zip`;
+      link.hidden = true;
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      setTimeout(() => {
+        link.remove();
+        URL.revokeObjectURL(objectUrl);
+      }, 60000);
 
       const details = [`ZIP gerado com ${files.length} entidade(s).`];
 
@@ -904,8 +938,7 @@
       setStatus(error.message || 'Nao foi possivel gerar o arquivo ZIP.');
     } finally {
       state.isBatchDownloading = false;
-      elements.downloadAllBtn.disabled = !state.records.length;
-      elements.downloadAllBtn.textContent = originalLabel;
+      updateBatchDownloadButton();
     }
   }
 

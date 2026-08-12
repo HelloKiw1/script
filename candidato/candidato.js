@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const TSE_BASE = 'https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/listar';
+  const TSE_DATA_BASE = 'https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand';
   const ROLES = {
     1: 'Presidente',
     3: 'Governador',
@@ -13,14 +13,16 @@
   const state = {
     candidates: [],
     filtered: [],
-    source: 'TSE',
-    query: null
+    source: 'Dados Abertos TSE',
+    query: null,
+    generatedAt: ''
   };
+  const archiveCache = new Map();
+  const csvCache = new Map();
 
   const elements = {
     form: document.querySelector('#searchForm'),
     year: document.querySelector('#yearInput'),
-    election: document.querySelector('#electionInput'),
     uf: document.querySelector('#stateSelect'),
     role: document.querySelector('#roleSelect'),
     searchButton: document.querySelector('#searchButton'),
@@ -43,6 +45,8 @@
     statusFilter: document.querySelector('#statusFilter'),
     clearFilters: document.querySelector('#clearFilters'),
     jsonInput: document.querySelector('#jsonInput'),
+    zipDownloadLink: document.querySelector('#zipDownloadLink'),
+    datasetPageLink: document.querySelector('#datasetPageLink'),
     copyButton: document.querySelector('#copyButton'),
     csvButton: document.querySelector('#csvButton'),
     jsonButton: document.querySelector('#jsonButton'),
@@ -56,7 +60,7 @@
 
   function setLoading(loading) {
     elements.searchButton.disabled = loading;
-    elements.searchButton.querySelector('span').textContent = loading ? 'Consultando o TSE…' : 'Buscar candidatos';
+    elements.searchButton.querySelector('span').textContent = loading ? 'Carregando base…' : 'Buscar candidatos';
   }
 
   function showMessage(html) {
@@ -69,28 +73,211 @@
     elements.message.textContent = '';
   }
 
-  function buildRemoteUrl(query) {
-    return `${TSE_BASE}/${encodeURIComponent(query.year)}/${encodeURIComponent(query.uf)}/${encodeURIComponent(query.election)}/${encodeURIComponent(query.role)}/candidatos`;
+  function archiveUrl(year) {
+    return `${TSE_DATA_BASE}/consulta_cand_${encodeURIComponent(year)}.zip`;
   }
 
-  function buildLocalUrl(query) {
-    const params = new URLSearchParams({
-      ano: query.year,
-      uf: query.uf,
-      eleicao: query.election,
-      cargo: query.role
-    });
-    return `/api/candidatos?${params.toString()}`;
+  function updateDownloadLink() {
+    const year = elements.year.value.trim() || '2026';
+    elements.zipDownloadLink.href = archiveUrl(year);
+    elements.datasetPageLink.href = `https://dadosabertos.tse.jus.br/dataset/candidatos-${encodeURIComponent(year)}`;
   }
 
-  async function fetchCandidates(query) {
-    const isLocalServer = location.protocol === 'http:' || location.protocol === 'https:';
-    const url = isLocalServer ? buildLocalUrl(query) : buildRemoteUrl(query);
-    const response = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!response.ok) throw new Error(`A consulta respondeu com status ${response.status}.`);
-    const data = await response.json();
-    if (!data || !Array.isArray(data.candidatos)) throw new Error('A resposta recebida não contém uma lista de candidatos.');
-    return data;
+  async function downloadArchive(year) {
+    if (archiveCache.has(year)) return archiveCache.get(year);
+
+    const request = (async () => {
+      const response = await fetch(archiveUrl(year), { mode: 'cors', cache: 'no-cache' });
+      if (!response.ok) {
+        if (response.status === 404) throw new Error(`A base de candidatos de ${year} ainda não está disponível no TSE.`);
+        throw new Error(`O download da base respondeu com status ${response.status}.`);
+      }
+
+      const total = Number(response.headers.get('Content-Length')) || 0;
+      if (!response.body || !total) return new Uint8Array(await response.arrayBuffer());
+
+      const reader = response.body.getReader();
+      const chunks = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        const percent = Math.min(100, Math.round((received / total) * 100));
+        setApiState('loading', `Baixando base oficial… ${percent}%`);
+      }
+
+      const bytes = new Uint8Array(received);
+      let offset = 0;
+      chunks.forEach((chunk) => {
+        bytes.set(chunk, offset);
+        offset += chunk.length;
+      });
+      return bytes;
+    })();
+
+    archiveCache.set(year, request);
+    try {
+      return await request;
+    } catch (error) {
+      archiveCache.delete(year);
+      throw error;
+    }
+  }
+
+  function findEndOfCentralDirectory(view) {
+    const minimum = Math.max(0, view.byteLength - 65557);
+    for (let offset = view.byteLength - 22; offset >= minimum; offset -= 1) {
+      if (view.getUint32(offset, true) === 0x06054b50) return offset;
+    }
+    throw new Error('O arquivo baixado não é um ZIP válido.');
+  }
+
+  function findZipEntry(bytes, wantedName) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const eocd = findEndOfCentralDirectory(view);
+    const entries = view.getUint16(eocd + 10, true);
+    let offset = view.getUint32(eocd + 16, true);
+    const decoder = new TextDecoder('utf-8');
+
+    for (let index = 0; index < entries; index += 1) {
+      if (view.getUint32(offset, true) !== 0x02014b50) throw new Error('O diretório do ZIP está corrompido.');
+      const method = view.getUint16(offset + 10, true);
+      const compressedSize = view.getUint32(offset + 20, true);
+      const filenameLength = view.getUint16(offset + 28, true);
+      const extraLength = view.getUint16(offset + 30, true);
+      const commentLength = view.getUint16(offset + 32, true);
+      const localOffset = view.getUint32(offset + 42, true);
+      const name = decoder.decode(bytes.subarray(offset + 46, offset + 46 + filenameLength));
+
+      if (name.toLocaleLowerCase() === wantedName.toLocaleLowerCase()) {
+        if (view.getUint32(localOffset, true) !== 0x04034b50) throw new Error('O arquivo interno do ZIP está corrompido.');
+        const localNameLength = view.getUint16(localOffset + 26, true);
+        const localExtraLength = view.getUint16(localOffset + 28, true);
+        const start = localOffset + 30 + localNameLength + localExtraLength;
+        return { method, compressed: bytes.slice(start, start + compressedSize) };
+      }
+      offset += 46 + filenameLength + extraLength + commentLength;
+    }
+    throw new Error(`O TSE não forneceu o arquivo ${wantedName} dentro da base.`);
+  }
+
+  async function decompressZipEntry(entry) {
+    if (entry.method === 0) return entry.compressed;
+    if (entry.method !== 8) throw new Error(`Método de compactação ZIP não suportado: ${entry.method}.`);
+    if (typeof DecompressionStream === 'undefined') {
+      throw new Error('Este navegador não consegue descompactar a base. Use uma versão atual do Chrome ou Edge.');
+    }
+    const stream = new Blob([entry.compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let field = '';
+    let quoted = false;
+
+    for (let index = 0; index < text.length; index += 1) {
+      const character = text[index];
+      if (quoted) {
+        if (character === '"') {
+          if (text[index + 1] === '"') {
+            field += '"';
+            index += 1;
+          } else {
+            quoted = false;
+          }
+        } else {
+          field += character;
+        }
+      } else if (character === '"') {
+        quoted = true;
+      } else if (character === ';') {
+        row.push(field);
+        field = '';
+      } else if (character === '\n') {
+        row.push(field);
+        if (row.some((value) => value !== '')) rows.push(row);
+        row = [];
+        field = '';
+      } else if (character !== '\r') {
+        field += character;
+      }
+    }
+    if (field || row.length) {
+      row.push(field);
+      rows.push(row);
+    }
+    if (rows.length < 2) return [];
+
+    const headers = rows.shift();
+    return rows.map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] || ''])));
+  }
+
+  async function loadCsv(year, unit) {
+    const cacheKey = `${year}-${unit}`;
+    if (csvCache.has(cacheKey)) return csvCache.get(cacheKey);
+
+    const request = (async () => {
+      const archive = await downloadArchive(year);
+      setApiState('loading', `Extraindo dados de ${unit}…`);
+      const filename = `consulta_cand_${year}_${unit}.csv`;
+      const content = await decompressZipEntry(findZipEntry(archive, filename));
+      const text = new TextDecoder('windows-1252').decode(content);
+      return parseCsv(text);
+    })();
+    csvCache.set(cacheKey, request);
+    try {
+      return await request;
+    } catch (error) {
+      csvCache.delete(cacheKey);
+      throw error;
+    }
+  }
+
+  function cleanTseValue(value, fallback = '') {
+    const cleaned = String(value ?? '').trim();
+    return !cleaned || cleaned === '-1' || /^#(?:NULO|NE)$/i.test(cleaned) ? fallback : cleaned;
+  }
+
+  function normalizeCsvCandidate(row) {
+    const roleCode = Number(row.CD_CARGO);
+    const situation = cleanTseValue(
+      row.DS_SITUACAO_CANDIDATURA,
+      cleanTseValue(row.DS_SIT_TOT_TURNO, 'Não informada')
+    );
+    return {
+      id: cleanTseValue(row.SQ_CANDIDATO) || null,
+      numero: cleanTseValue(row.NR_CANDIDATO),
+      nomeUrna: cleanTseValue(row.NM_URNA_CANDIDATO, 'Nome não informado'),
+      nomeCompleto: cleanTseValue(row.NM_CANDIDATO),
+      cargoCodigo: roleCode,
+      cargo: ROLES[roleCode] || cleanTseValue(row.DS_CARGO, 'Cargo não informado'),
+      partido: cleanTseValue(row.SG_PARTIDO, 'Sem partido'),
+      situacao: situation,
+      totalizacao: cleanTseValue(row.DS_SIT_TOT_TURNO),
+      coligacao: cleanTseValue(row.NM_COLIGACAO, cleanTseValue(row.NM_FEDERACAO, 'Partido isolado')),
+      uf: cleanTseValue(row.SG_UF),
+      tituloEleitor: cleanTseValue(row.NR_TITULO_ELEITORAL_CANDIDATO),
+      eleicao: cleanTseValue(row.CD_ELEICAO) || null,
+      ano: Number(row.ANO_ELEICAO) || null
+    };
+  }
+
+  async function loadCandidates(year, uf, selectedRole) {
+    const wantedRoles = new Set(selectedRole === 'all' ? Object.keys(ROLES) : [selectedRole]);
+    const units = selectedRole === '1' ? ['BR'] : selectedRole === 'all' ? ['BR', uf] : [uf];
+    const datasets = await Promise.all(units.map((unit) => loadCsv(year, unit)));
+    const rows = datasets.flat();
+    const first = rows[0] || {};
+    return {
+      candidates: rows
+        .filter((row) => wantedRoles.has(String(row.CD_CARGO)))
+        .map(normalizeCsvCandidate),
+      generatedAt: [cleanTseValue(first.DT_GERACAO), cleanTseValue(first.HH_GERACAO)].filter(Boolean).join(' às ')
+    };
   }
 
   function normalizeCandidate(candidate, fallbackRole, fallbackUf) {
@@ -118,52 +305,39 @@
     if (!elements.form.reportValidity()) return;
 
     const year = elements.year.value.trim();
-    const election = elements.election.value.trim();
     const uf = elements.uf.value;
     const selectedRole = elements.role.value;
-    const roleCodes = selectedRole === 'all' ? Object.keys(ROLES) : [selectedRole];
-    const queries = roleCodes.map((role) => ({ year, election, role, uf: role === '1' ? 'BR' : uf }));
 
     clearMessage();
+    if (location.protocol === 'file:' && !archiveCache.has(year)) {
+      setApiState('error', 'Importe a base ou use a extensão');
+      showMessage(`<strong>A busca automática precisa ser aberta pela extensão.</strong> Se preferir continuar no HTML, <a href="${escapeHtml(archiveUrl(year))}" target="_blank" rel="noopener noreferrer">baixe o ZIP oficial de ${escapeHtml(year)}</a> e clique em “Importar ZIP/JSON”.`);
+      return;
+    }
     setLoading(true);
-    setApiState('loading', `Consultando ${queries.length} ${queries.length === 1 ? 'cargo' : 'cargos'}…`);
+    setApiState('loading', 'Preparando a base oficial…');
 
     try {
-      const settled = await Promise.allSettled(queries.map(fetchCandidates));
-      const failures = settled.filter((item) => item.status === 'rejected');
-      const candidates = [];
-
-      settled.forEach((item, index) => {
-        if (item.status !== 'fulfilled') return;
-        item.value.candidatos.forEach((candidate) => {
-          candidates.push(normalizeCandidate(candidate, queries[index].role, queries[index].uf));
-        });
-      });
-
-      if (!candidates.length && failures.length) throw failures[0].reason;
-
-      state.candidates = deduplicate(candidates);
-      state.source = 'TSE';
-      state.query = { year, election, uf, selectedRole };
+      const result = await loadCandidates(year, uf, selectedRole);
+      state.candidates = deduplicate(result.candidates);
+      state.source = 'Dados Abertos TSE';
+      state.query = { year, uf, selectedRole };
+      state.generatedAt = result.generatedAt;
       resetFilters();
       updateFilterOptions();
       applyFilters();
       elements.results.hidden = false;
-      elements.context.textContent = buildContext(uf, selectedRole, year);
+      elements.context.textContent = `${buildContext(uf, selectedRole, year)}${result.generatedAt ? ` · Base de ${result.generatedAt}` : ''}`;
       elements.time.textContent = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date());
-      setApiState('success', `${state.candidates.length} candidaturas recebidas`);
-
-      if (failures.length) {
-        showMessage(`<strong>Consulta parcial.</strong> ${failures.length} ${failures.length === 1 ? 'cargo não respondeu' : 'cargos não responderam'}; os demais resultados foram exibidos.`);
-      }
+      setApiState('success', `${state.candidates.length} candidaturas carregadas`);
       elements.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       console.error(error);
       setApiState('error', 'Não foi possível consultar');
-      const localHint = location.protocol === 'file:'
-        ? 'Abra esta página pelo servidor local: execute <code>python candidato/servidor_candidatos.py</code> na raiz do projeto e acesse <code>http://localhost:8877</code>.'
-        : 'Confirme se o servidor local está ativo e tente novamente.';
-      showMessage(`<strong>Não foi possível acessar a API do TSE.</strong> ${escapeHtml(error.message)} ${localHint} Você também pode usar “Importar JSON”.`);
+      const extensionHint = location.protocol === 'chrome-extension:'
+        ? 'Confirme sua conexão e tente novamente.'
+        : 'Para busca automática, carregue a raiz do projeto como extensão no Chrome/Edge. Como alternativa, baixe e importe o ZIP oficial.';
+      showMessage(`<strong>Não foi possível carregar automaticamente os Dados Abertos do TSE.</strong> ${escapeHtml(error.message)} ${extensionHint} <a href="${escapeHtml(archiveUrl(year))}" target="_blank" rel="noopener noreferrer">Baixar ZIP de ${escapeHtml(year)}</a>.`);
     } finally {
       setLoading(false);
     }
@@ -268,15 +442,47 @@
     elements.statusFilter.value = '';
   }
 
-  async function importJson(event) {
+  async function importData(event) {
     const files = [...event.target.files];
     if (!files.length) return;
     clearMessage();
     setApiState('loading', `Lendo ${files.length} ${files.length === 1 ? 'arquivo' : 'arquivos'}…`);
 
     try {
+      const zipFiles = files.filter((file) => file.name.toLocaleLowerCase().endsWith('.zip'));
+      if (zipFiles.length) {
+        if (files.length !== 1) throw new Error('Para importar uma base ZIP, selecione somente um arquivo por vez.');
+        const file = zipFiles[0];
+        const inferredYear = file.name.match(/consulta_cand_(\d{4})\.zip$/i)?.[1];
+        const year = inferredYear || elements.year.value.trim();
+        if (!/^\d{4}$/.test(year)) throw new Error('Não foi possível identificar o ano do arquivo ZIP.');
+
+        elements.year.value = year;
+        updateDownloadLink();
+        archiveCache.set(year, Promise.resolve(new Uint8Array(await file.arrayBuffer())));
+        [...csvCache.keys()].filter((key) => key.startsWith(`${year}-`)).forEach((key) => csvCache.delete(key));
+
+        const uf = elements.uf.value;
+        const selectedRole = elements.role.value;
+        const result = await loadCandidates(year, uf, selectedRole);
+        state.candidates = deduplicate(result.candidates);
+        state.source = 'ZIP oficial importado';
+        state.query = { year, uf, selectedRole };
+        state.generatedAt = result.generatedAt;
+        resetFilters();
+        updateFilterOptions();
+        applyFilters();
+        elements.context.textContent = `${buildContext(uf, selectedRole, year)}${result.generatedAt ? ` · Base de ${result.generatedAt}` : ''}`;
+        elements.time.textContent = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+        elements.results.hidden = false;
+        setApiState('success', `${state.candidates.length} candidaturas importadas`);
+        elements.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
       const imported = [];
       for (const file of files) {
+        if (!file.name.toLocaleLowerCase().endsWith('.json')) throw new Error(`Formato não reconhecido: ${file.name}.`);
         const data = JSON.parse(await file.text());
         const lists = Array.isArray(data) ? [data] : [data.candidatos];
         const candidates = lists.flat().filter(Boolean);
@@ -289,6 +495,7 @@
       state.candidates = deduplicate(imported);
       state.source = 'JSON importado';
       state.query = null;
+      state.generatedAt = '';
       resetFilters();
       updateFilterOptions();
       applyFilters();
@@ -298,7 +505,7 @@
       setApiState('success', `${state.candidates.length} candidaturas importadas`);
       elements.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
-      setApiState('error', 'Falha ao importar JSON');
+      setApiState('error', 'Falha ao importar arquivo');
       showMessage(`<strong>Arquivo inválido.</strong> ${escapeHtml(error.message)}`);
     } finally {
       event.target.value = '';
@@ -385,11 +592,14 @@
   }
 
   elements.form.addEventListener('submit', runSearch);
-  elements.jsonInput.addEventListener('change', importJson);
+  elements.year.addEventListener('input', updateDownloadLink);
+  elements.jsonInput.addEventListener('change', importData);
   [elements.textFilter, elements.roleFilter, elements.partyFilter, elements.statusFilter]
     .forEach((element) => element.addEventListener('input', applyFilters));
   elements.clearFilters.addEventListener('click', () => { resetFilters(); applyFilters(); });
   elements.copyButton.addEventListener('click', copyNames);
   elements.csvButton.addEventListener('click', exportCsv);
   elements.jsonButton.addEventListener('click', exportJson);
+
+  updateDownloadLink();
 })();

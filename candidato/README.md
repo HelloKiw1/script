@@ -1,18 +1,24 @@
 # Candidatron
 
-Página para consultar candidaturas oficiais do DivulgaCandContas/TSE, filtrar os resultados e exportar CSV ou JSON.
+Página estática para consultar candidaturas pela base oficial de Dados Abertos do TSE, filtrar os resultados e exportar CSV ou JSON.
 
-## Executar
+## Busca automática sem servidor
 
-No terminal do VS Code, a partir da raiz do projeto, rode:
+Instale o projeto como extensão local:
 
-```powershell
-python candidato/servidor_candidatos.py
-```
+1. Abra `chrome://extensions` no Chrome ou `edge://extensions` no Edge.
+2. Ative o **Modo do desenvolvedor**.
+3. Clique em **Carregar sem compactação**.
+4. Selecione a raiz deste projeto: `C:\Users\eduar\Documents\GitHub\barco\script`.
+5. Clique no ícone do Candidatron instalado.
 
-Depois abra [http://localhost:8877](http://localhost:8877). O servidor usa somente a biblioteca padrão do Python; não é necessário instalar pacotes.
+A extensão serve apenas para conceder ao navegador permissão de leitura em `https://cdn.tse.jus.br/*`. Nenhum servidor é iniciado.
 
-O servidor local é necessário porque a API do TSE não autoriza chamadas diretas de uma página aberta no navegador. Como alternativa, abra `candidato.html` e use **Importar JSON** com arquivos obtidos no portal/API do TSE.
+Ao pesquisar, o navegador baixa o arquivo oficial `consulta_cand_<ano>.zip`, extrai em memória os CSVs de Brasil e do estado escolhido e monta a lista. O ZIP fica em cache na memória da página para que novas pesquisas no mesmo ano não façam outro download.
+
+## Usar somente o HTML
+
+Também é possível abrir `candidato.html` diretamente. Nesse modo, use **Baixar ZIP** e depois **Importar ZIP/JSON**, pois o CDN do TSE envia um cabeçalho CORS duplicado que impede a leitura automática a partir de `file://`.
 
 ## Consulta padrão
 
@@ -20,4 +26,8 @@ O servidor local é necessário porque a API do TSE não autoriza chamadas diret
 - Estado: Tocantins (`TO`)
 - Cargos: Presidente (`1`), Governador (`3`), Senador (`5`), Deputado Federal (`6`) e Deputado Estadual (`7`)
 
-Ao consultar todos os cargos, Presidente usa automaticamente a unidade `BR`; os demais usam o estado selecionado.
+Ao consultar todos os cargos, Presidente usa o arquivo `BR`; os demais usam o arquivo do estado selecionado.
+
+Fonte: [Candidatos 2026 — Dados Abertos do TSE](https://dadosabertos.tse.jus.br/dataset/candidatos-2026).
+
+O botão **Importar ZIP/JSON** também aceita respostas JSON obtidas no DivulgaCandContas.

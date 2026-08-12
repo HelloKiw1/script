@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Pesquisa e exportação de candidaturas oficiais do DivulgaCandContas/TSE.">
+  <meta name="description" content="Pesquisa e exportação de candidaturas pelos Dados Abertos do TSE.">
   <title>Candidatron — Pesquisa de candidatos</title>
   <link rel="icon" type="image/svg+xml" href="../assets/favicons/candidato.svg">
   <link rel="stylesheet" href="../assets/script-shell.css">
@@ -33,12 +33,12 @@
       <div class="hero-copy">
         <span class="hero-kicker">ELEIÇÕES GERAIS · TSE</span>
         <h1 id="pageTitle">Encontre candidaturas.<br><em>Organize a pesquisa.</em></h1>
-        <p>Consulte Presidente, Governador, Senador, Deputado Federal e Deputado Estadual em uma única busca. Os resultados vêm do DivulgaCandContas.</p>
+        <p>Consulte Presidente, Governador, Senador, Deputado Federal e Deputado Estadual em uma única busca. Os resultados vêm da base oficial de Dados Abertos do TSE.</p>
       </div>
       <div class="hero-stamp" aria-label="Fonte dos dados: Tribunal Superior Eleitoral">
         <span>FONTE</span>
         <strong>TSE</strong>
-        <small>DivulgaCandContas</small>
+        <small>Dados Abertos</small>
       </div>
     </section>
 
@@ -51,7 +51,7 @@
             <p>Para Presidente, a unidade eleitoral é automaticamente Brasil.</p>
           </div>
         </div>
-        <a class="tse-link" href="https://divulgacandcontas.tse.jus.br/divulga/#/home" target="_blank" rel="noopener noreferrer">
+        <a class="tse-link" id="datasetPageLink" href="https://dadosabertos.tse.jus.br/dataset/candidatos-2026" target="_blank" rel="noopener noreferrer">
           Abrir portal do TSE
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
         </a>
@@ -62,7 +62,6 @@
           <span>Ano</span>
           <input id="yearInput" name="ano" type="number" min="2004" max="2100" value="2026" inputmode="numeric" required>
         </label>
-        <input id="electionInput" name="eleicao" type="hidden" value="20322002026">
         <label class="field field-state">
           <span>Estado</span>
           <select id="stateSelect" name="uf" required aria-describedby="stateHint">
@@ -95,12 +94,18 @@
       </form>
 
       <div class="helper-row">
-        <p><strong>Dica:</strong> “Todos os 5 cargos” reúne a consulta nacional de Presidente com os cargos do estado escolhido.</p>
-        <label class="import-button" for="jsonInput" title="Use um ou mais arquivos JSON baixados da API do TSE">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-5 5 5-5 5 5M5 20h14"/></svg>
-          Importar JSON
-        </label>
-        <input id="jsonInput" type="file" accept=".json,application/json" multiple hidden>
+        <p><strong>Dica:</strong> “Todos os 5 cargos” reúne Presidente no arquivo Brasil com os cargos do estado escolhido. O ZIP fica em memória após a primeira busca.</p>
+        <div class="import-actions">
+          <a class="import-button" id="zipDownloadLink" href="https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip" target="_blank" rel="noopener noreferrer" title="Baixar a base oficial do TSE">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-5-5 5 5 5-5M5 20h14"/></svg>
+            Baixar ZIP
+          </a>
+          <label class="import-button" for="jsonInput" title="Use o ZIP oficial do TSE ou um JSON do DivulgaCandContas">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-5 5 5-5 5 5M5 20h14"/></svg>
+            Importar ZIP/JSON
+          </label>
+          <input id="jsonInput" type="file" accept=".zip,.json,application/zip,application/json" multiple hidden>
+        </div>
       </div>
     </section>
 

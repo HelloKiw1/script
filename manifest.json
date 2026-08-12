@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Candidatron — Dados Abertos TSE",
+  "version": "1.0.0",
+  "description": "Pesquisa candidaturas na base oficial de Dados Abertos do TSE sem servidor local.",
+  "host_permissions": [
+    "https://cdn.tse.jus.br/*"
+  ],
+  "background": {
+    "service_worker": "candidato/extension-background.js"
+  },
+  "action": {
+    "default_title": "Abrir Candidatron"
+  }
+}

@@ -3,7 +3,10 @@
   const INITIAL_NOTES_PATH = './nota_avalia.json';
   const BATCH_DOWNLOAD_LABEL = 'Baixar todas (.zip)';
   const LOGO_PATH = './logos_sites_padronizadas';
-  const SEAL_YEAR = 2025;
+  const SEAL_YEAR = 2026;
+  const SEAL_FILE_OVERRIDES = Object.freeze({
+    ouro_2026: 'ouro_2026_transparente.png',
+  });
   const SEAL_SIZE = 498;
   const SEAL_LEFT = 628;
   const SEAL_BOTTOM = 612;
@@ -15,7 +18,7 @@
   const LOGO_OUTLINE_BLUR = 2;
   const TEXT_LEFT = 49;
   const TEXT_RIGHT = 488;
-  const TEXT_BOTTOM = 691;
+  const TEXT_BOTTOM = 698;
 
   const CITY_NAMES = Object.freeze({
     ananas: 'Ananás',
@@ -319,10 +322,12 @@
       return null;
     }
 
+    const fileName = SEAL_FILE_OVERRIDES[`${type}_${SEAL_YEAR}`] || `${type}_${SEAL_YEAR}.png`;
+
     return {
       type,
-      fileName: `${type}_${SEAL_YEAR}.png`,
-      path: `./Selo/${type}_${SEAL_YEAR}.png`,
+      fileName,
+      path: `./Selo/${fileName}`,
     };
   }
 

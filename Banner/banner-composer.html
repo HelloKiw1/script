@@ -203,7 +203,7 @@
 
     .seal-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 12px;
       margin-top: 12px;
     }
@@ -214,6 +214,7 @@
       border: 1px dashed rgba(15, 23, 42, 0.18);
       border-radius: 16px;
       background: rgba(255, 255, 255, 0.72);
+      overflow-x: auto;
     }
 
     .seal-slot.is-visible { display: block; }
@@ -226,8 +227,9 @@
 
     .seal-picker {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+      grid-template-columns: repeat(5, minmax(100px, 1fr));
       gap: 10px;
+      min-width: 540px;
     }
 
     .seal-option {
@@ -553,6 +555,7 @@
           <option value="1">1 selo</option>
           <option value="2">2 selos</option>
           <option value="3" selected>3 selos</option>
+          <option value="5">5 selos</option>
         </select>
       </div>
 
@@ -593,6 +596,14 @@
         <div class="seal-slot is-visible" data-slot="3">
           <small>Selo 3</small>
           <div class="seal-picker" id="sealSelect3"></div>
+        </div>
+        <div class="seal-slot" data-slot="4">
+          <small>Selo 4</small>
+          <div class="seal-picker" id="sealSelect4"></div>
+        </div>
+        <div class="seal-slot" data-slot="5">
+          <small>Selo 5</small>
+          <div class="seal-picker" id="sealSelect5"></div>
         </div>
       </div>
 

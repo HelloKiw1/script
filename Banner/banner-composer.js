@@ -6,6 +6,11 @@ const TEMPLATE_BY_COUNT = {
   1: '1 Selo - Banner - Tranpsarencia Padrão.png',
   2: '2 Selo - Banner - Tranpsarencia Padrão.png',
   3: '3 Selo - Banner - Tranpsarencia Padrão.png',
+  5: '5 Selo - Banner - Tranpsarencia Padrão.png',
+};
+
+const SEAL_FILE_OVERRIDES = {
+  ouro_2026: 'ouro_2026_transparente.png',
 };
 
 const SEAL_FILES = [
@@ -13,18 +18,21 @@ const SEAL_FILES = [
   'diamante_2023.png',
   'diamante_2024.png',
   'diamante_2025.png',
+  'diamante_2026.png',
   'ouro_2022.png',
   'ouro_2023.png',
   'ouro_2024.png',
   'ouro_2025.png',
+  'ouro_2026_transparente.png',
   'prata_2022.png',
   'prata_2023.png',
   'prata_2024.png',
   'prata_2025.png',
+  'prata_2026.png',
 ];
 
 const INITIAL_NOTES_PATH = '../.venv/nota_avalia.json';
-const SUPPORTED_YEARS = [2022, 2023, 2024, 2025];
+const SUPPORTED_YEARS = [2022, 2023, 2024, 2025, 2026];
 const SEAL_PRIORITY = {
   diamante: 3,
   ouro: 2,
@@ -42,6 +50,17 @@ const SEAL_LAYOUTS = {
     { centerX: 701, centerY: 366, size: 379 },
     { centerX: 609, centerY: 144, size: 281 },
   ],
+  5: [
+    { x: 165, y: 51, width: 243, height: 244 },
+    { x: 605, y: 51, width: 246, height: 244 },
+    { x: 149, y: 210, width: 241, height: 241 },
+    { x: 638, y: 210, width: 241, height: 241 },
+    { x: 338, y: 114, width: 353, height: 353 },
+  ],
+};
+
+const SEAL_OVERLAP_PRIORITY = {
+  5: [0, 1, 4, 2, 3],
 };
 
 const elements = {
@@ -50,6 +69,8 @@ const elements = {
   sealSelect1: document.getElementById('sealSelect1'),
   sealSelect2: document.getElementById('sealSelect2'),
   sealSelect3: document.getElementById('sealSelect3'),
+  sealSelect4: document.getElementById('sealSelect4'),
+  sealSelect5: document.getElementById('sealSelect5'),
   jsonFile: document.getElementById('jsonFile'),
   recordSelect: document.getElementById('recordSelect'),
   scorePreview: document.getElementById('scorePreview'),
@@ -70,7 +91,8 @@ const elements = {
 const state = {
   sealCount: Number(elements.sealCount.value),
   backgroundColor: elements.backgroundColor.value,
-  sealChoices: ['', '', ''],
+  manualBackgroundColor: elements.backgroundColor.value,
+  sealChoices: ['', '', '', '', ''],
   noteRecords: [],
   currentRecord: null,
   currentSeals: [],
@@ -88,6 +110,10 @@ function getSealMeta(fileName) {
   };
 }
 
+function getSealFileName(type, year) {
+  return SEAL_FILE_OVERRIDES[`${type}_${year}`] || `${type}_${year}.png`;
+}
+
 function getRecordValue(record, keys) {
   return keys.map((key) => record?.[key]).find((value) => value !== undefined && value !== null && value !== '');
 }
@@ -96,6 +122,13 @@ function getRecordLabel(record, index) {
   const agency = getRecordValue(record, ['órgão', 'orgão', 'orgao', 'orgÃ£o']) || 'Entidade';
   const city = getRecordValue(record, ['cidade', 'município', 'municipio']) || `Registro ${index + 1}`;
   return `${agency} - ${city}`;
+}
+
+function getSolidColorFromRecord(record) {
+  const value = getRecordValue(record, ['cor_solida', 'cor_sólida', 'corSolida']);
+  const color = String(value || '').trim();
+
+  return /^#[0-9a-f]{6}$/i.test(color) ? color.toUpperCase() : null;
 }
 
 function parseScore(value) {
@@ -129,11 +162,11 @@ function getSealTypeFromScore(score) {
 }
 
 function getSealsFromRecord(record) {
-  return SUPPORTED_YEARS
+  const seals = SUPPORTED_YEARS
     .map((year) => {
       const score = parseScore(record?.[`nota_${year}`]);
       const type = score === null ? null : getSealTypeFromScore(score);
-      const fileName = type ? `${type}_${year}.png` : '';
+      const fileName = type ? getSealFileName(type, year) : '';
 
       return {
         year,
@@ -158,8 +191,9 @@ function getSealsFromRecord(record) {
       }
 
       return b.year - a.year;
-    })
-    .slice(0, 3);
+    });
+
+  return seals.length >= 5 ? seals.slice(0, 5) : seals.slice(0, 3);
 }
 
 function renderScorePreview(seals) {
@@ -189,7 +223,13 @@ function renderScorePreview(seals) {
 }
 
 function syncPickerSelections() {
-  [elements.sealSelect1, elements.sealSelect2, elements.sealSelect3].forEach((picker, index) => {
+  [
+    elements.sealSelect1,
+    elements.sealSelect2,
+    elements.sealSelect3,
+    elements.sealSelect4,
+    elements.sealSelect5,
+  ].forEach((picker, index) => {
     selectSealChoice(picker, state.sealChoices[index] || '');
   });
 }
@@ -272,15 +312,17 @@ async function applyRecordByIndex(index) {
   }
 
   const seals = getSealsFromRecord(record);
+  const solidColor = getSolidColorFromRecord(record);
 
   state.currentRecord = record;
   state.currentSeals = seals;
-  state.sealChoices = ['', '', ''];
+  state.sealChoices = ['', '', '', '', ''];
   seals.forEach((seal, sealIndex) => {
     state.sealChoices[sealIndex] = seal.fileName;
   });
 
   elements.sealCount.value = String(seals.length);
+  elements.backgroundColor.value = solidColor || state.manualBackgroundColor;
   syncPickerSelections();
   updateSealSlotVisibility();
   renderScorePreview(seals);
@@ -298,7 +340,7 @@ async function loadNoteRecords(records, sourceLabel) {
   if (!records.length) {
     state.currentRecord = null;
     state.currentSeals = [];
-    state.sealChoices = ['', '', ''];
+    state.sealChoices = ['', '', '', '', ''];
     elements.sealCount.value = '0';
     syncPickerSelections();
     updateSealSlotVisibility();
@@ -403,13 +445,21 @@ async function renderBanner() {
     ctx.drawImage(templateImage, 0, 0, BANNER_WIDTH, BANNER_HEIGHT);
 
     const layout = SEAL_LAYOUTS[count] ?? [];
-    layout
-      .map((box, index) => ({ box, image: sealImages[index] }))
+    const overlapPriority = SEAL_OVERLAP_PRIORITY[count] ?? layout.map((_, index) => index);
+
+    overlapPriority
+      .slice()
       .reverse()
-      .forEach(({ box, image }) => {
-        if (image) {
-          const halfSize = box.size / 2;
-          ctx.drawImage(image, box.centerX - halfSize, box.centerY - halfSize, box.size, box.size);
+      .forEach((index) => {
+        const box = layout[index];
+        const image = sealImages[index];
+
+        if (box && image) {
+          const width = box.width ?? box.size;
+          const height = box.height ?? box.size;
+          const x = box.x ?? box.centerX - width / 2;
+          const y = box.y ?? box.centerY - height / 2;
+          ctx.drawImage(image, x, y, width, height);
         }
       });
 
@@ -599,6 +649,7 @@ elements.sealCount.addEventListener('change', async () => {
 });
 
 elements.backgroundColor.addEventListener('input', async () => {
+  state.manualBackgroundColor = elements.backgroundColor.value;
   await renderBanner();
 });
 
@@ -630,13 +681,17 @@ elements.minimizeFloatingBtns.forEach((button) => {
   button.addEventListener('click', toggleCurrentFloatingMinimized);
 });
 
-populateSealPicker(elements.sealSelect1, 'diamante_2025.png');
-populateSealPicker(elements.sealSelect2, 'prata_2024.png');
-populateSealPicker(elements.sealSelect3, 'ouro_2024.png');
+populateSealPicker(elements.sealSelect1, 'diamante_2026.png');
+populateSealPicker(elements.sealSelect2, 'prata_2026.png');
+populateSealPicker(elements.sealSelect3, 'ouro_2026_transparente.png');
+populateSealPicker(elements.sealSelect4, 'diamante_2025.png');
+populateSealPicker(elements.sealSelect5, 'ouro_2025.png');
 
 wireSealPicker(elements.sealSelect1, 0);
 wireSealPicker(elements.sealSelect2, 1);
 wireSealPicker(elements.sealSelect3, 2);
+wireSealPicker(elements.sealSelect4, 3);
+wireSealPicker(elements.sealSelect5, 4);
 wireFloatingDrag(elements.previewWindow, elements.previewHandle, () => !isConfigFloating());
 wireFloatingDrag(elements.configWindow, elements.configHandle, () => isConfigFloating());
 updateFloatingButtons();
@@ -644,6 +699,8 @@ updateFloatingButtons();
 state.sealChoices[0] = elements.sealSelect1.dataset.value;
 state.sealChoices[1] = elements.sealSelect2.dataset.value;
 state.sealChoices[2] = elements.sealSelect3.dataset.value;
+state.sealChoices[3] = elements.sealSelect4.dataset.value;
+state.sealChoices[4] = elements.sealSelect5.dataset.value;
 
 updateSealSlotVisibility();
 

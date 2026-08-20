@@ -6,6 +6,7 @@ const TEMPLATE_BY_COUNT = {
   1: '1 Selo - Banner - Tranpsarencia Padrão.png',
   2: '2 Selo - Banner - Tranpsarencia Padrão.png',
   3: '3 Selo - Banner - Tranpsarencia Padrão.png',
+  4: '4 Selo - Banner - Tranpsarencia Padrão.png',
   5: '5 Selo - Banner - Tranpsarencia Padrão.png',
 };
 
@@ -50,6 +51,12 @@ const SEAL_LAYOUTS = {
     { centerX: 701, centerY: 366, size: 379 },
     { centerX: 609, centerY: 144, size: 281 },
   ],
+  4: [
+    { x: 176, y: 71, width: 285, height: 288 },
+    { x: 423, y: 9, width: 285, height: 286 },
+    { x: 614, y: 190, width: 286, height: 288 },
+    { x: 373, y: 247, width: 284, height: 286 },
+  ],
   5: [
     { x: 165, y: 51, width: 243, height: 244 },
     { x: 605, y: 51, width: 246, height: 244 },
@@ -60,6 +67,7 @@ const SEAL_LAYOUTS = {
 };
 
 const SEAL_OVERLAP_PRIORITY = {
+  4: [3, 1, 0, 2],
   5: [0, 1, 4, 2, 3],
 };
 
@@ -193,7 +201,7 @@ function getSealsFromRecord(record) {
       return b.year - a.year;
     });
 
-  return seals.length >= 5 ? seals.slice(0, 5) : seals.slice(0, 3);
+  return seals.slice(0, 5);
 }
 
 function renderScorePreview(seals) {

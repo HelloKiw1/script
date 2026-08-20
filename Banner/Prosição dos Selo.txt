@@ -53,3 +53,14 @@ Da borda Esquerda: 609 px
 Da borda Superior: 144 px
 Da borda Baixo: 398px
 Da borda Direita: 1391px
+
+__________________
+
+Quando tiver 4 Selos:
+Proporção do Banner: 2000 x 542px
+Ordem de sobreposição (acima para abaixo): Selo 4 -> Selo 2 -> Selo 1 -> Selo 3
+
+Selo 1: 176px da esquerda, 71px do topo, 1539px da direita e 183px do fundo.
+Selo 2: 423px da esquerda, 9px do topo, 1292px da direita e 247px do fundo.
+Selo 3: 614px da esquerda, 190px do topo, 1100px da direita e 64px do fundo.
+Selo 4: 373px da esquerda, 247px do topo, 1343px da direita e 9px do fundo.

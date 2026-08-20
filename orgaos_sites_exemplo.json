@@ -4,19 +4,19 @@
         "estado":  "TO",
         "link":  "https://ananas.to.leg.br/",
         "cor_solida":  "#207D29",
-        "nota_2022":  94,
-        "nota_2023":  87,
+        "nota_2022":  30,
+        "nota_2023":  40,
         "nota_2024":  80,
-        "nota_2025":  null,
-        "nota_2026":  null
+        "nota_2025":  77,
+        "nota_2026":  90
     },
     {
         "cidade":  "Aparecida do Rio Negro",
         "estado":  "TO",
         "link":  "https://www.aparecidadorionegro.to.leg.br/",
         "cor_solida":  "#442273",
-        "nota_2022":  77,
-        "nota_2023":  85,
+        "nota_2022":  null,
+        "nota_2023":  null,
         "nota_2024":  95,
         "nota_2025":  75,
         "nota_2026":  100
@@ -26,9 +26,9 @@
         "estado":  "TO",
         "link":  "https://araguacu.to.leg.br/",
         "cor_solida":  "#19481D",
-        "nota_2022":  90,
+        "nota_2022":  null,
         "nota_2023":  88,
-        "nota_2024":  88,
+        "nota_2024":  null,
         "nota_2025":  87,
         "nota_2026":  96
     },

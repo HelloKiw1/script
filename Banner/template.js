@@ -19,6 +19,9 @@
   const TEXT_LEFT = 49;
   const TEXT_RIGHT = 488;
   const TEXT_BOTTOM = 698;
+  const CITY_REFERENCE_FONT_SIZE = 56;
+  const CITY_LINE_HEIGHT = 0.92;
+  const CITY_CONNECTORS = new Set(['DA', 'DAS', 'DE', 'DO', 'DOS', 'E']);
 
   const CITY_NAMES = Object.freeze({
     ananas: 'Ananás',
@@ -506,6 +509,61 @@
     return referenceSize * (targetWidth / measuredWidth);
   }
 
+  function getCityTextLayout(ctx, cityName, maxWidth) {
+    const singleLineFontSize = fitText(ctx, cityName, maxWidth, CITY_REFERENCE_FONT_SIZE);
+    const singleLineWidth = ctx.measureText(cityName).width;
+    const words = cityName.split(/\s+/).filter(Boolean);
+
+    if (singleLineWidth <= maxWidth || words.length < 3) {
+      return {
+        lines: [cityName],
+        fontSizes: [singleLineFontSize],
+      };
+    }
+
+    let bestLayout = null;
+
+    for (let splitAt = 1; splitAt < words.length; splitAt += 1) {
+      if (CITY_CONNECTORS.has(words[splitAt])) {
+        continue;
+      }
+
+      const lines = [
+        words.slice(0, splitAt).join(' '),
+        words.slice(splitAt).join(' '),
+      ];
+      const widths = lines.map((line) => ctx.measureText(line).width);
+      const widestLine = Math.max(...widths);
+      const balance = Math.abs(widths[0] - widths[1]);
+
+      if (
+        !bestLayout
+        || widestLine < bestLayout.widestLine
+        || (widestLine === bestLayout.widestLine && balance < bestLayout.balance)
+      ) {
+        bestLayout = {
+          lines,
+          widestLine,
+          balance,
+        };
+      }
+    }
+
+    if (!bestLayout) {
+      return {
+        lines: [cityName],
+        fontSizes: [singleLineFontSize],
+      };
+    }
+
+    return {
+      lines: bestLayout.lines,
+      fontSizes: bestLayout.lines.map((line) => (
+        CITY_REFERENCE_FONT_SIZE * (maxWidth / ctx.measureText(line).width)
+      )),
+    };
+  }
+
   function drawSkipInkUnderline(ctx, text, x, baselineY, width, fontSize) {
     const layer = document.createElement('canvas');
     layer.width = CANVAS_SIZE;
@@ -547,22 +605,38 @@
 
     const maxWidth = CANVAS_SIZE - TEXT_LEFT - TEXT_RIGHT;
     const cityName = text.toUpperCase();
-    const fontSize = fitText(ctx, cityName, maxWidth, 56);
     const x = TEXT_LEFT;
     const visibleBottomY = CANVAS_SIZE - TEXT_BOTTOM;
 
     ctx.save();
-    ctx.font = `800 ${fontSize}px "Segoe UI", Tahoma, sans-serif`;
+    ctx.font = `800 ${CITY_REFERENCE_FONT_SIZE}px "Segoe UI", Tahoma, sans-serif`;
+    const layout = getCityTextLayout(ctx, cityName, maxWidth);
+    const { lines, fontSizes } = layout;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    const metrics = ctx.measureText(cityName);
-    const y = visibleBottomY - (metrics.actualBoundingBoxDescent || 0);
+    const lastLineFontSize = fontSizes[fontSizes.length - 1];
+    ctx.font = `800 ${lastLineFontSize}px "Segoe UI", Tahoma, sans-serif`;
+    const lastLineMetrics = ctx.measureText(lines[lines.length - 1]);
+    const lastLineY = visibleBottomY - (lastLineMetrics.actualBoundingBoxDescent || 0);
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
     ctx.shadowBlur = 5;
     ctx.shadowOffsetY = 2;
-    ctx.fillText(cityName, x, y);
-    drawSkipInkUnderline(ctx, cityName, x, y, metrics.width, fontSize);
+
+    lines.forEach((line, index) => {
+      const fontSize = fontSizes[index];
+      ctx.font = `800 ${fontSize}px "Segoe UI", Tahoma, sans-serif`;
+      const metrics = ctx.measureText(line);
+      const y = index === lines.length - 1
+        ? lastLineY
+        : lastLineY - (Math.max(fontSize, lastLineFontSize) * CITY_LINE_HEIGHT);
+      ctx.fillText(line, x, y);
+
+      if (index === lines.length - 1) {
+        drawSkipInkUnderline(ctx, line, x, y, metrics.width, fontSize);
+      }
+    });
+
     ctx.restore();
   }
 

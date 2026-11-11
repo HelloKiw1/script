@@ -31,7 +31,7 @@ import sys
 import time
 import unicodedata
 import webbrowser
-from datetime import datetime
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -201,6 +201,8 @@ def empty_result(account: Dict[str, Any]) -> Dict[str, Any]:
         "manifestacao_data": "",
         "manifestacao_historico": [],
         "manifestacao_historico_texto": "",
+        "coletado_em": datetime.now(timezone.utc).isoformat(),
+        "coleta_detalhada": "nao_solicitada",
     }
 
 
@@ -387,14 +389,14 @@ def add_window_header(parent: Any, tk: Any, ttk: Any, title: str, subtitle: str 
         ttk.Label(text_frame, text=subtitle, style="Subtle.TLabel").pack(anchor="w", pady=(4, 0))
 
 
-def choose_run_in_window(default_input_path: Path, default_accounts: List[Dict[str, Any]]) -> tuple[Path, List[Dict[str, Any]]]:
+def choose_run_in_window(default_input_path: Path, default_accounts: List[Dict[str, Any]]) -> tuple[Path, List[Dict[str, Any]], bool]:
     try:
         import tkinter as tk
         from tkinter import filedialog, messagebox, ttk
     except Exception as exc:  # pragma: no cover
         raise SystemExit("Interface grafica indisponivel. Use --entrada, --todos, --cidade ou --usuario.") from exc
 
-    selected: Dict[str, Any] = {"input_path": None, "accounts": None}
+    selected: Dict[str, Any] = {"input_path": None, "accounts": None, "analysis": False}
     total_accounts = len(default_accounts)
     valid_accounts = [account for account in default_accounts if not account.get("_erro_validacao")]
     missing_access = total_accounts - len(valid_accounts)
@@ -405,6 +407,10 @@ def choose_run_in_window(default_input_path: Path, default_accounts: List[Dict[s
         root.destroy()
 
     def select_all() -> None:
+        finish(default_input_path, default_accounts)
+
+    def select_all_analysis() -> None:
+        selected["analysis"] = True
         finish(default_input_path, default_accounts)
 
     def select_external_json() -> None:
@@ -428,7 +434,7 @@ def choose_run_in_window(default_input_path: Path, default_accounts: List[Dict[s
 
     root = tk.Tk()
     root.title("Coletor Atricon")
-    root.geometry("720x520")
+    root.geometry("720x600")
     root.resizable(False, False)
     configure_tk_style(root, ttk)
     apply_window_logo(root, tk)
@@ -462,6 +468,8 @@ def choose_run_in_window(default_input_path: Path, default_accounts: List[Dict[s
     actions.pack(fill="x")
     ttk.Button(actions, text="Verificar todas as cidades", style="Action.TButton", command=select_all).pack(fill="x", pady=4)
     ttk.Label(actions, text="Usa o orgaos_avalia.json e coleta apenas status/porcentagem, sem manifestacoes.", style="Subtle.TLabel").pack(anchor="w", padx=4, pady=(0, 6))
+    ttk.Button(actions, text="Coletar e analisar todas as cidades", style="Action.TButton", command=select_all_analysis).pack(fill="x", pady=4)
+    ttk.Label(actions, text="Coleta criterios/evidencias de todos para analisar falhas, recorrencias e cruzamentos.", style="Subtle.TLabel").pack(anchor="w", padx=4, pady=(0, 6))
     ttk.Button(actions, text="Verificar uma cidade ou usuario especifico", style="Action.TButton", command=select_specific).pack(fill="x", pady=4)
     ttk.Label(actions, text="Permite escolher orgao e cidade; nesse modo tambem coleta as manifestacoes/evidencias.", style="Subtle.TLabel").pack(anchor="w", padx=4, pady=(0, 6))
     ttk.Button(actions, text="Verificar um JSON externo", style="Action.TButton", command=select_external_json).pack(fill="x", pady=4)
@@ -475,7 +483,7 @@ def choose_run_in_window(default_input_path: Path, default_accounts: List[Dict[s
 
     if not selected["input_path"] or selected["accounts"] is None:
         raise SystemExit("Nenhuma opcao selecionada.")
-    return selected["input_path"], selected["accounts"]
+    return selected["input_path"], selected["accounts"], selected["analysis"]
 
 
 def choose_specific_account_window(parent: Any, accounts: List[Dict[str, Any]]) -> Dict[str, Any] | None:
@@ -2098,6 +2106,7 @@ def collect_validation_evidences_from_form(
     form_url: str,
     questionario_id: str,
     output_path: Path,
+    criteria_output: List[Dict[str, Any]] | None = None,
 ) -> List[Dict[str, Any]]:
     if not form_url:
         return []
@@ -2113,9 +2122,21 @@ def collect_validation_evidences_from_form(
     evidencias: List[Dict[str, Any]] = []
     botoes_evidencias = 0
     visited_buttons: set[str] = set()
+    criteria_reader = (Path(__file__).parent / "extension" / "criterios.js").read_text(encoding="utf-8")
+    page.evaluate(criteria_reader)
     panes = get_questionnaire_panes(page)
     if not panes:
         panes = [{"id": get_active_pane_id(page), "title": get_active_chapter_title(page)}]
+
+    # Read every criterion first, including those without evidence buttons.
+    # A later failure loading a modal must not discard other criteria.
+    if criteria_output is not None:
+        for pane in panes:
+            if pane.get("id"):
+                criteria_output.extend(page.locator(f"#{pane['id']}").first.evaluate(
+                    "(pane, title) => globalThis.AtriconCriteria.read(pane, title)",
+                    pane.get("title", "") or pane["id"],
+                ))
 
     for pane in panes:
         pane_id = pane.get("id", "")
@@ -2322,14 +2343,20 @@ def process_account(
         result["evidencias_validacao"] = []
         return result
 
-    evidencias_validacao = collect_validation_evidences_from_form(
-        page,
-        questionnaire_form_url(row),
-        row["questionario_id"],
-        output_path,
-    )
-    result["total_evidencias_validacao"] = len(evidencias_validacao)
-    result["evidencias_validacao"] = evidencias_validacao
+    result["coleta_detalhada"] = "em_andamento"
+    result["criterios_validacao"] = []
+    try:
+        evidencias_validacao = collect_validation_evidences_from_form(
+            page, questionnaire_form_url(row), row["questionario_id"], output_path,
+            result["criterios_validacao"],
+        )
+        result["total_evidencias_validacao"] = len(evidencias_validacao)
+        result["evidencias_validacao"] = evidencias_validacao
+        result["coleta_detalhada"] = "concluida" if result["criterios_validacao"] else "sem_criterios"
+    except Exception as exc:
+        # Preserve the assessment and any criteria already read if evidence collection fails.
+        result["coleta_detalhada"] = "parcial" if result["criterios_validacao"] else "erro"
+        result["erro_evidencias"] = str(exc)
     return result
 
 
@@ -2380,6 +2407,8 @@ def run_collector_from_viewer(payload: Dict[str, Any], viewer_dir: Path) -> Dict
     if mode == "all":
         output_path = default_output_path(input_path, accounts)
         command.extend(["--todos", "--saida", str(output_path)])
+        if payload.get("analysis") is True:
+            command.append("--analise-completa")
     elif mode == "specific":
         orgao = str(payload.get("orgao", "") or "").strip()
         cidade = str(payload.get("cidade", "") or "").strip()
@@ -2541,6 +2570,7 @@ def parse_args() -> argparse.Namespace:
         help="Caminho do JSON de saida. Padrao: .resultado/particular/resultado_atricon_<orgao>_<cidade>.json ou .resultado/geral/resultado_geral_atricon_<hora>hrs.json",
     )
     parser.add_argument("--todos", action="store_true", help="Analisa todos os usuarios do JSON sem perguntar.")
+    parser.add_argument("--analise-completa", action="store_true", help="Coleta criterios e evidencias de todos para a analise consolidada (mais demorado).")
     parser.add_argument("--cidade", help="Analisa apenas a cidade informada, sem perguntar.")
     parser.add_argument("--usuario", help="Analisa apenas o usuario informado, sem perguntar.")
     parser.add_argument("--headless", action="store_true", help="Executa o navegador sem abrir janela.")
@@ -2567,7 +2597,8 @@ def main() -> int:
         if args.entrada or args.todos or args.cidade or args.usuario:
             accounts = choose_accounts(accounts, args)
         else:
-            input_path, accounts = choose_run_in_window(input_path, accounts)
+            input_path, accounts, window_analysis = choose_run_in_window(input_path, accounts)
+            args.analise_completa = args.analise_completa or window_analysis
         output_path = args.saida or default_output_path(input_path, accounts)
     except SystemExit as exc:
         result = empty_result({})
@@ -2581,8 +2612,10 @@ def main() -> int:
 
     results: List[Dict[str, Any]] = []
     valid_accounts_count = sum(1 for account in accounts if not account.get("_erro_validacao"))
-    collect_manifestations = valid_accounts_count == 1
-    if collect_manifestations:
+    collect_manifestations = args.analise_completa or valid_accounts_count == 1
+    if args.analise_completa:
+        print("Analise completa: criterios e evidencias serao coletados de todos os orgaos.")
+    elif collect_manifestations:
         print("Modo especifico: manifestacoes/evidencias serao coletadas.")
     else:
         print("Modo geral: manifestacoes/evidencias nao serao coletadas.")
@@ -2596,6 +2629,9 @@ def main() -> int:
             validation_error = str(account.get("_erro_validacao", "")).strip()
             if validation_error:
                 result = empty_result(account)
+                if args.analise_completa:
+                    result["modo_coleta"] = "analise_completa"
+                    result["coleta_detalhada"] = "erro"
                 result["erro"] = validation_error
                 results.append(result)
                 write_results(output_path, results)
@@ -2627,14 +2663,19 @@ def main() -> int:
             try:
                 print(f"[{index}/{len(accounts)}] Processando login {user}...")
                 result = process_account(page, account, output_path, collect_manifestations)
+                if args.analise_completa:
+                    result["modo_coleta"] = "analise_completa"
                 results.append(result)
-                if result.get("erro"):
-                    print(f"  Aviso: {result['erro']}")
+                if result.get("erro") or result.get("erro_evidencias"):
+                    print(f"  Aviso: {result.get('erro') or result.get('erro_evidencias')}")
                 else:
                     print(f"  OK: status={result['status']} porcentagem={result['porcentagem']}")
             except Exception as exc:
                 message = f"Erro no login {user}: {exc}"
                 result = empty_result(account)
+                if args.analise_completa:
+                    result["modo_coleta"] = "analise_completa"
+                    result["coleta_detalhada"] = "erro"
                 result["erro"] = message
                 try:
                     debug_page = current_live_page(page)

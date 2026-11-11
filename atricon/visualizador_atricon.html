@@ -6,6 +6,7 @@
   <title>Resultados Atricon</title>
   <link rel="icon" type="image/svg+xml" href="../assets/favicons/atricon.svg">
   <link rel="stylesheet" href="../assets/script-shell.css">
+  <link rel="stylesheet" href="extension/analise.css">
   <style>
     :root {
       color-scheme: dark;
@@ -208,6 +209,7 @@
       width: min(1320px, calc(100% - 32px));
       margin: 18px auto 32px;
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 14px;
     }
 
@@ -259,6 +261,8 @@
 
     .tab-panel {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      min-width: 0;
       gap: 14px;
     }
 
@@ -999,6 +1003,15 @@
       }
     }
 
+    @media (max-width: 900px) {
+      body.script-shell-ready .topbar,
+      body.script-shell-ready main {
+        width: calc(100% - 80px);
+        margin-left: 64px;
+        margin-right: 16px;
+      }
+    }
+
     @media (max-width: 620px) {
       .file-control,
       .toolbar,
@@ -1074,6 +1087,7 @@
       <button class="tab-button active" type="button" data-tab="resultsPanel" aria-controls="resultsPanel" aria-selected="true">Resultados</button>
       <button class="tab-button" type="button" data-tab="collectorPanel" aria-controls="collectorPanel" aria-selected="false">Coletor</button>
       <button class="tab-button" type="button" data-tab="comparePanel" aria-controls="comparePanel" aria-selected="false">Comparador</button>
+      <button class="tab-button" type="button" data-tab="analysisPanel" aria-controls="analysisPanel" aria-selected="false">Análise de todos</button>
     </nav>
 
     <section id="resultsPanel" class="tab-panel">
@@ -1178,6 +1192,8 @@
           <h3>Todas as cidades</h3>
           <p>Usa o arquivo orgaos_avalia.json e coleta somente status e porcentagem.</p>
           <button id="runAllCollector" type="button">Verificar todas</button>
+          <p>Para identificar falhas recorrentes, coleta os critérios e as evidências de cada órgão. Pode levar mais tempo.</p>
+          <button id="runAllAnalysisCollector" type="button">Coletar e analisar todos</button>
         </div>
 
         <div class="collector-card">
@@ -1247,8 +1263,12 @@
         </table>
       </section>
     </section>
+    <section id="analysisPanel" class="tab-panel" hidden aria-label="Análise consolidada">
+      <div id="analysisContent"></div>
+    </section>
   </main>
 
+  <script src="extension/analise.js"></script>
   <script>
     const state = {
       rows: [],
@@ -1260,6 +1280,7 @@
       sortKey: 'manifestacao_sort',
       sortDir: 'asc'
     };
+    const analysisView = AtriconAnalysis.mount(document.getElementById('analysisContent'), () => state.rows);
 
     const fileInput = document.getElementById('fileInput');
     const compareInput = document.getElementById('compareInput');
@@ -1296,6 +1317,7 @@
     const collectorAccount = document.getElementById('collectorAccount');
     const collectorExternalJson = document.getElementById('collectorExternalJson');
     const runAllCollector = document.getElementById('runAllCollector');
+    const runAllAnalysisCollector = document.getElementById('runAllAnalysisCollector');
     const runSpecificCollector = document.getElementById('runSpecificCollector');
     const runExternalCollector = document.getElementById('runExternalCollector');
     const collectorStatus = document.getElementById('collectorStatus');
@@ -1352,6 +1374,7 @@
     clearCompare.addEventListener('click', clearComparison);
     collectorOrgao.addEventListener('change', renderCollectorAccounts);
     runAllCollector.addEventListener('click', () => runCollector({ mode: 'all' }));
+    runAllAnalysisCollector.addEventListener('click', () => runCollector({ mode: 'all', analysis: true }));
     runSpecificCollector.addEventListener('click', runCollectorSpecific);
     runExternalCollector.addEventListener('click', runCollectorExternal);
     tabButtons.forEach((button) => {
@@ -1414,6 +1437,7 @@
       generateChecklist.disabled = state.rows.length === 0;
       resetComparison('Selecione o segundo JSON para comparar.');
       compareInput.disabled = state.rows.length === 0;
+      if (state.rows.some(row => row.raw.modo_coleta === 'analise_completa')) switchTab('analysisPanel');
     }
 
     function loadPastedJsonText() {
@@ -1464,6 +1488,7 @@
     }
 
     function setResultLoadedState(loaded) {
+      analysisView.refresh(true);
       jsonPastePanel.hidden = loaded;
       resultToolbar.hidden = !loaded;
       metricsDrawer.hidden = !loaded;
@@ -1599,7 +1624,7 @@
         }
         const output = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
         collectorStatus.innerHTML = `Coleta concluida.\nJSON: ${escapeHtml(result.output_path || '')}${output ? `\n\n<pre class="collector-output">${escapeHtml(output)}</pre>` : ''}`;
-        switchTab('resultsPanel');
+        switchTab(payload.analysis ? 'analysisPanel' : 'resultsPanel');
       } catch (error) {
         collectorStatus.textContent = `Erro ao executar coleta: ${error.message}`;
       } finally {
@@ -1617,6 +1642,7 @@
 
     function setCollectorRunning(isRunning) {
       runAllCollector.disabled = isRunning;
+      runAllAnalysisCollector.disabled = isRunning;
       runSpecificCollector.disabled = isRunning || !collectorAccount.value;
       runExternalCollector.disabled = isRunning;
       collectorOrgao.disabled = isRunning;

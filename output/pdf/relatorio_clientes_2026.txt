@@ -1,0 +1,109 @@
+﻿RELATÓRIO DOS ÓRGÃOS CLIENTES - RESULTADO DE 2026
+Emitido em 10/11/2026
+
+1. RESUMO
+Base de clientes: 56 órgãos da relação informada (32 Câmaras, 23 Prefeituras e CRP23).
+Localizados no CSV: 55. Não localizado: CRP23.
+Critério dos selos: classificação registrada na coluna nivel_2026 do CSV.
+
+Diamante: 13 (23,6% dos 55 localizados).
+Ouro: 4 (7,3% dos 55 localizados).
+Prata: 5 (9,1% dos 55 localizados).
+Sem selo registrado: 33 (60,0% dos 55 localizados).
+
+Com selo registrado: 22 de 55 (40,0%).
+Sem selo registrado: 33 de 55 (60,0%).
+Sem informação: 1 (CRP23), fora dos percentuais acima.
+
+2. RESULTADO POR TIPO DE ÓRGÃO
+Tipo               Diamante  Ouro  Prata  Sem selo  Total
+Câmaras municipais        8     0      2        22     32
+Prefeituras               5     4      3        11     23
+Total                    13     4      5        33     55
+
+3. COMO INTERPRETAR OS RESULTADOS
+Sem selo registrado reúne: 24 Elevado, 7 Intermediário e 2 Básico.
+Esses órgãos têm nota e classificação no CSV; não são registros ausentes.
+A nota sozinha não foi usada para atribuir um selo neste relatório.
+Existem 46 órgãos com nota entre 75 e 100, mas apenas 22 aparecem como
+Diamante, Ouro ou Prata no campo nivel_2026. Os outros 24 constam como
+Elevado e têm essenciais_2026 inferior a 100 no arquivo fornecido.
+Por isso, os 46 banners gerados por faixa de nota não representam 46 selos registrados.
+
+4. ÓRGÃOS COM SELO REGISTRADO (22)
+
+DIAMANTE (13)
+CM Araguaçu / TO - Nota: 96,4%
+CM Dueré / TO - Nota: 99,5%
+CM Figueirópolis / TO - Nota: 96,2%
+CM Lajeado / TO - Nota: 97,7%
+CM Lizarda / TO - Nota: 95,2%
+CM Mateiros / TO - Nota: 99,2%
+CM Palmeirante / TO - Nota: 97,9%
+CM Santa Maria do Tocantins / TO - Nota: 97,1%
+PM Aparecida do Rio Negro / TO - Nota: 98,0%
+PM Divinópolis do Tocantins / TO - Nota: 95,0%
+PM Miranorte / TO - Nota: 95,6%
+PM Santa Maria do Tocantins / TO - Nota: 95,6%
+PM Tocantinópolis / TO - Nota: 96,6%
+
+OURO (4)
+PM Lagoa da Confusão / TO - Nota: 93,5%
+PM Lajeado / TO - Nota: 93,0%
+PM Ponte Alta do Tocantins / TO - Nota: 94,2%
+PM Recursolândia / TO - Nota: 86,0%
+
+PRATA (5)
+CM Nova Olinda / TO - Nota: 82,6%
+CM Recursolândia / TO - Nota: 75,9%
+PM Araguaína / TO - Nota: 83,3%
+PM Babaçulândia / TO - Nota: 80,3%
+PM Tupirama / TO - Nota: 80,9%
+
+5. ÓRGÃOS SEM SELO REGISTRADO (33)
+Órgão | UF | Nota 2026 | Classificação no CSV | Essenciais 2026
+CM Ananás | TO | 64,8% | Intermediário | 80,8%
+CM Aparecida do Rio Negro | TO | 94,9% | Elevado | 96,2%
+CM Araguanã | TO | 52,7% | Intermediário | 69,2%
+CM Carmolândia | TO | 78,3% | Elevado | 73,1%
+CM Centenário | TO | 80,7% | Elevado | 61,5%
+CM Colméia | TO | 68,6% | Intermediário | 76,9%
+CM Envira | AM | 41,8% | Básico | 50,0%
+CM Itaguatins | TO | 88,1% | Elevado | 80,8%
+CM Luzinópolis | TO | 63,6% | Intermediário | 100,0%
+CM Miranorte | TO | 95,9% | Elevado | 96,2%
+CM Nazaré | TO | 86,3% | Elevado | 69,2%
+CM Novo Acordo | TO | 89,3% | Elevado | 80,8%
+CM Palmeiras do Tocantins | TO | 83,5% | Elevado | 96,2%
+CM Pau D'Arco | TO | 81,3% | Elevado | 96,2%
+CM Pindorama do Tocantins | TO | 76,8% | Elevado | 42,3%
+CM Riachinho | TO | 83,3% | Elevado | 61,5%
+CM Rio Sono | TO | 91,0% | Elevado | 96,2%
+CM São Bento do Tocantins | TO | 82,2% | Elevado | 65,4%
+CM São Félix do Tocantins | TO | 84,5% | Elevado | 76,9%
+CM São Gabriel da Cachoeira | AM | 33,6% | Básico | 26,9%
+CM Silvanópolis | TO | 98,5% | Elevado | 96,2%
+CM Tabocão | TO | 86,5% | Elevado | 84,6%
+PM Arapoema | TO | 70,4% | Intermediário | 86,8%
+PM Carmolândia | TO | 80,3% | Elevado | 97,4%
+PM Centenário | TO | 77,7% | Elevado | 89,5%
+PM Filadélfia | TO | 66,9% | Intermediário | 97,4%
+PM Lagoa do Tocantins | TO | 95,8% | Elevado | 97,4%
+PM Mateiros | TO | 84,1% | Elevado | 76,3%
+PM Monte do Carmo | TO | 91,9% | Elevado | 86,8%
+PM Nazaré | TO | 72,3% | Intermediário | 71,0%
+PM Pugmil | TO | 89,3% | Elevado | 89,5%
+PM Santa Fé do Araguaia | TO | 88,8% | Elevado | 92,1%
+PM Silvanópolis | TO | 94,3% | Elevado | 97,4%
+
+6. ÓRGÃO NÃO LOCALIZADO
+CRP23: sem registro identificado no CSV fornecido; não é possível atribuir nota ou selo.
+
+7. FONTE E MÉTODO
+Fonte: p7-lista-2026.csv, fornecido pelo cliente.
+Clientes: relação informada na conversa, com 55 Câmaras/Prefeituras cadastradas em
+Banner/nota_avalia.json e CRP23 informado separadamente.
+Cruzamento: município, UF, poder e esfera municipal; uma correspondência por cliente.
+Campos utilizados: indice_2026, nivel_2026 e essenciais_2026.
+CM = Câmara Municipal. PM = Prefeitura Municipal.
+Notas e selos refletem o arquivo fornecido, sem verificação externa ou atualização posterior.

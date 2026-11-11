@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -29,6 +30,13 @@ def standardize(source: Path, destination: Path) -> tuple[str, str, str]:
         image = ImageOps.exif_transpose(opened).convert("RGBA")
 
     bbox = visible_bbox(image)
+    if image.size == TARGET_SIZE:
+        # Preserve o recorte, a transparência e as margens das versões aprovadas.
+        if source.resolve() != destination.resolve():
+            shutil.copyfile(source, destination)
+        visible_size = f"{bbox[2] - bbox[0]}x{bbox[3] - bbox[1]}"
+        return "500x162", visible_size, visible_size
+
     content = image.crop(bbox)
 
     target_width, target_height = TARGET_SIZE
@@ -66,7 +74,8 @@ def main() -> None:
 
     report_lines = [
         "LOGOS PADRONIZADAS EM 500x162 PX",
-        "O conteúdo visível foi recortado, redimensionado proporcionalmente e alinhado à direita e abaixo.",
+        "Imagens já aprovadas em 500x162 são preservadas, incluindo transparência e margens.",
+        "Outros tamanhos são recortados, redimensionados proporcionalmente e alinhados à direita e abaixo.",
         "",
         "arquivo | original | conteúdo visível original | conteúdo na cópia",
     ]

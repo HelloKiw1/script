@@ -1,0 +1,109 @@
+BANNER EXTERNO — EXPLICAÇÃO PARA UMA IA
+
+O “Banner externo” é o primeiro modo da página banner-composer.html. Ele é um compositor visual que gera uma imagem horizontal em PNG, com tamanho fixo de 2000 x 542 pixels. Não deve ser confundido com o segundo modo da página, chamado “Template 1080”, que produz imagens quadradas de 1080 x 1080 pixels.
+
+OBJETIVO
+
+O Banner externo serve para montar um banner institucional com:
+
+1. uma cor sólida de fundo;
+2. de zero a cinco selos de avaliação;
+3. um template gráfico transparente correspondente à quantidade de selos;
+4. uma pré-visualização antes do download;
+5. exportação do resultado final como arquivo PNG.
+
+Os selos representam classificações obtidas por uma entidade em diferentes anos. Existem três categorias: Diamante, Ouro e Prata. O sistema possui imagens de selos dos anos de 2022 a 2026.
+
+ENTRADAS DO USUÁRIO
+
+- Quantidade de selos: pode ser de 0 a 5.
+- Cor sólida de fundo: escolhida manualmente ou preenchida pelo campo “cor_solida” de um registro JSON.
+- JSON de notas: lista de entidades e suas notas anuais.
+- Nota/entidade: registro selecionado dentro do JSON.
+- Selos: cada posição visível permite escolher manualmente uma imagem de selo por tipo e ano.
+
+FUNCIONAMENTO COM JSON
+
+Ao abrir a página, o sistema tenta carregar automaticamente o arquivo:
+
+./nota_avalia.json
+
+Também é possível importar outro arquivo JSON pela interface. O conteúdo precisa ser uma lista de registros. Cada registro pode identificar a entidade por campos como “órgão”/“orgao” e “cidade”/“município”/“municipio”. As notas são lidas dos campos nota_2022, nota_2023, nota_2024, nota_2025 e nota_2026.
+
+Cada nota é convertida em um selo conforme estas faixas:
+
+- Diamante: nota entre 95 e 100, inclusive.
+- Ouro: nota maior ou igual a 85 e menor que 95.
+- Prata: nota maior ou igual a 75 e menor que 85.
+- Abaixo de 75, acima de 100, ausente ou inválida: não gera selo.
+
+Valores entre 0 e 1 são interpretados como proporções e multiplicados por 100. Por exemplo, 0,95 equivale a 95%.
+
+Quando uma entidade é selecionada, o sistema encontra os selos válidos, limita o resultado a cinco e os ordena nesta prioridade:
+
+1. categoria mais alta: Diamante, depois Ouro, depois Prata;
+2. maior nota;
+3. ano mais recente.
+
+Em seguida, a quantidade de selos e as escolhas de cada posição são preenchidas automaticamente. O usuário ainda pode alterar manualmente a quantidade, os selos e a cor de fundo.
+
+COMPOSIÇÃO DA IMAGEM
+
+O resultado é desenhado em um elemento canvas de 2000 x 542 pixels. Na implementação atual, a ordem das camadas é:
+
+1. preenchimento completo do canvas com a cor sólida;
+2. desenho do template PNG transparente referente à quantidade selecionada;
+3. desenho dos selos nas posições fixas previstas para aquela quantidade.
+
+Existe um template específico para cada opção: sem selo, 1 selo, 2 selos, 3 selos, 4 selos ou 5 selos. Esses arquivos ficam na pasta “tipos de banner Sem Fundo”. As imagens dos selos ficam na pasta “Selo”.
+
+POSIÇÕES DOS SELOS
+
+As coordenadas abaixo usam pixels no canvas de 2000 x 542:
+
+- 1 selo: centro (577, 278), tamanho 471 x 471.
+- 2 selos:
+  - posição 1: centro (365, 261), tamanho 490 x 490;
+  - posição 2: centro (701, 366), tamanho 379 x 379.
+- 3 selos:
+  - posição 1: centro (365, 261), tamanho 490 x 490;
+  - posição 2: centro (701, 366), tamanho 379 x 379;
+  - posição 3: centro (609, 144), tamanho 281 x 281.
+- 4 selos:
+  - posição 1: x 176, y 71, tamanho 285 x 288;
+  - posição 2: x 423, y 9, tamanho 285 x 286;
+  - posição 3: x 614, y 190, tamanho 286 x 288;
+  - posição 4: x 373, y 247, tamanho 284 x 286.
+- 5 selos:
+  - posição 1: x 165, y 51, tamanho 243 x 244;
+  - posição 2: x 605, y 51, tamanho 246 x 244;
+  - posição 3: x 149, y 210, tamanho 241 x 241;
+  - posição 4: x 638, y 210, tamanho 241 x 241;
+  - posição 5: x 338, y 114, tamanho 353 x 353.
+
+Nos layouts com quatro ou cinco selos existe uma ordem específica de desenho para controlar qual selo aparece por cima nas áreas de sobreposição.
+
+INTERAÇÃO DA INTERFACE
+
+- A pré-visualização é atualizada quando o usuário escolhe uma entidade, muda a quantidade, troca a cor ou seleciona um selo.
+- O botão “Gerar banner” força uma nova renderização.
+- O botão “Baixar PNG” só é habilitado depois que o banner foi gerado com sucesso.
+- Se alguma das posições exigidas estiver sem selo, a geração é interrompida e a interface pede que todos os selos sejam selecionados.
+- Em telas grandes, a pré-visualização ou a configuração pode funcionar como painel flutuante, arrastável e minimizável.
+- Em telas menores, os painéis passam para um layout vertical.
+
+ARQUIVO GERADO
+
+O download é sempre um PNG. Quando existe uma entidade selecionada, o nome segue aproximadamente este padrão:
+
+banner-orgao-cidade.png
+
+Sem uma entidade selecionada, o padrão é:
+
+banner-N-selos.png
+
+onde N é a quantidade de selos usada.
+
+RESUMO EM UMA FRASE
+
+“Banner externo” é uma ferramenta do navegador que combina uma cor de fundo, um template transparente e até cinco selos de avaliação, escolhidos manualmente ou derivados das notas anuais de uma entidade em JSON, para gerar e baixar um banner horizontal de 2000 x 542 pixels em PNG.

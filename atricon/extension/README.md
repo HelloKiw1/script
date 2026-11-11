@@ -11,14 +11,15 @@ Extensao Manifest V3 para coletar avaliacoes do Avalia Atricon usando a sessao j
 - Abre a tela `Minhas Avaliacoes`.
 - Le as linhas da tabela de avaliacoes.
 - Para registros com status `Validado`, abre o link do questionario e tenta ler a porcentagem.
-- Quando apenas uma cidade/avaliacao e selecionada, abre o formulario do questionario e coleta evidencias/manifestacoes de validacao.
+- Quando apenas uma cidade/avaliacao e selecionada, ou a opcao de analise completa esta marcada, abre os formularios e coleta criterios e evidencias/manifestacoes de validacao.
+- Oferece analise consolidada com falhas recorrentes, maioria, orgaos afetados, prioridades, matriz de criterios, divergencias e cruzamentos, com filtros e exportacao JSON/CSV.
 - Abre a pagina interna de resultado da extensao com opcoes de copiar e baixar o JSON.
 - Mantem opcao de baixar o JSON depois.
 - Salva o ultimo resultado dentro da extensao para consulta rapida.
 
 ## Limites desta primeira versao
 
-- A coleta detalhada roda apenas quando ha uma unica cidade/avaliacao selecionada.
+- Para varios orgaos, a coleta detalhada precisa ser ativada em `Coletar e analisar todos os selecionados` e leva mais tempo.
 - As imagens das evidencias entram no JSON como links; a extensao nao baixa as imagens para uma pasta local.
 - Usa a aba visivel do Chrome durante a coleta.
 - A pasta da extensao contem `orgaos_avalia_credentials.json` com credenciais internas.
@@ -42,7 +43,7 @@ atricon/extension
 4. Confira se as credenciais internas foram carregadas.
 5. Escolha `Todas`, `Especificas` ou `Unica`.
 6. Marque as cidades desejadas no checklist.
-7. Clique em `Coletar avaliacoes`. Para coleta profunda, deixe apenas uma cidade marcada.
+7. Para analisar todos, marque `Coletar e analisar todos os selecionados`. Clique em `Coletar avaliacoes`.
 8. Ao final, a pagina de resultado da extensao sera aberta automaticamente.
 9. Use `Baixar JSON` no painel se quiser salvar o arquivo depois.
 

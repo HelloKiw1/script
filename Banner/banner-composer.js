@@ -32,7 +32,7 @@ const SEAL_FILES = [
   'prata_2026.png',
 ];
 
-const INITIAL_NOTES_PATH = '../.venv/nota_avalia.json';
+const INITIAL_NOTES_PATH = './nota_avalia.json';
 const SUPPORTED_YEARS = [2022, 2023, 2024, 2025, 2026];
 const SEAL_PRIORITY = {
   diamante: 3,
@@ -365,18 +365,12 @@ async function loadNoteRecords(records, sourceLabel) {
 
 async function loadInitialNotes() {
   try {
-    const response = await fetch(INITIAL_NOTES_PATH, { cache: 'no-store' });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const records = await response.json();
+    const records = await BannerResources.loadNotes(INITIAL_NOTES_PATH);
     await loadNoteRecords(records, INITIAL_NOTES_PATH);
   } catch (error) {
     console.warn(error);
     populateRecordSelect([]);
-    setStatus('Nao foi possivel carregar ../.venv/nota_avalia.json automaticamente. Importe um JSON para gerar por nota.');
+    setStatus(`${error.message} Importe nota_avalia.json para gerar por nota.`);
   }
 }
 
@@ -411,12 +405,13 @@ function getTemplatePath(count) {
   };
 }
 
-function loadImageFromPath(path) {
+async function loadImageFromPath(path) {
+  const source = await BannerResources.imageSource(path);
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error(`Falha ao carregar ${path}`));
-    image.src = new URL(encodeURI(path), document.baseURI).href;
+    image.src = source;
   });
 }
 

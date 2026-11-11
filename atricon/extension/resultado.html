@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Resultado Atricon</title>
   <link rel="stylesheet" href="resultado.css">
+  <link rel="stylesheet" href="analise.css">
 </head>
 <body>
   <aside class="extension-rail" aria-hidden="true">
@@ -26,6 +27,10 @@
     </header>
     <section id="notice" class="notice" hidden></section>
     <section id="empty" class="empty" hidden>Nenhum resultado salvo pela extensao.</section>
+    <details id="analysisPanel" class="analysis-card" hidden>
+      <summary>Análise consolidada de todos os dados</summary>
+      <div id="analysisContent"></div>
+    </details>
     <section id="tablePanel" class="table-panel" hidden>
       <table>
         <thead>
@@ -44,6 +49,7 @@
       </table>
     </section>
   </main>
+  <script src="analise.js"></script>
   <script src="resultado.js"></script>
 </body>
 </html>

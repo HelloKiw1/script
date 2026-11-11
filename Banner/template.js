@@ -27,7 +27,9 @@
     ananas: 'Ananás',
     aparecida_do_rio_negro: 'Aparecida do Rio Negro',
     araguacu: 'Araguaçu',
+    araguaina: 'Araguaína',
     araguana: 'Araguanã',
+    arapoema: 'Arapoema',
     babaculandia: 'Babaçulândia',
     carmolandia: 'Carmolândia',
     centenario: 'Centenário',
@@ -35,9 +37,11 @@
     divinopolis_do_tocantins: 'Divinópolis do Tocantins',
     duere: 'Dueré',
     envira: 'Envira',
+    figueiropolis: 'Figueirópolis',
     filadelfia: 'Filadélfia',
     itaguatins: 'Itaguatins',
     lagoa_da_confusao: 'Lagoa da Confusão',
+    lagoa_do_tocantins: 'Lagoa do Tocantins',
     lajeado: 'Lajeado',
     lizarda: 'Lizarda',
     luzinopolis: 'Luzinópolis',
@@ -51,7 +55,6 @@
     palmeiras_do_tocantins: 'Palmeiras do Tocantins',
     pau_d_arco: "Pau D'Arco",
     pindorama_do_tocantins: 'Pindorama do Tocantins',
-    piraque: 'Piraquê',
     ponte_alta_do_tocantins: 'Ponte Alta do Tocantins',
     pugmil: 'Pugmil',
     recursolandia: 'Recursolândia',
@@ -61,6 +64,7 @@
     santa_maria_do_tocantins: 'Santa Maria do Tocantins',
     sao_bento_do_tocantins: 'São Bento do Tocantins',
     sao_felix_do_tocantins: 'São Félix do Tocantins',
+    sao_gabriel_da_cachoeira: 'São Gabriel da Cachoeira',
     silvanopolis: 'Silvanópolis',
     tabocao: 'Tabocão',
     tocantinopolis: 'Tocantinópolis',
@@ -77,6 +81,7 @@
     'cm_colmeia.png',
     'cm_duere.png',
     'cm_envira.png',
+    'cm_figueiropolis.png',
     'cm_itaguatins.png',
     'cm_lajeado.png',
     'cm_lizarda.png',
@@ -96,21 +101,24 @@
     'cm_santa_maria_do_tocantins.png',
     'cm_sao_bento_do_tocantins.png',
     'cm_sao_felix_do_tocantins.png',
+    'cm_sao_gabriel_da_cachoeira.png',
     'cm_silvanopolis.png',
     'cm_tabocao.png',
     'pm_aparecida_do_rio_negro.png',
+    'pm_araguaina.png',
+    'pm_arapoema.png',
     'pm_babaculandia.png',
     'pm_carmolandia.png',
     'pm_centenario.png',
     'pm_divinopolis_do_tocantins.png',
     'pm_filadelfia.png',
     'pm_lagoa_da_confusao.png',
+    'pm_lagoa_do_tocantins.png',
     'pm_lajeado.png',
     'pm_mateiros.png',
     'pm_miranorte.png',
     'pm_monte_do_carmo.png',
     'pm_nazare.png',
-    'pm_piraque.png',
     'pm_ponte_alta_do_tocantins.png',
     'pm_pugmil.png',
     'pm_recursolandia.png',
@@ -339,12 +347,13 @@
     return LOGO_FILES.find((fileName) => fileName === expected) || '';
   }
 
-  function loadImageFromPath(path) {
+  async function loadImageFromPath(path) {
+    const source = await BannerResources.imageSource(path);
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
       image.onerror = () => reject(new Error(`Falha ao carregar ${path}`));
-      image.src = new URL(encodeURI(path), document.baseURI).href;
+      image.src = source;
     });
   }
 
@@ -482,18 +491,12 @@
 
   async function loadInitialNotes() {
     try {
-      const response = await fetch(INITIAL_NOTES_PATH, { cache: 'no-store' });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      await loadRecords(await response.json(), INITIAL_NOTES_PATH);
+      await loadRecords(await BannerResources.loadNotes(INITIAL_NOTES_PATH), INITIAL_NOTES_PATH);
     } catch (error) {
       console.warn(error);
       populateRecordSelect([]);
       populateCitySelect([]);
-      setStatus('Nao foi possivel carregar ./nota_avalia.json automaticamente. Importe um JSON para listar as cidades.');
+      setStatus(`${error.message} Importe nota_avalia.json para listar as cidades.`);
       await renderTemplate();
     }
   }
@@ -951,11 +954,18 @@
     elements.downloadAllBtn.disabled = true;
     const files = [];
     const skipped = [];
+    const failures = [];
     const withoutLogo = [];
     const usedNames = new Map();
 
     try {
       for (let index = 0; index < state.records.length; index += 1) {
+        const record = state.records[index];
+        const score = getScoreFromRecord(record);
+        if (!getBaseTemplate(score, getAgencyCode(getAgencyText(record)))) {
+          skipped.push(getRecordLabel(record, index));
+          continue;
+        }
         const progress = `${index + 1}/${state.records.length}`;
         elements.downloadAllBtn.textContent = `Gerando ${progress}...`;
         setStatus(`Gerando entidade ${progress} para o ZIP...`);
@@ -977,12 +987,12 @@
             withoutLogo.push(result.city);
           }
         } catch (error) {
-          skipped.push(`${getRecordLabel(state.records[index], index)}: ${error.message}`);
+          failures.push(`${getRecordLabel(record, index)}: ${error.message}`);
         }
       }
 
       if (!files.length) {
-        throw new Error('Nenhuma entidade possui uma nota valida entre 75 e 100.');
+        throw new Error(`Nao foi possivel gerar as imagens de ${failures.length} entidade(s) com nota valida.\n${failures.slice(0, 3).join('\n')}`);
       }
 
       elements.downloadAllBtn.textContent = 'Compactando...';
@@ -1009,6 +1019,10 @@
 
       if (withoutLogo.length) {
         details.push(`${withoutLogo.length} imagem(ns) gerada(s) sem logo automatica.`);
+      }
+
+      if (failures.length) {
+        details.push(`${failures.length} imagem(ns) falharam na geracao.\n${failures.slice(0, 3).join('\n')}`);
       }
 
       setStatus(details.join('\n'));

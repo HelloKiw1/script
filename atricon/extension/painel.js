@@ -31,6 +31,7 @@ const clearCitiesButton = document.getElementById('clearCities');
 const modeButtons = Array.from(document.querySelectorAll('.mode'));
 const reloadCredentialsButton = document.getElementById('reloadCredentials');
 const credentialSummary = document.getElementById('credentialSummary');
+const completeAnalysis = document.getElementById('completeAnalysis');
 
 let lastRows = [];
 let cityOptions = [];
@@ -80,6 +81,7 @@ async function restoreLastResult() {
 
 async function collectAssessments() {
   collectButton.disabled = true;
+  completeAnalysis.disabled = true;
   progress.value = 0;
   updateProgressMetrics(0, 0);
   lastRows = [];
@@ -87,6 +89,7 @@ async function collectAssessments() {
   const selectedKeys = selectedKeysForCollection();
   if (selectionMode !== 'all' && !selectedKeys.size) {
     collectButton.disabled = false;
+    completeAnalysis.disabled = false;
     setStatus('Selecione uma cidade', 'Escolha uma cidade ou mude para Todas.');
     return;
   }
@@ -116,9 +119,9 @@ async function collectAssessments() {
     }
     const outputRows = [];
     updateProgressMetrics(0, assessmentRows.length);
-    const collectDeep = assessmentRows.length === 1;
+    const collectDeep = completeAnalysis.checked || assessmentRows.length === 1;
     if (collectDeep) {
-      log('Modo profundo ativo: uma unica avaliacao selecionada.');
+      log('Coleta detalhada ativa para todas as avaliacoes selecionadas.');
     }
 
     for (let index = 0; index < assessmentRows.length; index += 1) {
@@ -137,6 +140,9 @@ async function collectAssessments() {
         total_evidencias_validacao: 0,
         evidencias_validacao: []
       };
+      output.coletado_em = new Date().toISOString();
+      output.coleta_detalhada = 'nao_solicitada';
+      if (completeAnalysis.checked) output.modo_coleta = 'analise_completa';
 
       setStatus(`Coletando ${current}/${assessmentRows.length}`, row.entidade || row.numero || 'avaliacao');
       progress.value = Math.round((index / Math.max(assessmentRows.length, 1)) * 100);
@@ -194,6 +200,7 @@ async function collectAssessments() {
     log(`ERRO: ${error.message}`);
   } finally {
     collectButton.disabled = false;
+    completeAnalysis.disabled = false;
   }
 }
 
@@ -201,11 +208,11 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
   const tab = await openOrReuseAnyAtriconTab(HOME_URL);
   const outputRows = [];
   const expectedKeys = keysForSelectedOptions(selectedKeys);
-  const collectDeep = expectedKeys.size === 1 && accounts.length === 1;
+  const collectDeep = completeAnalysis.checked || (expectedKeys.size === 1 && accounts.length === 1);
   const accountsByKey = new Set(accounts.map((account) => account.key));
   updateProgressMetrics(0, expectedKeys.size);
   if (collectDeep) {
-    log('Modo profundo ativo: uma unica cidade selecionada.');
+    log('Coleta detalhada ativa para todas as cidades selecionadas.');
   }
 
   for (const key of expectedKeys) {
@@ -221,6 +228,9 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       porcentagem: '',
       total_evidencias_validacao: 0,
       evidencias_validacao: [],
+      coletado_em: new Date().toISOString(),
+      coleta_detalhada: 'erro',
+      modo_coleta: completeAnalysis.checked ? 'analise_completa' : 'geral',
       erro: 'credencial nao encontrada para esta cidade.'
     });
   }
@@ -240,6 +250,9 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
       total_evidencias_validacao: 0,
       evidencias_validacao: []
     };
+    output.coletado_em = new Date().toISOString();
+    output.coleta_detalhada = 'nao_solicitada';
+    if (completeAnalysis.checked) output.modo_coleta = 'analise_completa';
 
     try {
       setStatus(`Login ${current}/${accounts.length}`, `${account.orgao} de ${account.cidade}`);
@@ -316,20 +329,33 @@ async function collectWithAutomaticLogin(accounts, selectedKeys) {
 }
 
 async function collectDeepForRow(tabId, row, output) {
+  output.coleta_detalhada = 'em_andamento';
   const formUrl = questionnaireFormUrl(row);
   if (!formUrl) {
     output.erro_evidencias = 'link do formulario do questionario nao encontrado.';
+    output.coleta_detalhada = 'erro';
     log(`Coleta profunda ignorada: ${output.erro_evidencias}`);
     return;
   }
 
   setStatus('Coleta profunda', row.entidade || output.cidade || 'avaliacao');
   log(`Coleta profunda: abrindo formulario ${formUrl}`);
-  await chrome.tabs.update(tabId, { url: formUrl, active: true });
-  await waitForTabComplete(tabId, 45000);
-  await sleep(1400);
-
-  const result = await executeInTab(tabId, extractDeepEvidencesFromForm, [row.questionario_id]);
+  let result;
+  try {
+    await chrome.tabs.update(tabId, { url: formUrl, active: true });
+    await waitForTabComplete(tabId, 45000);
+    await sleep(1400);
+    await chrome.scripting.executeScript({ target: { tabId }, files: ['criterios.js'] });
+    result = await executeInTab(tabId, extractDeepEvidencesFromForm, [row.questionario_id]);
+  } catch (error) {
+    output.coleta_detalhada = 'erro';
+    output.erro_evidencias = error.message;
+    return;
+  }
+  output.criterios_validacao = Array.isArray(result?.criterios) ? result.criterios : [];
+  output.evidencias_validacao = Array.isArray(result?.evidencias) ? result.evidencias : [];
+  output.total_evidencias_validacao = output.evidencias_validacao.length;
+  output.coleta_detalhada = result?.ok ? (output.criterios_validacao.length ? 'concluida' : 'sem_criterios') : (output.criterios_validacao.length ? 'parcial' : 'erro');
   if (!result?.ok) {
     const message = result?.error || 'nao foi possivel coletar evidencias de validacao.';
     output.erro_evidencias = message;
@@ -338,8 +364,6 @@ async function collectDeepForRow(tabId, row, output) {
     return;
   }
 
-  output.evidencias_validacao = Array.isArray(result.evidencias) ? result.evidencias : [];
-  output.total_evidencias_validacao = output.evidencias_validacao.length;
   log(`Coleta profunda: ${output.total_evidencias_validacao} evidencia(s) de validacao coletada(s).`);
 }
 
@@ -772,7 +796,10 @@ function summaryRowForStorage(row) {
     porcentagem: row.porcentagem,
     total_evidencias_validacao: row.total_evidencias_validacao,
     erro: row.erro || '',
-    erro_evidencias: row.erro_evidencias || ''
+    erro_evidencias: row.erro_evidencias || '',
+    coleta_detalhada: row.criterios_validacao?.length ? 'resumo_sem_detalhes' : row.coleta_detalhada,
+    coletado_em: row.coletado_em,
+    modo_coleta: row.modo_coleta
   };
 }
 
@@ -1272,8 +1299,21 @@ async function extractDeepEvidencesFromForm(questionarioId) {
   };
 
   const evidencias = [];
+  const criterios = [];
+  const erros = [];
   let botoesEvidencias = 0;
   const visitedButtons = new Set();
+
+  // Read all criteria before evidence requests so a modal error cannot erase coverage.
+  for (const pane of panes) {
+    try {
+      await activatePane(pane.id);
+      const element = document.getElementById(pane.id);
+      if (element) criterios.push(...globalThis.AtriconCriteria.read(element, pane.title || pane.id));
+    } catch (error) {
+      erros.push(`${pane.title || pane.id}: ${error.message}`);
+    }
+  }
 
   for (const pane of panes) {
     await activatePane(pane.id);
@@ -1296,13 +1336,17 @@ async function extractDeepEvidencesFromForm(questionarioId) {
       visitedButtons.add(buttonKey);
       botoesEvidencias += 1;
 
-      const criterioContext = extractCriterionContext(button);
-      const preLoad = extractModalValidationEvidences(modalSelector, pane.title || pane.id, criterioId, evidencias.length + 1, criterioContext);
-      if (await loadEvidenceModalContent(modalSelector, data.respostaId, data.tipo)) {
-        await waitModalLoaded(modalSelector);
+      try {
+        const criterioContext = extractCriterionContext(button);
+        const preLoad = extractModalValidationEvidences(modalSelector, pane.title || pane.id, criterioId, evidencias.length + 1, criterioContext);
+        if (await loadEvidenceModalContent(modalSelector, data.respostaId, data.tipo)) {
+          await waitModalLoaded(modalSelector);
+        }
+        const loaded = extractModalValidationEvidences(modalSelector, pane.title || pane.id, criterioId, evidencias.length + 1, criterioContext);
+        evidencias.push(...(loaded.length ? loaded : preLoad));
+      } catch (error) {
+        erros.push(`${criterioId || modalSelector}: ${error.message}`);
       }
-      const loaded = extractModalValidationEvidences(modalSelector, pane.title || pane.id, criterioId, evidencias.length + 1, criterioContext);
-      evidencias.push(...(loaded.length ? loaded : preLoad));
     }
   }
 
@@ -1311,13 +1355,16 @@ async function extractDeepEvidencesFromForm(questionarioId) {
       ok: false,
       error: `${botoesEvidencias} botao(oes) de evidencias encontrado(s), mas nenhuma evidencia de validacao foi coletada.`,
       botoes: botoesEvidencias,
+      criterios,
       evidencias: []
     };
   }
 
   return {
-    ok: true,
+    ok: erros.length === 0,
+    error: erros.join('; '),
     botoes: botoesEvidencias,
+    criterios,
     evidencias
   };
 }

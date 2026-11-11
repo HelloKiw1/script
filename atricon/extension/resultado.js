@@ -8,6 +8,8 @@ const RESULT_CHANNEL_NAME = 'atricon-result';
 
 let rows = [];
 let isSummary = false;
+const analysisPanel = document.getElementById('analysisPanel');
+const analysisView = AtriconAnalysis.mount(document.getElementById('analysisContent'), () => rows);
 const resultChannel = typeof BroadcastChannel === 'function'
   ? new BroadcastChannel(RESULT_CHANNEL_NAME)
   : null;
@@ -46,6 +48,9 @@ function requestLiveResult() {
 }
 
 function render() {
+  analysisPanel.hidden = !rows.length;
+  analysisView.refresh(true);
+  if (rows.some(row => row.modo_coleta === 'analise_completa')) analysisPanel.open = true;
   if (!rows.length) {
     notice.hidden = true;
     empty.hidden = false;

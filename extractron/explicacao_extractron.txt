@@ -1,0 +1,191 @@
+PASSO A PASSO: COMO O EXTRACTRON LE UM ARQUIVO PDF
+===================================================
+
+Este texto explica somente o caminho que o Extractron segue para ler um PDF, desde o momento em que o arquivo e escolhido ate a retirada das informacoes.
+
+
+1. O USUARIO ESCOLHE O ARQUIVO
+-------------------------------
+
+O usuario clica em "Selecionar PDFs" e escolhe um ou varios arquivos PDF no computador.
+
+O navegador entrega cada arquivo ao Extractron. O programa recebe o arquivo sem alterar o PDF original.
+
+
+2. O PROGRAMA TRANSFORMA O ARQUIVO EM DADOS QUE PODE LER
+---------------------------------------------------------
+
+O Extractron usa uma funcao do navegador chamada arrayBuffer. Em linguagem simples,
+essa funcao transforma o PDF em uma sequencia de dados que o programa consegue analisar.
+
+E como transformar um livro fechado em uma forma que o computador consiga abrir e
+examinar por dentro.
+
+Se essa leitura inicial demorar demais, o programa interrompe aquele arquivo e registra
+um erro. Assim, um PDF com problema nao trava todos os outros.
+
+
+3. O PROGRAMA ABRE O PDF
+------------------------
+
+Depois de transformar o arquivo em dados, o Extractron usa a biblioteca PDF.js para abrir
+o PDF dentro do navegador.
+
+Nesse momento, ele descobre quantas paginas existem e prepara o arquivo para ser lido.
+
+O PDF.js funciona como um leitor de PDF dentro do programa. Ele nao interpreta o assunto
+do documento; apenas permite acessar as paginas e o que existe dentro delas.
+
+
+4. O PROGRAMA DEFINE QUAIS PAGINAS VAI LER
+------------------------------------------
+
+O Extractron identifica o tipo do documento pelo tipo escolhido ou pelo nome do arquivo.
+Com isso, decide quantas paginas precisa analisar.
+
+Em alguns tipos, as informacoes principais normalmente estao no inicio. Nesses casos,
+ele le somente uma parte para economizar tempo:
+
+   - Projeto Politico-Pedagogico: somente a primeira pagina.
+   - Julgamento de Contas e Declaracao: somente a primeira pagina.
+   - Projeto de Lei, Resolucao, Portaria e Decreto: ate as tres primeiras paginas.
+   - Outros tipos: pode ler todas as paginas do PDF.
+
+Essa escolha e uma otimizacao. Ela evita que anexos longos ou muitas paginas sem relacao
+com os dados principais atrasem o processamento.
+
+
+5. O PROGRAMA ABRE UMA PAGINA POR VEZ
+-------------------------------------
+
+Para cada pagina escolhida, o Extractron:
+
+   a) Carrega a pagina.
+   b) Tenta extrair o texto que ja esta gravado nela.
+   c) Junta as partes do texto em uma unica frase ou bloco de texto.
+
+Ele repete esse processo ate terminar as paginas definidas no passo anterior.
+
+
+6. PRIMEIRA TENTATIVA: LER O TEXTO DO PDF
+-----------------------------------------
+
+Se o PDF foi criado digitalmente, as letras normalmente ja estao gravadas dentro dele.
+
+Exemplo: quando e possivel clicar em uma palavra do PDF, selecionar e copiar, existe um
+texto que o programa consegue tentar ler diretamente.
+
+O Extractron pega os trechos encontrados em cada pagina e junta tudo. Depois, ele passa
+para a proxima pagina.
+
+Essa e a forma mais rapida de leitura, pois o programa nao precisa reconhecer a imagem.
+
+
+7. O PROGRAMA VERIFICA SE ENCONTROU TEXTO SUFICIENTE
+-----------------------------------------------------
+
+Depois da primeira tentativa, o Extractron verifica o tamanho do texto encontrado na
+pagina.
+
+Se a pagina tiver pelo menos 50 caracteres, ele considera que encontrou texto suficiente
+e usa esse texto.
+
+Se tiver menos de 50 caracteres ou nenhum texto, ele entende que a pagina pode ser uma
+imagem escaneada e passa para a segunda tentativa: o OCR.
+
+
+8. SEGUNDA TENTATIVA: USAR OCR
+------------------------------
+
+OCR significa reconhecimento de texto em imagem.
+
+Um PDF escaneado e parecido com uma fotografia de uma folha. A pessoa consegue enxergar
+as palavras, mas o computador nao consegue selecionar cada letra, porque dentro do PDF
+existe uma imagem, e nao um texto de verdade.
+
+Quando isso acontece, o Extractron faz o seguinte:
+
+   a) Transforma a pagina em uma imagem.
+   b) Usa uma qualidade ampliada para facilitar a leitura.
+   c) Converte a imagem para o formato PNG.
+   d) Envia a imagem para o Tesseract.js.
+   e) Pede ao Tesseract.js para reconhecer texto em portugues.
+   f) Recebe de volta o texto que conseguiu identificar.
+
+E como se o programa tirasse uma foto da pagina e pedisse a uma pessoa para digitar o
+que esta escrito nela.
+
+O OCR nao garante perfeicao. Ele pode confundir letras e numeros, principalmente se a
+imagem estiver borrada, inclinada, escura, pequena ou coberta por carimbos e assinaturas.
+
+
+9. O PROGRAMA JUNTA O TEXTO DAS PAGINAS
+---------------------------------------
+
+O texto lido diretamente e o texto reconhecido pelo OCR sao reunidos em uma variavel
+chamada textoCompleto.
+
+Assim, no final da leitura, o Extractron possui um bloco com todo o texto que conseguiu
+retirar das paginas analisadas.
+
+Exemplo simplificado:
+
+   Pagina 1: texto lido diretamente
+   Pagina 2: texto obtido pelo OCR
+   Pagina 3: texto lido diretamente
+   Resultado: Pagina 1 + Pagina 2 + Pagina 3
+
+
+10. O PROGRAMA PROCURA OS DADOS DENTRO DO TEXTO
+-----------------------------------------------
+
+Com o texto completo reunido, o Extractron procura informacoes usando regras programadas.
+
+Ele procura, por exemplo:
+
+   - numero do documento;
+   - data;
+   - letra identificadora;
+   - descricao ou assunto;
+   - tipo do documento;
+   - conteudo completo, quando necessario.
+
+Essas regras procuram formatos e palavras conhecidas. Por exemplo, ao encontrar algo como
+"Decreto no 001, de 10 de janeiro de 2024", o programa tenta identificar o numero, a data
+e o tipo do documento.
+
+O programa nao entende o documento como uma pessoa. Ele compara o texto com os padroes
+que foram programados para cada tipo de documento.
+
+
+11. O QUE ACONTECE SE UMA PAGINA DER PROBLEMA?
+-----------------------------------------------
+
+O Extractron possui limites de tempo para abrir o PDF, carregar cada pagina, extrair o
+texto e executar o OCR.
+
+Se uma pagina nao puder ser lida ou o OCR falhar, o programa tenta continuar com as
+outras paginas. Se o arquivo inteiro ultrapassar o tempo limite, ele e marcado como
+falha e os outros arquivos continuam sendo processados.
+
+
+12. RESUMO
+----------
+
+O Extractron le cada PDF assim:
+
+   1) Recebe o arquivo escolhido pelo usuario.
+   2) Transforma o PDF em dados que o navegador consegue analisar.
+   3) Abre o PDF usando o PDF.js.
+   4) Descobre quantas paginas precisa ler.
+   5) Abre uma pagina por vez.
+   6) Tenta extrair o texto que ja esta gravado no PDF.
+   7) Se encontrar pouco ou nenhum texto, transforma a pagina em imagem.
+   8) Usa OCR para reconhecer as letras da imagem em portugues.
+   9) Junta o texto de todas as paginas analisadas.
+   10) Procura numero, data, letra, descricao e outros dados.
+   11) Registra o resultado ou marca o arquivo como falha se nao conseguir le-lo.
+
+Em uma frase: o Extractron primeiro tenta copiar o texto existente no PDF; se o PDF for
+uma imagem, ele usa OCR para tentar enxergar e reconhecer as letras, e depois procura os
+dados importantes dentro do texto reunido.

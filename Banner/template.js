@@ -138,6 +138,7 @@
     city: document.getElementById('templateCity'),
     agency: document.getElementById('templateAgency'),
     score: document.getElementById('templateScore'),
+    essentials: document.getElementById('templateEssentials'),
     logoFile: document.getElementById('templateLogoFile'),
     renderBtn: document.getElementById('templateRenderBtn'),
     downloadBtn: document.getElementById('templateDownloadBtn'),
@@ -151,6 +152,7 @@
     renderedBlob: null,
     manualLogoUrl: '',
     isBatchDownloading: false,
+    renderVersion: 0,
   };
 
   const CRC32_TABLE = (() => {
@@ -270,14 +272,14 @@
   }
 
   function getScoreFromRecord(record) {
-    return parseScore(getRecordValue(record, ['nota_2026', 'nota', 'nota_2025', 'nota_2024', 'nota_2023', 'nota_2022']));
+    return BannerSealRules.evaluate(record, SEAL_YEAR).score;
   }
 
   function getBatchEligibleCount(records = state.records) {
     return records.filter((record) => {
-      const score = getScoreFromRecord(record);
+      const evaluation = BannerSealRules.evaluate(record, SEAL_YEAR);
       const agencyCode = getAgencyCode(getAgencyText(record));
-      return Boolean(getBaseTemplate(score, agencyCode));
+      return evaluation.eligible && Boolean(getBaseTemplate(evaluation.score, agencyCode));
     }).length;
   }
 
@@ -288,8 +290,8 @@
       ? `Baixar todas (${eligibleCount}) (.zip)`
       : BATCH_DOWNLOAD_LABEL;
     elements.downloadAllBtn.title = eligibleCount
-      ? `${eligibleCount} entidade(s) com nota valida entre 75 e 100`
-      : 'Nenhuma entidade possui nota valida entre 75 e 100';
+      ? `${eligibleCount} entidade(s) com nota geral de 75 a 100 e essenciais em 100%`
+      : 'Nenhuma entidade atende a nota geral de 75 a 100 e essenciais em 100%';
     return eligibleCount;
   }
 
@@ -463,6 +465,21 @@
     populateCitySelect(state.records, elements.agency.value);
     elements.city.value = city;
     elements.score.value = score === null ? '' : String(score);
+    const essentials = BannerSealRules.evaluate(record, SEAL_YEAR).essentials;
+    elements.essentials.value = essentials === null ? '' : String(essentials);
+  }
+
+  function syncSelectedCity() {
+    const index = state.records.findIndex((record) => (
+      normalizeSlug(getCity(record)) === normalizeSlug(elements.city.value)
+      && getAgencyCode(getAgencyText(record)) === elements.agency.value
+    ));
+    elements.recordSelect.value = index < 0 ? '' : String(index);
+    if (index >= 0) applyRecord(index);
+    else {
+      elements.score.value = '';
+      elements.essentials.value = '';
+    }
   }
 
   async function loadRecords(records, sourceLabel) {
@@ -710,7 +727,9 @@
   async function renderRecordToPng(record) {
     const city = String(getCity(record) || '').trim();
     const agencyCode = getAgencyCode(getAgencyText(record));
-    const score = getScoreFromRecord(record);
+    const evaluation = BannerSealRules.evaluate(record, SEAL_YEAR);
+    if (!evaluation.eligible) throw new Error(evaluation.reason);
+    const score = evaluation.score;
     const baseTemplate = getBaseTemplate(score, agencyCode);
     const sealTemplate = getSealTemplate(score);
 
@@ -758,10 +777,15 @@
   }
 
   async function renderTemplate() {
+    const renderVersion = ++state.renderVersion;
     const ctx = elements.canvas.getContext('2d');
     const city = elements.city.value.trim();
     const agencyCode = elements.agency.value;
-    const score = parseScore(elements.score.value);
+    const evaluation = BannerSealRules.evaluate({
+      nota_2026: elements.score.value,
+      essenciais_2026: elements.essentials.value,
+    }, SEAL_YEAR);
+    const score = evaluation.score;
     const baseTemplate = getBaseTemplate(score, agencyCode);
     const sealTemplate = getSealTemplate(score);
     const messages = [];
@@ -772,6 +796,7 @@
     state.renderedBlob = null;
 
     try {
+      if (!evaluation.eligible) throw new Error(evaluation.reason);
       if (!baseTemplate) {
         throw new Error('Nota abaixo de 75, vazia ou invalida: nao existe imagem base para essa classificacao.');
       }
@@ -784,6 +809,8 @@
           return null;
         }),
       ]);
+
+      if (renderVersion !== state.renderVersion) return;
 
       ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
       ctx.drawImage(baseImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -803,7 +830,9 @@
       drawLogo(ctx, logo?.image);
       drawCityName(ctx, city);
 
-      state.renderedBlob = await new Promise((resolve) => elements.canvas.toBlob(resolve, 'image/png'));
+      const blob = await new Promise((resolve) => elements.canvas.toBlob(resolve, 'image/png'));
+      if (renderVersion !== state.renderVersion) return;
+      state.renderedBlob = blob;
       elements.downloadBtn.disabled = !state.renderedBlob;
       elements.sealName.textContent = `Imagem: ${baseTemplate.fileName} | Selo: ${sealTemplate?.fileName || 'sem selo'}`;
 
@@ -817,6 +846,7 @@
 
       setStatus(messages.length ? messages.join('\n') : 'Imagem gerada com sucesso.');
     } catch (error) {
+      if (renderVersion !== state.renderVersion) return;
       console.error(error);
       elements.sealName.textContent = 'Imagem: erro';
       setStatus(error.message || 'Nao foi possivel gerar a imagem.');
@@ -944,8 +974,8 @@
 
     if (!getBatchEligibleCount()) {
       setStatus(
-        'O JSON carregado nao possui notas validas entre 75 e 100. '
-        + 'Carregue um arquivo com notas preenchidas, como nota_avalia_exemplo.json.',
+        'Nenhuma entidade atende aos requisitos: nota geral de 75 a 100 e essenciais em 100%. '
+        + 'Importe um JSON com nota_2026 e essenciais_2026 preenchidos.',
       );
       return;
     }
@@ -961,8 +991,8 @@
     try {
       for (let index = 0; index < state.records.length; index += 1) {
         const record = state.records[index];
-        const score = getScoreFromRecord(record);
-        if (!getBaseTemplate(score, getAgencyCode(getAgencyText(record)))) {
+        const evaluation = BannerSealRules.evaluate(record, SEAL_YEAR);
+        if (!evaluation.eligible) {
           skipped.push(getRecordLabel(record, index));
           continue;
         }
@@ -992,7 +1022,7 @@
       }
 
       if (!files.length) {
-        throw new Error(`Nao foi possivel gerar as imagens de ${failures.length} entidade(s) com nota valida.\n${failures.slice(0, 3).join('\n')}`);
+        throw new Error(`Nao foi possivel gerar as imagens de ${failures.length} entidade(s) apta(s) ao selo.\n${failures.slice(0, 3).join('\n')}`);
       }
 
       elements.downloadAllBtn.textContent = 'Compactando...';
@@ -1014,7 +1044,7 @@
       const details = [`ZIP gerado com ${files.length} entidade(s).`];
 
       if (skipped.length) {
-        details.push(`${skipped.length} registro(s) ignorado(s) por nota ausente ou invalida.`);
+        details.push(`${skipped.length} registro(s) sem selo: nota geral insuficiente ou criterios essenciais abaixo de 100% ou nao informados.`);
       }
 
       if (withoutLogo.length) {
@@ -1060,13 +1090,19 @@
     }
   });
 
-  [elements.city, elements.score].forEach((input) => {
+  [elements.score, elements.essentials].forEach((input) => {
     input.addEventListener('input', renderTemplate);
     input.addEventListener('change', renderTemplate);
   });
 
+  elements.city.addEventListener('change', async () => {
+    syncSelectedCity();
+    await renderTemplate();
+  });
+
   elements.agency.addEventListener('change', async () => {
     populateCitySelect(state.records);
+    syncSelectedCity();
     await renderTemplate();
   });
 

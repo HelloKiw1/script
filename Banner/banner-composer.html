@@ -637,7 +637,7 @@
         <div class="config-head">
           <div class="eyebrow">Template 2026</div>
           <h1>Imagem por nota</h1>
-          <p class="lead">Informe cidade, orgao e nota para posicionar base, selo, logo e nome da cidade em camadas.</p>
+          <p class="lead">O selo exige nota geral a partir de 75% e criterios essenciais em 100%.</p>
         </div>
 
         <div class="note-panel">
@@ -673,8 +673,13 @@
           </div>
 
           <div class="field">
-            <label for="templateScore">Nota</label>
+            <label for="templateScore">Nota geral (%)</label>
             <input id="templateScore" type="number" min="0" max="100" step="0.01" placeholder="95" />
+          </div>
+
+          <div class="field">
+            <label for="templateEssentials">Criterios essenciais (%)</label>
+            <input id="templateEssentials" type="number" min="0" max="100" step="0.01" placeholder="Obrigatorio: 100" />
           </div>
 
           <div class="field">
@@ -695,6 +700,7 @@
   </main>
 
   <script src="./local-resources.js" defer></script>
+  <script src="./seal-rules.js" defer></script>
   <script src="./banner-composer.js" defer></script>
   <script src="./template.js" defer></script>
   <script src="../assets/script-shell.js"></script>

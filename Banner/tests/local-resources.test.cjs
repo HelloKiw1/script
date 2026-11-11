@@ -70,6 +70,7 @@ function templateRuntime(fail) {
   let archive;
   const context = vm.createContext({
     document, Blob, Uint8Array, Uint32Array, DataView, TextEncoder,
+    BannerSealRules: require('../seal-rules.js'),
     setTimeout(callback, delay) { if (delay < 60000) callback(); },
     URL: { createObjectURL(blob) { archive = blob; return 'blob:test'; }, revokeObjectURL() {} },
     console: { error() {} },
@@ -86,16 +87,16 @@ function templateRuntime(fail) {
   return { context, elements, downloads, archive: () => archive };
 }
 
-test('ZIP includes 46 eligible entities and skips only the 9 lower scores', async () => {
+test('ZIP includes only the 22 eligible entities and skips all 33 without a seal', async () => {
   const runtime = templateRuntime(false);
   await runtime.context.runBatch();
   assert.equal(runtime.downloads.length, 1);
   const zip = Buffer.from(await runtime.archive().arrayBuffer());
   assert.equal(zip.readUInt32LE(zip.length - 22), 0x06054b50);
-  assert.equal(zip.readUInt16LE(zip.length - 12), 46);
+  assert.equal(zip.readUInt16LE(zip.length - 12), 22);
   const status = runtime.elements.get('templateStatus').textContent;
-  assert.match(status, /ZIP gerado com 46 entidade/);
-  assert.match(status, /9 registro\(s\) ignorado/);
+  assert.match(status, /ZIP gerado com 22 entidade/);
+  assert.match(status, /33 registro\(s\) sem selo/);
   assert.equal(runtime.elements.get('templateDownloadAllBtn').disabled, false);
 });
 
@@ -103,7 +104,7 @@ test('render failures report the real error instead of claiming no valid scores'
   const runtime = templateRuntime(true);
   await runtime.context.runBatch();
   const status = runtime.elements.get('templateStatus').textContent;
-  assert.match(status, /46 entidade\(s\) com nota valida/);
+  assert.match(status, /22 entidade\(s\) apta\(s\) ao selo/);
   assert.match(status, /Falha ao carregar/);
   assert.doesNotMatch(status, /Nenhuma entidade possui/);
   assert.equal(runtime.downloads.length, 0);

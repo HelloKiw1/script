@@ -1,277 +1,387 @@
 [
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Ananás",
-        "nota_2026":  64.8
+        "orgão": "Câmara Municipal",
+        "cidade": "Ananás",
+        "nota_2026": 64.8,
+        "essenciais_2026": 80.8,
+        "nivel_2026": "Intermediário"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Aparecida do Rio Negro",
-        "nota_2026":  94.9
+        "orgão": "Câmara Municipal",
+        "cidade": "Aparecida do Rio Negro",
+        "nota_2026": 94.9,
+        "essenciais_2026": 96.2,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Araguaçu",
-        "nota_2026":  96.4
+        "orgão": "Câmara Municipal",
+        "cidade": "Araguaçu",
+        "nota_2026": 96.4,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Araguanã",
-        "nota_2026":  52.7
+        "orgão": "Câmara Municipal",
+        "cidade": "Araguanã",
+        "nota_2026": 52.7,
+        "essenciais_2026": 69.2,
+        "nivel_2026": "Intermediário"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Carmolândia",
-        "nota_2026":  78.3
+        "orgão": "Câmara Municipal",
+        "cidade": "Carmolândia",
+        "nota_2026": 78.3,
+        "essenciais_2026": 73.1,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Centenário",
-        "nota_2026":  80.7
+        "orgão": "Câmara Municipal",
+        "cidade": "Centenário",
+        "nota_2026": 80.7,
+        "essenciais_2026": 61.5,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Colméia",
-        "nota_2026":  68.6
+        "orgão": "Câmara Municipal",
+        "cidade": "Colméia",
+        "nota_2026": 68.6,
+        "essenciais_2026": 76.9,
+        "nivel_2026": "Intermediário"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Dueré",
-        "nota_2026":  99.5
+        "orgão": "Câmara Municipal",
+        "cidade": "Dueré",
+        "nota_2026": 99.5,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Envira",
-        "nota_2026":  41.8
+        "orgão": "Câmara Municipal",
+        "cidade": "Envira",
+        "nota_2026": 41.8,
+        "essenciais_2026": 50.0,
+        "nivel_2026": "Básico"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Figueirópolis",
-        "nota_2026":  96.2
+        "orgão": "Câmara Municipal",
+        "cidade": "Figueirópolis",
+        "nota_2026": 96.2,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Itaguatins",
-        "nota_2026":  88.1
+        "orgão": "Câmara Municipal",
+        "cidade": "Itaguatins",
+        "nota_2026": 88.1,
+        "essenciais_2026": 80.8,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Lajeado",
-        "nota_2026":  97.7
+        "orgão": "Câmara Municipal",
+        "cidade": "Lajeado",
+        "nota_2026": 97.7,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Lizarda",
-        "nota_2026":  95.2
+        "orgão": "Câmara Municipal",
+        "cidade": "Lizarda",
+        "nota_2026": 95.2,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Luzinópolis",
-        "nota_2026":  63.6
+        "orgão": "Câmara Municipal",
+        "cidade": "Luzinópolis",
+        "nota_2026": 63.6,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Intermediário"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Mateiros",
-        "nota_2026":  99.2
+        "orgão": "Câmara Municipal",
+        "cidade": "Mateiros",
+        "nota_2026": 99.2,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Miranorte",
-        "nota_2026":  95.9
+        "orgão": "Câmara Municipal",
+        "cidade": "Miranorte",
+        "nota_2026": 95.9,
+        "essenciais_2026": 96.2,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Nazaré",
-        "nota_2026":  86.3
+        "orgão": "Câmara Municipal",
+        "cidade": "Nazaré",
+        "nota_2026": 86.3,
+        "essenciais_2026": 69.2,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Nova Olinda",
-        "nota_2026":  82.6
+        "orgão": "Câmara Municipal",
+        "cidade": "Nova Olinda",
+        "nota_2026": 82.6,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Prata"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Novo Acordo",
-        "nota_2026":  89.3
+        "orgão": "Câmara Municipal",
+        "cidade": "Novo Acordo",
+        "nota_2026": 89.3,
+        "essenciais_2026": 80.8,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Palmeirante",
-        "nota_2026":  97.9
+        "orgão": "Câmara Municipal",
+        "cidade": "Palmeirante",
+        "nota_2026": 97.9,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Palmeiras do Tocantins",
-        "nota_2026":  83.5
+        "orgão": "Câmara Municipal",
+        "cidade": "Palmeiras do Tocantins",
+        "nota_2026": 83.5,
+        "essenciais_2026": 96.2,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Pau D'Arco",
-        "nota_2026":  81.3
+        "orgão": "Câmara Municipal",
+        "cidade": "Pau D'Arco",
+        "nota_2026": 81.3,
+        "essenciais_2026": 96.2,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Pindorama do Tocantins",
-        "nota_2026":  76.8
+        "orgão": "Câmara Municipal",
+        "cidade": "Pindorama do Tocantins",
+        "nota_2026": 76.8,
+        "essenciais_2026": 42.3,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Recursolândia",
-        "nota_2026":  75.9
+        "orgão": "Câmara Municipal",
+        "cidade": "Recursolândia",
+        "nota_2026": 75.9,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Prata"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Riachinho",
-        "nota_2026":  83.3
+        "orgão": "Câmara Municipal",
+        "cidade": "Riachinho",
+        "nota_2026": 83.3,
+        "essenciais_2026": 61.5,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Rio Sono",
-        "nota_2026":  91
+        "orgão": "Câmara Municipal",
+        "cidade": "Rio Sono",
+        "nota_2026": 91.0,
+        "essenciais_2026": 96.2,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Santa Maria do Tocantins",
-        "nota_2026":  97.1
+        "orgão": "Câmara Municipal",
+        "cidade": "Santa Maria do Tocantins",
+        "nota_2026": 97.1,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "São Bento do Tocantins",
-        "nota_2026":  82.2
+        "orgão": "Câmara Municipal",
+        "cidade": "São Bento do Tocantins",
+        "nota_2026": 82.2,
+        "essenciais_2026": 65.4,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "São Félix do Tocantins",
-        "nota_2026":  84.5
+        "orgão": "Câmara Municipal",
+        "cidade": "São Félix do Tocantins",
+        "nota_2026": 84.5,
+        "essenciais_2026": 76.9,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "São Gabriel da Cachoeira",
-        "nota_2026":  33.6
+        "orgão": "Câmara Municipal",
+        "cidade": "São Gabriel da Cachoeira",
+        "nota_2026": 33.6,
+        "essenciais_2026": 26.9,
+        "nivel_2026": "Básico"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Silvanópolis",
-        "nota_2026":  98.5
+        "orgão": "Câmara Municipal",
+        "cidade": "Silvanópolis",
+        "nota_2026": 98.5,
+        "essenciais_2026": 96.2,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Câmara Municipal",
-        "cidade":  "Tabocão",
-        "nota_2026":  86.5
+        "orgão": "Câmara Municipal",
+        "cidade": "Tabocão",
+        "nota_2026": 86.5,
+        "essenciais_2026": 84.6,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Aparecida do Rio Negro",
-        "nota_2026":  98
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Aparecida do Rio Negro",
+        "nota_2026": 98.0,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Araguaína",
-        "nota_2026":  83.3
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Araguaína",
+        "nota_2026": 83.3,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Prata"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Arapoema",
-        "nota_2026":  70.4
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Arapoema",
+        "nota_2026": 70.4,
+        "essenciais_2026": 86.8,
+        "nivel_2026": "Intermediário"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Babaçulândia",
-        "nota_2026":  80.3
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Babaçulândia",
+        "nota_2026": 80.3,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Prata"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Carmolândia",
-        "nota_2026":  80.3
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Carmolândia",
+        "nota_2026": 80.3,
+        "essenciais_2026": 97.4,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Centenário",
-        "nota_2026":  77.7
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Centenário",
+        "nota_2026": 77.7,
+        "essenciais_2026": 89.5,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Divinópolis do Tocantins",
-        "nota_2026":  95
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Divinópolis do Tocantins",
+        "nota_2026": 95.0,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Filadélfia",
-        "nota_2026":  66.9
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Filadélfia",
+        "nota_2026": 66.9,
+        "essenciais_2026": 97.4,
+        "nivel_2026": "Intermediário"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Lagoa da Confusão",
-        "nota_2026":  93.5
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Lagoa da Confusão",
+        "nota_2026": 93.5,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Ouro"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Lagoa do Tocantins",
-        "nota_2026":  95.8
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Lagoa do Tocantins",
+        "nota_2026": 95.8,
+        "essenciais_2026": 97.4,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Lajeado",
-        "nota_2026":  93
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Lajeado",
+        "nota_2026": 93.0,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Ouro"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Mateiros",
-        "nota_2026":  84.1
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Mateiros",
+        "nota_2026": 84.1,
+        "essenciais_2026": 76.3,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Miranorte",
-        "nota_2026":  95.6
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Miranorte",
+        "nota_2026": 95.6,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Monte do Carmo",
-        "nota_2026":  91.9
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Monte do Carmo",
+        "nota_2026": 91.9,
+        "essenciais_2026": 86.8,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Nazaré",
-        "nota_2026":  72.3
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Nazaré",
+        "nota_2026": 72.3,
+        "essenciais_2026": 71.0,
+        "nivel_2026": "Intermediário"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Ponte Alta do Tocantins",
-        "nota_2026":  94.2
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Ponte Alta do Tocantins",
+        "nota_2026": 94.2,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Ouro"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Pugmil",
-        "nota_2026":  89.3
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Pugmil",
+        "nota_2026": 89.3,
+        "essenciais_2026": 89.5,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Recursolândia",
-        "nota_2026":  86
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Recursolândia",
+        "nota_2026": 86.0,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Ouro"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Santa Fé do Araguaia",
-        "nota_2026":  88.8
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Santa Fé do Araguaia",
+        "nota_2026": 88.8,
+        "essenciais_2026": 92.1,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Santa Maria do Tocantins",
-        "nota_2026":  95.6
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Santa Maria do Tocantins",
+        "nota_2026": 95.6,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Silvanópolis",
-        "nota_2026":  94.3
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Silvanópolis",
+        "nota_2026": 94.3,
+        "essenciais_2026": 97.4,
+        "nivel_2026": "Elevado"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Tocantinópolis",
-        "nota_2026":  96.6
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Tocantinópolis",
+        "nota_2026": 96.6,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Diamante"
     },
     {
-        "orgão":  "Prefeitura Municipal",
-        "cidade":  "Tupirama",
-        "nota_2026":  80.9
+        "orgão": "Prefeitura Municipal",
+        "cidade": "Tupirama",
+        "nota_2026": 80.9,
+        "essenciais_2026": 100.0,
+        "nivel_2026": "Prata"
     }
 ]

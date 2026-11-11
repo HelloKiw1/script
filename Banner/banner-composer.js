@@ -105,6 +105,7 @@ const state = {
   currentRecord: null,
   currentSeals: [],
   renderedBlob: null,
+  renderVersion: 0,
 };
 
 function getSealMeta(fileName) {
@@ -172,8 +173,9 @@ function getSealTypeFromScore(score) {
 function getSealsFromRecord(record) {
   const seals = SUPPORTED_YEARS
     .map((year) => {
-      const score = parseScore(record?.[`nota_${year}`]);
-      const type = score === null ? null : getSealTypeFromScore(score);
+      const evaluation = BannerSealRules.evaluate(record, year);
+      const score = evaluation.score;
+      const type = evaluation.eligible ? evaluation.type : null;
       const fileName = type ? getSealFileName(type, year) : '';
 
       return {
@@ -209,7 +211,8 @@ function renderScorePreview(seals) {
 
   if (!seals.length) {
     const empty = document.createElement('li');
-    empty.textContent = 'Nenhuma nota entre 75% e 100% nos anos com selo disponivel.';
+    empty.textContent = BannerSealRules.evaluate(state.currentRecord, 2026).reason
+      || 'Nenhum selo disponivel para os anos informados.';
     elements.scorePreview.appendChild(empty);
     return;
   }
@@ -223,7 +226,7 @@ function renderScorePreview(seals) {
     value.textContent = `${seal.score.toLocaleString('pt-BR', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    })}%`;
+    })}% | Essenciais: 100%`;
 
     item.append(title, value);
     elements.scorePreview.appendChild(item);
@@ -416,11 +419,24 @@ async function loadImageFromPath(path) {
 }
 
 async function renderBanner() {
+  const renderVersion = ++state.renderVersion;
   const canvas = elements.previewCanvas;
   const ctx = canvas.getContext('2d');
   const count = Number(elements.sealCount.value);
   const sealFiles = state.sealChoices.slice(0, count);
   const template = getTemplatePath(count);
+
+  for (const fileName of sealFiles.filter(Boolean)) {
+    const meta = getSealMeta(fileName);
+    const evaluation = BannerSealRules.evaluate(state.currentRecord, Number(meta.year));
+    if (!evaluation.eligible || evaluation.type !== meta.type) {
+      state.renderedBlob = null;
+      elements.downloadBtn.disabled = true;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setStatus(evaluation.reason || `O selo selecionado nao corresponde a nota do orgao em ${meta.year}.`);
+      return;
+    }
+  }
 
   state.sealCount = count;
   state.backgroundColor = elements.backgroundColor.value;
@@ -437,6 +453,8 @@ async function renderBanner() {
 
     const sealImages = await Promise.all(sealFiles.map((sealFile) => loadImageFromPath(`./Selo/${sealFile}`)));
     const templateImage = await loadImageFromPath(template.path);
+
+    if (renderVersion !== state.renderVersion) return;
 
     canvas.width = BANNER_WIDTH;
     canvas.height = BANNER_HEIGHT;
@@ -466,10 +484,13 @@ async function renderBanner() {
         }
       });
 
-    state.renderedBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (renderVersion !== state.renderVersion) return;
+    state.renderedBlob = blob;
     elements.downloadBtn.disabled = !state.renderedBlob;
     setStatus(`Banner gerado com sucesso. Template usado: ${template.fileName}`);
   } catch (error) {
+    if (renderVersion !== state.renderVersion) return;
     console.error(error);
     state.renderedBlob = null;
     elements.downloadBtn.disabled = true;

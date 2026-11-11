@@ -8,6 +8,7 @@ const { rows } = require('./fixtures.cjs');
 const root = path.resolve(__dirname, '../..');
 const captures = path.join(root, 'tmp/atricon-analysis');
 let requestPayload;
+let activeRows = rows;
 const server = http.createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
   response.setHeader('Cache-Control', 'no-store');
@@ -24,7 +25,7 @@ const server = http.createServer(async (request, response) => {
   }
   if (pathname === '/fixture.json') {
     response.setHeader('Content-Type', 'application/json');
-    return response.end(JSON.stringify(rows));
+    return response.end(JSON.stringify(activeRows));
   }
   // Never read or serve the real account files during UI tests.
   if (/credentials|orgaos_avalia|\/entrada\//.test(pathname)) {
@@ -85,13 +86,39 @@ const server = http.createServer(async (request, response) => {
     await page.locator('[data-shell-theme]').click();
     await page.screenshot({ path: path.join(captures, 'light.png') });
 
+    // A closed assessment uses the PDF's revision, not an expired deadline or
+    // the old passing validation. Fixtures contain no real account details.
+    activeRows = [{orgao:'Câmara',cidade:'Teste PDF',status:'Revisado',porcentagem:'94,92%',
+      setor_atual:'Tribunal de Contas Envio para Manifestação até 01/01/2020',
+      fonte_coleta:'pdf',etapa_resultado:'revisao',modo_coleta:'analise_completa',coleta_detalhada:'concluida',
+      pdf_arquivo:'C:/teste/atricon/pdfs/demo.pdf',criterios_validacao:[{
+        titulo:'Licitações',criterio:'8.1 Licitações',grau_importancia:'',
+        validacoes_avaliacao:[{item:'Série Histórica',status:'Atende'}],
+        validacoes_validacao:[{item:'Série Histórica',status:'Atende'}],
+        validacoes_resultado:[{item:'Série Histórica',status:'Não atende'}],
+      }]}];
+    await page.goto(`${base}/atricon/visualizador_atricon.html?json=/fixture.json`);
+    await page.waitForFunction(() => !document.getElementById('analysisPanel').hidden && document.getElementById('analysisContent').textContent.includes('Revisão'));
+    assert.ok((await page.locator('#analysisContent').innerText()).includes('grau de importância não foi informado'));
+    await page.screenshot({path:path.join(captures,'pdf-analysis.png')});
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),false);
+    await page.screenshot({path:path.join(captures,'pdf-mobile.png')});
+    await page.setViewportSize({width:1440,height:1000});
+    await page.locator('[data-tab="resultsPanel"]').click();
+    const pdfRow = page.locator('#tableBody');
+    assert.ok((await pdfRow.innerText()).includes('Relatório PDF'));
+    assert.ok(!(await pdfRow.innerText()).includes('Manifestação vencida'));
+    assert.equal(await pdfRow.getByRole('link',{name:'PDF',exact:true}).getAttribute('href'),`${base}/pdfs/demo.pdf`);
+    activeRows = rows;
+
     // Extension results use the same analysis with Chrome storage mocked locally.
     await page.addInitScript(data => {
       window.chrome = { storage: { local: { get: async () => ({ lastAtriconResult: { rows: data } }) } }, downloads: { download() {} } };
     }, rows);
     await page.goto(`${base}/atricon/extension/resultado.html`);
     await page.waitForFunction(() => document.getElementById('analysisPanel').open);
-    assert.ok((await page.locator('#analysisContent').innerText()).includes('Itens não atendidos'));
+    assert.ok((await page.locator('#analysisContent').innerText()).includes('Critérios não atendidos'));
     await page.screenshot({ path: path.join(captures, 'extension.png') });
 
     // DOM fixture includes passing, failing, N/A and evidence-free cards.

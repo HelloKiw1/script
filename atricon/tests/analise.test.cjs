@@ -3,6 +3,26 @@ const assert = require('node:assert/strict');
 const { build, status, score, csv, reportHtml } = require('../extension/analise.js');
 const { rows, criterion } = require('./fixtures.cjs');
 
+test('PDF revision overrides passing validation and crosses the same criterion between cities', () => {
+  const pdfCriterion = { ...criterion('1.1 Receitas', 'Sim', 'Sim', ''),
+    validacoes_revisao: [{item:'Disponibilidade',status:'Não'},{item:'Atualidade',status:'Atende'}],
+    validacoes_resultado: [{item:'Disponibilidade',status:'Não'},{item:'Atualidade',status:'Atende'}],
+    validacoes_nao_atendidas: ['Disponibilidade'], etapa_resultado:'revisao' };
+  const report = build([
+    {orgao:'Prefeitura',cidade:'Alfa',porcentagem:'94,92%',fonte_coleta:'pdf',etapa_resultado:'revisao',coleta_detalhada:'concluida',criterios_validacao:[pdfCriterion]},
+    {orgao:'Prefeitura',cidade:'Beta',fonte_coleta:'pdf',etapa_resultado:'revisao',coleta_detalhada:'concluida',criterios_validacao:[{...pdfCriterion,criterio_id:'999'}]},
+  ]);
+  assert.equal(report.resumo.falhas, 2);
+  assert.equal(report.criterios.length, 1);
+  assert.equal(report.criterios[0].afetados.length, 2);
+  assert.equal(report.criterios[0].maioria, true);
+  assert.equal(report.resumo.sem_importancia, 2);
+  assert.match(reportHtml(report), /grau de importância não foi informado/);
+  assert.ok(csv(report).includes('revisao'));
+  const missing = build([{orgao:'X',criterios_validacao:[{...pdfCriterion,validacoes_resultado:[],validacoes_nao_atendidas:[]}]}]);
+  assert.equal(missing.resumo.com_detalhes, 0);
+});
+
 test('majority, coverage, scores and failure totals use observed data', () => {
   const result = build(rows);
   assert.equal(result.resumo.total, 5);
@@ -97,4 +117,56 @@ test('exports contain detail without credentials, escape HTML and neutralize CSV
   assert.ok(!reportHtml(report).includes('<script>'));
   assert.ok(csv(report).includes("'=HYPERLINK(1)"));
   assert.ok(csv(report).includes('Essencial'));
+});
+
+test('separa reprovações de critérios dos subitens e desenha pizzas por grupo', () => {
+  const report = build(rows);
+  assert.equal(report.resumo.criterios_nao_atendidos, 4);
+  assert.equal(report.resumo.criterios_avaliados, 6);
+  assert.equal(report.resumo.falhas, 5);
+  const html = reportHtml(report);
+  assert.match(html, /class="analysis-pie"/);
+  assert.match(html, /Prefeituras: Não atendidos: 4; Atendidos: 0; Sem resultado: 1/);
+  assert.match(html, /Câmaras: Não atendidos: 0; Atendidos: 2; Sem resultado: 0/);
+  assert.match(html, /Prefeituras com falha/);
+});
+
+test('busca e dimensão recalculam também os gráficos, sem inventar comentário ausente', () => {
+  const report = build(rows,new Date(),{criterio:'receitas'});
+  assert.equal(report.criterios.length, 1);
+  assert.equal(report.resumo.criterios_nao_atendidos, 2);
+  assert.equal(report.resumo.falhas, 3);
+  assert.match(reportHtml(report), /Comentário do Revisor não registrado/);
+  assert.equal(build(rows,new Date(),{dimensao:'Inexistente'}).criterios.length, 0);
+});
+
+test('último comentário do revisor prevalece por data e o validador permanece no histórico', () => {
+  const c = criterion('1.1 Receitas','Não');
+  const mensagens = [
+    {tipo:'Comentário do Revisor',etapa:'revisao',data_evidencia:'20/10/2026 13:00',conteudo_texto:'Atualizado após ajuste.',paginas_pdf:[9]},
+    {tipo:'Comentário do Validador',etapa:'validacao',data_evidencia:'01/11/2026 10:00',conteudo_texto:'Validador não é o revisor.'},
+    {tipo:'Comentário do Revisor',etapa:'revisao',data_evidencia:'03/09/2026 10:00',conteudo_texto:'Faltam dados antigos.',paginas_pdf:[8]}
+  ];
+  const report = build([{orgao:'Prefeitura',cidade:'Alfa',fonte_coleta:'pdf',criterios_validacao:[c],evidencias_validacao:[{...c,mensagens_evidencia:mensagens},{...c,mensagens_evidencia:mensagens}],pdf_arquivo:'C:/projeto/atricon/pdf.pdf'}]);
+  const evidencia = report.criterios[0].registros[0];
+  assert.equal(evidencia.evidencias.length,3);
+  const html = reportHtml(report);
+  const inicio = html.indexOf('<h5>Comentário do Revisor</h5>');
+  const historico = html.indexOf('class="analysis-history"',inicio);
+  assert.ok(html.slice(inicio,historico).includes('Atualizado após ajuste.'));
+  assert.ok(!html.slice(inicio,historico).includes('Faltam dados antigos.'));
+  assert.ok(csv(report).includes('Atualizado após ajuste.'));
+  assert.match(html, /#page=9/);
+  assert.equal(build([{orgao:'Prefeitura',criterios_validacao:[c]}],new Date(),{revisor:'com'}).criterios.length,0);
+  assert.equal(build([{orgao:'Prefeitura',criterios_validacao:[c],evidencias_validacao:[{...c,mensagens_evidencia:mensagens}]}],new Date(),{criterio:'dados antigos'}).criterios.length,1);
+});
+
+test('variações tipográficas do PDF não dividem o mesmo critério em linhas distintas', () => {
+  const primeiro = criterion('12.3 Há canal (e -SIC)?', 'Não');
+  const segundo = criterion('12.3. Há canal (e\u00ad-SIC)?', 'Sim');
+  const report = build([{orgao:'Prefeitura',cidade:'Alfa',criterios_validacao:[primeiro]},{orgao:'Câmara',cidade:'Beta',criterios_validacao:[segundo]}]);
+  assert.equal(report.criterios.length,1);
+  assert.equal(report.criterios[0].avaliados,2);
+  assert.equal(report.criterios[0].afetados.length,1);
+  assert.equal(build([{orgao:'A',criterios_validacao:[primeiro,criterion('12.3 Outro enunciado','Sim')]}]).criterios.length,2);
 });

@@ -1,0 +1,37 @@
+[
+  {
+    "headers": [
+      "#",
+      "Entidade",
+      "Setor Atual",
+      "Data",
+      "Índice",
+      "Essencias",
+      "Ação"
+    ],
+    "rows": [
+      {
+        "cells": [
+          "43006",
+          "Câmara Municipal de Aparecida do Rio Negro (TO)\n                                            PNTP 2026 |  Revisado \n                                            \n                                            Avaliação prorrogada para 07/06/2026",
+          "Atricon",
+          "20/05/2026 09:13",
+          "100,0",
+          "100,0",
+          ""
+        ],
+        "links": [
+          {
+            "text": "Câmara Municipal de Aparecida do Rio Negro (TO)\n                                            PNTP 2026 |  Revisado \n                                            \n                                            Avaliação prorrogada para 07/06/2026",
+            "href": "/questionarios/43006/view/"
+          },
+          {
+            "text": "",
+            "href": "/questionarios/43006/view/"
+          }
+        ],
+        "buttons": []
+      }
+    ]
+  }
+]

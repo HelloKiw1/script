@@ -37,6 +37,9 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List
 from urllib.parse import parse_qs, quote, urlencode, urljoin, urlparse, urlunparse
 
+from pdf_atricon import extract_pdf_report
+from relatorio_html import gerar_relatorio_html
+
 try:
     from playwright.sync_api import Error as PlaywrightError
     from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
@@ -72,7 +75,7 @@ ACCEPTED_ANALYSIS_STATUSES = {"validado", "em validacao"}
 
 def install_runtime_dependencies() -> int:
     commands = [
-        [sys.executable, "-m", "pip", "install", "--upgrade", "playwright"],
+        [sys.executable, "-m", "pip", "install", "--upgrade", "playwright", "pypdf"],
         [sys.executable, "-m", "playwright", "install", "chromium"],
     ]
 
@@ -471,7 +474,7 @@ def choose_run_in_window(default_input_path: Path, default_accounts: List[Dict[s
     ttk.Button(actions, text="Coletar e analisar todas as cidades", style="Action.TButton", command=select_all_analysis).pack(fill="x", pady=4)
     ttk.Label(actions, text="Coleta criterios/evidencias de todos para analisar falhas, recorrencias e cruzamentos.", style="Subtle.TLabel").pack(anchor="w", padx=4, pady=(0, 6))
     ttk.Button(actions, text="Verificar uma cidade ou usuario especifico", style="Action.TButton", command=select_specific).pack(fill="x", pady=4)
-    ttk.Label(actions, text="Permite escolher orgao e cidade; nesse modo tambem coleta as manifestacoes/evidencias.", style="Subtle.TLabel").pack(anchor="w", padx=4, pady=(0, 6))
+    ttk.Label(actions, text="Permite escolher orgao e cidade; baixa e analisa o relatorio PDF desse orgao.", style="Subtle.TLabel").pack(anchor="w", padx=4, pady=(0, 6))
     ttk.Button(actions, text="Verificar um JSON externo", style="Action.TButton", command=select_external_json).pack(fill="x", pady=4)
 
     footer = ttk.Frame(frame, style="App.TFrame")
@@ -1252,36 +1255,115 @@ def get_my_assessment_rows(page: Page) -> List[Dict[str, str]]:
     except PlaywrightTimeoutError as exc:
         raise RuntimeError("tabela de Minhas Avaliacoes nao carregou ou nao foi encontrada.") from exc
 
-    rows: List[Dict[str, str]] = []
-    for row in page.locator("table tbody tr").all():
-        cells = [cell.inner_text().strip() for cell in row.locator("td").all()]
-        if len(cells) < 6:
-            continue
-        link = ""
-        href = row.locator("a[href*='/questionarios/'][href*='/view/']").first
-        if href.count() > 0:
-            link = href.get_attribute("href") or ""
-            if link:
-                link = urljoin(BASE_URL, link)
-        match = re.search(r"(\d+)\s*/\s*2026", cells[0])
-        questionnaire_id = match.group(1) if match else ""
-        if not link and questionnaire_id:
-            link = f"{BASE_URL}/questionarios/{questionnaire_id}/view/"
-        rows.append(
-            {
-                "numero": cells[0],
-                "questionario_id": questionnaire_id,
-                "entidade": re.sub(r"\s+", " ", cells[1]).strip(),
-                "status": re.sub(r"\s+", " ", cells[2]).strip(),
-                "setor_atual": re.sub(r"\s+", " ", cells[3]).strip(),
-                "data": cells[4],
-                "indice": cells[5],
-                "link": link,
-            }
-        )
+    snapshots = page.locator('table tbody tr').evaluate_all("""
+      rows => rows.map(row => ({
+        headers: Array.from(row.closest('table').querySelectorAll('thead th')).map(n => n.innerText.trim()),
+        cells: Array.from(row.querySelectorAll('td')).map(n => n.innerText.trim()),
+        link: row.querySelector("a[href*='/questionarios/']")?.getAttribute('href') || ''
+      }))
+    """)
+    rows = parse_assessment_rows(snapshots)
     if not rows:
         raise RuntimeError("nenhuma avaliacao com colunas esperadas foi encontrada na tabela.")
     return rows
+
+
+def table_percentage(value: str) -> str:
+    text = clean_text(value)
+    return normalize_percentage_text(text if '%' in text else f'{text}%') if text else ''
+
+
+def parse_assessment_rows(snapshots: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    """Read both the old table and the current PNTP/status-inside-entity layout."""
+    rows = []
+    for snapshot in snapshots:
+        cells = snapshot.get('cells') or []
+        headers = [normalize_text(h) for h in snapshot.get('headers') or []]
+        if len(cells) < 5:
+            continue
+        columns = {header: index for index, header in enumerate(headers)}
+        current = any(h in columns for h in ['essencias', 'essenciais'])
+        def value(names: tuple[str, ...], fallback: int) -> str:
+            index = next((columns[name] for name in names if name in columns), fallback)
+            return str(cells[index]) if index < len(cells) else ''
+        number = value(('numero', 'n'), 0)
+        entity_text = value(('entidade', 'orgao'), 1)
+        entity = clean_text(entity_text.splitlines()[0])
+        year_match = re.search(r'PNTP\s+(\d{4})|/\s*(20\d{2})\b', entity_text + ' ' + number)
+        year = next((g for g in year_match.groups() if g), '') if year_match else ''
+        status_match = re.search(r'PNTP\s+\d{4}\s*\|\s*([^\r\n]+)', entity_text)
+        status = clean_text(status_match.group(1)) if status_match else value(('status', 'situacao'), 2) if not current else ''
+        link = urljoin(BASE_URL, str(snapshot.get('link') or '')) if snapshot.get('link') else ''
+        identifier = re.search(r'/questionarios/(\d+)/', link)
+        if not identifier:
+            identifier = re.match(r'^\s*(\d+)\s*(?:/\s*20\d{2})?\s*$', number)
+        question_id = identifier.group(1) if identifier else ''
+        if not link and question_id:
+            link = f'{BASE_URL}/questionarios/{question_id}/view/'
+        rows.append({
+            'numero': number, 'ano': year, 'questionario_id': question_id, 'entidade': entity,
+            'status': status, 'setor_atual': clean_text(value(('setor atual', 'setor'), 2 if current else 3)),
+            'data': value(('data',), 3 if current else 4),
+            'indice': table_percentage(value(('indice', 'indice de transparencia'), 4 if current else 5)),
+            'essenciais_tabela': table_percentage(value(('essencias', 'essenciais'), 5)) if current else '',
+            'link': link,
+        })
+    return rows
+
+
+def select_assessment(rows: List[Dict[str, str]], account: Dict[str, Any]) -> Dict[str, str] | None:
+    matching = [r for r in rows if entity_matches(r['entidade'], account) and r.get('ano', '') in ['', '2026']]
+    if not matching:
+        return None
+    return max(matching, key=lambda r: (
+        r.get('ano') == '2026', parse_brazilian_datetime(r.get('data', ''))[1] or datetime.min,
+        int(r.get('questionario_id') or 0),
+    ))
+
+
+def download_questionnaire_pdf(page: Page, row: Dict[str, str], account: Dict[str, Any], output_path: Path) -> Dict[str, Any]:
+    identifier = row.get('questionario_id', '')
+    if not identifier.isdigit():
+        raise RuntimeError('ID do questionario nao identificado; nenhum PDF foi solicitado.')
+    url = f'{BASE_URL}/questionarios/{identifier}/pdf/'
+    response = page.context.request.get(url, timeout=120_000)
+    if not response.ok:
+        raise RuntimeError(f'Nao foi possivel baixar o relatorio do questionario {identifier}: HTTP {response.status}.')
+    content = response.body()
+    method = 'download'
+    broken_images = 0
+    if not content.startswith(b'%PDF-'):
+        content_type = response.headers.get('content-type', '').lower()
+        if 'html' not in content_type:
+            raise RuntimeError('O endereco do relatorio nao retornou PDF nem pagina HTML de impressao.')
+        # The /pdf/ endpoint currently serves a print report. Render it in a
+        # headless context with the SAME authentication, including when the main
+        # collector browser has a visible window. No session is written to disk.
+        print_browser = page.context.browser.browser_type.launch(headless=True)
+        try:
+            print_context = print_browser.new_context(locale='pt-BR', storage_state=page.context.storage_state())
+            report_page = print_context.new_page()
+            report_page.goto(url, wait_until='domcontentloaded', timeout=120_000)
+            report_page.locator('.info-geral, .criterio').first.wait_for(state='attached', timeout=30_000)
+            report_page.evaluate('document.fonts.ready.then(() => true)')
+            try:
+                report_page.wait_for_function('Array.from(document.images).every(img => img.complete)', timeout=45_000)
+            except PlaywrightTimeoutError:
+                pass
+            broken_images = report_page.evaluate('Array.from(document.images).filter(img => !img.complete || !img.naturalWidth).length')
+            content = report_page.pdf(format='A4', print_background=True, prefer_css_page_size=True)
+            method = 'impressao_html'
+        finally:
+            print_browser.close()
+    if not content.startswith(b'%PDF-'):
+        raise RuntimeError('Arquivo recebido sem assinatura PDF valida.')
+    folder = output_path.parent / 'pdfs' / output_path.stem
+    folder.mkdir(parents=True, exist_ok=True)
+    filename = f"{safe_filename(first_value(account, ORGAO_KEYS))}_{safe_filename(account['cidade'])}_{identifier}.pdf"
+    destination = folder / filename
+    destination.write_bytes(content)
+    return {'pdf_arquivo': str(destination.resolve()), 'pdf_url': url, 'pdf_metodo': method,
+            'pdf_bytes': len(content), 'pdf_imagens_indisponiveis': broken_images}
 
 
 def extract_history_from_questionnaire_view(page: Page, url: str) -> Dict[str, Any]:
@@ -2316,7 +2398,7 @@ def process_account(
 
     page = login(page, account)
     rows = get_my_assessment_rows(page)
-    row = next((item for item in rows if entity_matches(item["entidade"], account)), None)
+    row = select_assessment(rows, account)
     if row is None:
         expected = expected_entity(account)
         found = [item["entidade"] for item in rows]
@@ -2330,15 +2412,15 @@ def process_account(
 
     result["data"] = row["data"]
     result["questionario_id"] = row["questionario_id"]
+    result['indice_tabela'] = row.get('indice', '')
+    result['essenciais_tabela'] = row.get('essenciais_tabela', '')
+    result['porcentagem'] = table_percentage(row.get('indice', ''))
     if not row["link"]:
         raise RuntimeError(f"nao foi possivel localizar o link do questionario para {account['user']}.")
-    history_result = extract_history_from_questionnaire_view(page, row["link"])
-    result.update(history_result)
-    result["porcentagem"] = extract_percentage_from_loaded_questionnaire(page, row["indice"])
-    if not result["porcentagem"]:
-        result["erro"] = "porcentagem nao encontrada no questionario."
-
     if not collect_manifestations:
+        history_result = extract_history_from_questionnaire_view(page, row["link"])
+        result.update(history_result)
+        result['porcentagem'] = extract_percentage_from_loaded_questionnaire(page, row['indice'])
         result["total_evidencias_validacao"] = 0
         result["evidencias_validacao"] = []
         return result
@@ -2346,17 +2428,26 @@ def process_account(
     result["coleta_detalhada"] = "em_andamento"
     result["criterios_validacao"] = []
     try:
-        evidencias_validacao = collect_validation_evidences_from_form(
-            page, questionnaire_form_url(row), row["questionario_id"], output_path,
-            result["criterios_validacao"],
-        )
-        result["total_evidencias_validacao"] = len(evidencias_validacao)
-        result["evidencias_validacao"] = evidencias_validacao
-        result["coleta_detalhada"] = "concluida" if result["criterios_validacao"] else "sem_criterios"
+        result.update(download_questionnaire_pdf(page, row, account, output_path))
+        report = extract_pdf_report(Path(result['pdf_arquivo']))
+        if str(report.get('questionario_id')) != row['questionario_id']:
+            raise RuntimeError('O PDF pertence a outro questionario; dados nao associados ao orgao.')
+        if report.get('ano_pdf') not in [None, '2026']:
+            raise RuntimeError('O PDF nao corresponde ao ciclo PNTP 2026.')
+        if not entity_matches(str(report.get('entidade_pdf', '')), account):
+            raise RuntimeError('A entidade do PDF nao corresponde ao orgao selecionado.')
+        result.update(report)
+        result['status'] = report.get('status_pdf') or row['status']
+        for evidence in result['evidencias_validacao']:
+            evidence['pdf_arquivo'] = result['pdf_arquivo']
+        if result.get('pdf_imagens_indisponiveis'):
+            result['limitacoes_pdf'].append(f"{result['pdf_imagens_indisponiveis']} imagem(ns) do relatorio nao carregaram na impressao.")
+        if result.get('avisos_pdf'):
+            result['erro_evidencias'] = '; '.join(result['avisos_pdf'])
     except Exception as exc:
         # Preserve the assessment and any criteria already read if evidence collection fails.
         result["coleta_detalhada"] = "parcial" if result["criterios_validacao"] else "erro"
-        result["erro_evidencias"] = str(exc)
+        result["erro_evidencias"] = f'Coleta pelo PDF: {exc}'
     return result
 
 
@@ -2457,6 +2548,7 @@ def run_collector_from_viewer(payload: Dict[str, Any], viewer_dir: Path) -> Dict
         "returncode": completed.returncode,
         "output_path": str(output_path),
         "json_url": output_json_url(output_path, viewer_dir),
+        "analysis_html_url": output_json_url(output_path.with_suffix('.html'), viewer_dir) if payload.get('analysis') is True and output_path.with_suffix('.html').exists() else '',
         "stdout": completed.stdout[-4000:],
         "stderr": completed.stderr[-4000:],
     }
@@ -2570,7 +2662,7 @@ def parse_args() -> argparse.Namespace:
         help="Caminho do JSON de saida. Padrao: .resultado/particular/resultado_atricon_<orgao>_<cidade>.json ou .resultado/geral/resultado_geral_atricon_<hora>hrs.json",
     )
     parser.add_argument("--todos", action="store_true", help="Analisa todos os usuarios do JSON sem perguntar.")
-    parser.add_argument("--analise-completa", action="store_true", help="Coleta criterios e evidencias de todos para a analise consolidada (mais demorado).")
+    parser.add_argument("--analise-completa", action="store_true", help="Baixa e analisa o relatorio PDF de todos, incluindo revisao e evidencias (mais demorado).")
     parser.add_argument("--cidade", help="Analisa apenas a cidade informada, sem perguntar.")
     parser.add_argument("--usuario", help="Analisa apenas o usuario informado, sem perguntar.")
     parser.add_argument("--headless", action="store_true", help="Executa o navegador sem abrir janela.")
@@ -2614,9 +2706,9 @@ def main() -> int:
     valid_accounts_count = sum(1 for account in accounts if not account.get("_erro_validacao"))
     collect_manifestations = args.analise_completa or valid_accounts_count == 1
     if args.analise_completa:
-        print("Analise completa: criterios e evidencias serao coletados de todos os orgaos.")
+        print("Analise completa: relatorios PDF serao baixados e analisados para todos os orgaos.")
     elif collect_manifestations:
-        print("Modo especifico: manifestacoes/evidencias serao coletadas.")
+        print("Modo especifico: o relatorio PDF deste orgao sera baixado e analisado.")
     else:
         print("Modo geral: manifestacoes/evidencias nao serao coletadas.")
 
@@ -2703,6 +2795,12 @@ def main() -> int:
         browser.close()
 
     print(f"Saida salva em: {output_path}")
+    if args.analise_completa:
+        try:
+            relatorio_html = gerar_relatorio_html(output_path, results)
+            print(f"Analise HTML com graficos e comentarios do revisor: {relatorio_html}")
+        except Exception as exc:
+            print(f"Aviso: os dados foram salvos, mas a geracao do HTML falhou: {exc}", file=sys.stderr)
     if not args.no_abrir_visualizador:
         open_result_viewer(output_path)
     return 0

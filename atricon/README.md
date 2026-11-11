@@ -1,5 +1,39 @@
 # Atricon: coleta e análise consolidada
 
+## HTML com gráficos e Comentário do Revisor
+
+Abra `analise_revisores_2026.html` para a análise consolidada preparada em
+11/11/2026. O arquivo funciona localmente, sem bibliotecas remotas. Mantenha
+a pasta `entrada/.resultado/analise_revisores_2026/pdfs/` junto ao projeto para
+abrir as páginas das evidências. A base inclui a união dos clientes da planilha
+original com o cadastro do coletor; órgãos sem PDF aparecem com a limitação.
+
+Os botões **Prefeituras** e **Câmaras** e os filtros de cidade, status, dimensão,
+critério/comentário e presença de comentário do revisor recalculam as pizzas,
+barras, totais, tabelas e exportações. A tabela de critérios separa quantos
+órgãos falham em cada grupo e o total de subitens reprovados.
+
+Nas evidências, o **Comentário do Revisor mais recente por data** fica em
+destaque. Os comentários anteriores e de outras etapas ficam no histórico.
+Cada registro mostra a etapa do resultado, os subitens reprovados e o link para
+a página do PDF. Ausência de comentário não é convertida em justificativa.
+As imagens das evidências permanecem no documento original.
+
+O PDF indicado de Silvanópolis é uma imagem: as tabelas passaram por OCR e
+conferência visual das células incertas; os 13 comentários do revisor foram
+transcritos e conferidos visualmente. O relatório informa essa limitação.
+Os PDFs coletados pelo sistema são lidos por `pdf_atricon.py`.
+
+Novas coletas com `--analise-completa` geram automaticamente um `.html` ao
+lado do JSON, usando `relatorio_html.py`. O visualizador oferece o link ao
+final da coleta e sua aba **Análise de todos** usa o mesmo motor de gráficos.
+O HTML e suas exportações excluem os campos de credenciais.
+
+Diferenças apenas de pontuação, espaços e hifens de quebra de linha do mesmo
+enunciado são normalizadas no cruzamento. Palavras e números diferentes
+permanecem critérios distintos; o ID local da resposta nunca é usado como
+identificador global.
+
 Para consultar todos com os detalhes necessários à análise, abra o coletor e
 escolha **Coletar e analisar todas as cidades**. Pelo visualizador, use
 **Coletor → Coletar e analisar todos**. A coleta simples continua disponível.
@@ -9,6 +43,28 @@ No terminal:
 ```powershell
 python atricon/coletor_atricon.py --todos --analise-completa
 ```
+
+## Relatórios PDF após o encerramento da avaliação
+
+A coleta individual e **Coletar e analisar todas as cidades** usam o relatório
+`/questionarios/ID/pdf/`, depois do login e da identificação do órgão em Minhas
+Avaliações. O formulário com prazo encerrado não é utilizado nesse fluxo.
+Se o endpoint retornar uma página de impressão, o coletor a converte em PDF com
+Chromium headless, reutilizando a autenticação em memória. Os arquivos ficam em
+`pdfs/<nome_do_resultado>/`, junto à pasta do JSON. O visualizador oferece o link PDF.
+
+A extração lê as tabelas do PDF e preserva Avaliação, Validação e Revisão.
+Quando existe Revisão, ela é o resultado usado na análise consolidada; lacunas
+não são preenchidas com respostas de etapas anteriores. O total de itens extraídos
+é conferido contra o resumo do documento e divergências tornam a coleta parcial.
+O ID, o ano e a entidade do PDF são conferidos antes da associação ao cliente.
+
+O PDF atual não informa a importância de cada critério. Esse campo fica vazio,
+e o painel avisa que não pode determinar quantas falhas são essenciais. Imagens
+permanecem no PDF original; comentários de validadores e revisores são extraídos.
+A coleta simples de todas as cidades continua disponível sem baixar os PDFs.
+
+Instale também a dependência de leitura do PDF com o comando `install` do coletor.
 
 Depois da coleta, a aba **Análise de todos** apresenta:
 

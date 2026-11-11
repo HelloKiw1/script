@@ -9,27 +9,28 @@ import coletor_atricon as collector
 
 
 class DetailedCollectionTests(unittest.TestCase):
-    def test_detailed_error_preserves_assessment_and_criteria(self):
+    def test_partial_pdf_preserves_assessment_and_criteria_without_opening_expired_form(self):
         account = {"orgao": "Prefeitura", "cidade": "Demo", "user": "demo", "senha": "dummy"}
         row = {"entidade": "Prefeitura de Demo", "status": "Validado", "setor_atual": "Tribunal", "data": "", "questionario_id": "1", "link": "https://example.invalid/view/", "indice": "80%"}
 
-        def fail_after_criteria(page, url, question_id, output, criteria):
-            criteria.append({"criterio": "1.1 Receitas", "validacoes_validacao": [{"item": "Atualidade", "status": "Não"}]})
-            raise RuntimeError("modal indisponivel")
-
         with patch.object(collector, "login", return_value=MagicMock()), \
              patch.object(collector, "get_my_assessment_rows", return_value=[row]), \
-             patch.object(collector, "extract_history_from_questionnaire_view", return_value={}), \
-             patch.object(collector, "extract_percentage_from_loaded_questionnaire", return_value="80%"), \
-             patch.object(collector, "collect_validation_evidences_from_form", side_effect=fail_after_criteria) as detailed:
+             patch.object(collector, "download_questionnaire_pdf", return_value={"pdf_arquivo":"dummy.pdf"}) as download, \
+             patch.object(collector, "extract_pdf_report", return_value={
+                 'questionario_id':'1', 'entidade_pdf':'Prefeitura de Demo', 'porcentagem':'80%',
+                 'criterios_validacao':[{'criterio':'1.1 Receitas'}], 'evidencias_validacao':[],
+                 'coleta_detalhada':'parcial', 'avisos_pdf':['Uma coluna nao foi lida.'],
+             }), \
+             patch.object(collector, "collect_validation_evidences_from_form") as expired_form:
             result = collector.process_account(MagicMock(), account, Path("result.json"), True)
         self.assertEqual(result["porcentagem"], "80%")
         self.assertEqual(result["status"], "Validado")
         self.assertEqual(result["coleta_detalhada"], "parcial")
         self.assertEqual(len(result["criterios_validacao"]), 1)
-        self.assertEqual(result["erro_evidencias"], "modal indisponivel")
+        self.assertEqual(result["erro_evidencias"], "Uma coluna nao foi lida.")
         self.assertNotIn("senha", result)
-        detailed.assert_called_once()
+        download.assert_called_once()
+        expired_form.assert_not_called()
 
     def test_viewer_propagates_analysis_only_when_requested(self):
         completed = MagicMock(returncode=0, stdout="", stderr="")

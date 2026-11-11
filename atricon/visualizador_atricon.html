@@ -1169,7 +1169,7 @@
             <th data-key="manifestacao_data">Histórico tramitação</th>
             <th data-key="porcentagem">Porcentagem</th>
             <th data-key="erro">Erro</th>
-            <th data-key="debug_html">Debug</th>
+            <th data-key="debug_html">PDF / arquivos</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -1192,13 +1192,13 @@
           <h3>Todas as cidades</h3>
           <p>Usa o arquivo orgaos_avalia.json e coleta somente status e porcentagem.</p>
           <button id="runAllCollector" type="button">Verificar todas</button>
-          <p>Para identificar falhas recorrentes, coleta os critérios e as evidências de cada órgão. Pode levar mais tempo.</p>
+          <p>Baixa os relatórios PDF e cruza os critérios e resultados finais de todos os órgãos. Pode levar mais tempo.</p>
           <button id="runAllAnalysisCollector" type="button">Coletar e analisar todos</button>
         </div>
 
         <div class="collector-card">
           <h3>Cidade especifica</h3>
-          <p>Coleta status, porcentagem e manifestacoes/evidencias da cidade escolhida.</p>
+          <p>Baixa e analisa o relatório PDF da cidade escolhida, incluindo as respostas da revisão.</p>
           <div class="collector-form">
             <label>
               Orgao
@@ -1624,6 +1624,17 @@
         }
         const output = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
         collectorStatus.innerHTML = `Coleta concluida.\nJSON: ${escapeHtml(result.output_path || '')}${output ? `\n\n<pre class="collector-output">${escapeHtml(output)}</pre>` : ''}`;
+        if (result.analysis_html_url) {
+          const endereco = new URL(result.analysis_html_url, window.location.href);
+          if (['http:', 'https:', 'file:'].includes(endereco.protocol)) {
+            const link = document.createElement('a');
+            link.href = endereco.href;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'Abrir análise HTML com gráficos e comentários do revisor';
+            collectorStatus.append(document.createElement('br'), link);
+          }
+        }
         switchTab(payload.analysis ? 'analysisPanel' : 'resultsPanel');
       } catch (error) {
         collectorStatus.textContent = `Erro ao executar coleta: ${error.message}`;
@@ -1921,6 +1932,9 @@
         erro,
         debug_html: value(row.debug_html),
         debug_screenshot: value(row.debug_screenshot),
+        pdf_arquivo: value(row.pdf_arquivo),
+        fonte_coleta: value(row.fonte_coleta),
+        etapa_resultado: value(row.etapa_resultado),
         raw: row
       };
       const criterio = manifestationCriterion(normalized);
@@ -1949,6 +1963,10 @@
     }
 
     function mainManifestationInfo(row) {
+      if (row.fonte_coleta === 'pdf') {
+        return { label: 'Relatório PDF', className: 'not-manifestation', prazo: '', deadlineTime: null,
+          setor: row.setor_atual || '', isActive: false, isExpired: false, sortValue: '1 pdf' };
+      }
       const setorAtual = String(row.setor_atual || '').replace(/\s+/g, ' ').trim();
       if (!setorAtual) {
         return {
@@ -2198,6 +2216,7 @@
         ? `<span class="${historyClass}">${escapeHtml(historyText)}</span>`
         : '<span class="manifestation-detail">Sem histórico de tramitação encontrado.</span>';
       const debugLinks = [
+        row.pdf_arquivo ? `<a href="${escapeAttr(fileHref(row.pdf_arquivo))}" target="_blank">PDF</a>` : '',
         row.debug_html ? `<a href="${escapeAttr(fileHref(row.debug_html))}" target="_blank">HTML</a>` : '',
         row.debug_screenshot ? `<a href="${escapeAttr(fileHref(row.debug_screenshot))}" target="_blank">Imagem</a>` : ''
       ].filter(Boolean).join(' · ');
@@ -3889,7 +3908,9 @@
       const statusClass = row.erro ? 'error' : '';
       const statusText = row.status || (row.erro ? 'Erro' : 'Sem status');
       const manifestacaoData = row.manifestacao_data || row.manifestacao_prazo || '';
-      const manifestacaoBadge = manifestacaoData
+      const manifestacaoBadge = row.fonte_coleta === 'pdf'
+        ? `<span class="report-date-pill">Fonte: relatório PDF · Resultado: ${escapeHtml(row.etapa_resultado || 'não informado')}</span>`
+        : manifestacaoData
         ? `<span class="report-date-pill ${row.manifestacao_vencida ? 'expired' : ''}">Prazo para manifestação: ${escapeHtml(manifestacaoData)}${row.manifestacao_vencida ? ' (vencido)' : ''}</span>`
         : '<span class="report-date-pill">Prazo para manifestação: não informado</span>';
       const entidade = [row.orgao, row.cidade].filter(Boolean).join(' de ');
@@ -3996,7 +4017,7 @@
 
       return messages.map((message, index) => `
         <div class="evidence-message">
-          ${index === 0 ? '<p class="message-title">Mensagem do validador</p>' : ''}
+          ${message.tipo ? `<p class="message-title">${escapeHtml(message.tipo)}</p>` : index === 0 ? '<p class="message-title">Mensagem do validador</p>' : ''}
           ${renderEvidenceText(message.conteudo_texto || '')}
           ${renderImageList(message.imagens || [])}
         </div>
@@ -4010,6 +4031,7 @@
             ordem: Number(message.ordem || index + 1),
             data_evidencia: message.data_evidencia || evidence[`data_evidencia_${index + 1}`] || '',
             conteudo_texto: message.conteudo_texto || '',
+            tipo: message.tipo || '',
             imagens: Array.isArray(message.imagens) ? message.imagens : []
           }))
           .sort((a, b) => a.ordem - b.ordem);

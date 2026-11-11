@@ -1,0 +1,5845 @@
+          RELATÓRIO DE AVALIAÇÃO DA TRANSPARÊNCIA PÚBLICA
+                                                                       2026
+
+
+
+
+
+  Questionário: 43006
+
+  Status: Revisado
+
+  Entidade Avaliada: Câmara Municipal de Aparecida do Rio Negro (TO)
+
+  Índice de Transparência: 94,92%                                                        Classificação: Elevado
+
+
+
+RESUMO
+
+
+                      Dimensão                             Itens            Avaliação                  Validação                    Revisão
+
+  Informações Prioritárias                                   4           4 / 4 (100,0%)              4 / 4 (100,0%)              4 / 4 (100,0%)
+
+  Informações Institucionais                                12          12 / 12 (100,0%)            12 / 12 (100,0%)           12 / 12 (100,0%)
+
+  Receita                                                    5           5 / 5 (100,0%)              5 / 5 (100,0%)              5 / 5 (100,0%)
+
+  Despesa                                                   15          15 / 15 (100,0%)            15 / 15 (100,0%)           15 / 15 (100,0%)
+
+  Convênios e Transferências                                15          15 / 15 (100,0%)            15 / 15 (100,0%)           15 / 15 (100,0%)
+
+  Recursos Humanos                                          29          29 / 29 (100,0%)            29 / 29 (100,0%)           29 / 29 (100,0%)
+
+  Diárias                                                    9           9 / 9 (100,0%)              9 / 9 (100,0%)              9 / 9 (100,0%)
+
+  Licitações                                                28          28 / 28 (100,0%)            28 / 28 (100,0%)            27 / 28 (96,4%)
+
+  Contratos                                                 19          19 / 19 (100,0%)            19 / 19 (100,0%)            18 / 19 (94,7%)
+
+  Obras                                                     14          14 / 14 (100,0%)            14 / 14 (100,0%)           14 / 14 (100,0%)
+
+  Planejamento e Prestação de Contas                        16          16 / 16 (100,0%)            15 / 16 (93,8%)              9 / 16 (56,3%)
+
+  SIC                                                       21          21 / 21 (100,0%)            21 / 21 (100,0%)           21 / 21 (100,0%)
+
+  Acessibilidade                                             5           5 / 5 (100,0%)              5 / 5 (100,0%)              5 / 5 (100,0%)
+
+  Ouvidoria                                                  3           3 / 3 (100,0%)              3 / 3 (100,0%)              3 / 3 (100,0%)
+
+  LGPD e Governo Digital                                     6           6 / 6 (100,0%)              6 / 6 (100,0%)              6 / 6 (100,0%)
+
+  Atividade Finalísticas                                    41          41 / 41 (100,0%)            41 / 41 (100,0%)           41 / 41 (100,0%)
+
+
+Informações Prioritárias
+
+1.1 Possui sítio oficial próprio na internet?
+
+                                          Item de Verificação                                                 Avaliação      Validação        Revisão
+
+ Disponibilidade                                                                                                Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Foto do Avaliador                                                                                                                 20/05/2026 09:15
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Link do Avaliador                                                                                                                 20/05/2026 09:15
+
+   🔗 https://www.aparecidadorionegro.to.leg.br
+
+
+
+
+   Comentário do Validador                                                                                                           12/06/2026 16:14
+
+   Confere com a avaliação.
+
+1.2 Possui portal da transparência próprio ou compartilhado na internet?
+
+                                         Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 09:16
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 09:17
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                          12/06/2026 16:15
+
+  Confere com a avaliação.
+
+1.3 O acesso ao portal transparência está visível na capa do site?
+
+                                          Item de Verificação                                                Avaliação       Validação       Revisão
+
+ Disponibilidade                                                                                               Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                 20/05/2026 09:32
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia
+
+
+
+
+   Foto do Avaliador                                                                                                                 20/05/2026 10:01
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Foto do Avaliador                                                                                                                 20/05/2026 10:03
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                           12/06/2026 16:15
+
+   Confere com a avaliação.
+
+1.4 O site e o portal de transparência contêm ferramenta de pesquisa de conteúdo que permita o acesso à
+informação?
+
+                                         Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                            Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 10:08
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 10:35
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 10:36
+
+  🔗 https://www.aparecidadorionegro.to.leg.br
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 10:37
+
+Comentário do Validador                                                                                                                  12/06/2026 16:15
+
+Confere com a avaliação.
+
+Informações Institucionais
+
+
+2.1 Divulga a sua estrutura organizacional e a norma que a institui/altera?
+
+
+                                         Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                            Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 10:40
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/estrutura-organizacional
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 10:48
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                        12/06/2026 16:16
+
+  Confere com a avaliação.
+
+2.2 Divulga competências e/ou atribuições?
+
+                                          Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                              Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                 20/05/2026 10:50
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/unidade/1
+
+
+
+
+  Foto do Avaliador                                                                                                                 20/05/2026 10:52
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                           12/06/2026 16:16
+
+  Confere com a avaliação.
+
+2.3 Identifica o nome dos atuais responsáveis pela gestão do Poder/Órgão?
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 10:56
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/unidade/1
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 10:56
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                         12/06/2026 16:16
+
+  Confere com a avaliação.
+
+2.4 Divulga os endereços e telefones atuais do Poder ou órgão e e-mails institucionais?
+
+                                         Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                              Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 10:57
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/unidade/1
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 10:58
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 10:59
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                          12/06/2026 16:17
+
+  Confere com a avaliação.
+
+2.5 Divulga o horário de atendimento?
+
+                                          Item de Verificação                                                 Avaliação       Validação       Revisão
+
+ Disponibilidade                                                                                                Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                  20/05/2026 11:00
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/unidade/1
+
+
+
+
+   Foto do Avaliador                                                                                                                  20/05/2026 11:04
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Foto do Avaliador                                                                                                                  20/05/2026 11:05
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                            12/06/2026 16:17
+
+   Confere com a avaliação.
+
+2.6 Divulga os atos normativos próprios?
+
+                                          Item de Verificação                                                Avaliação       Validação       Revisão
+
+ Disponibilidade                                                                                               Atende         Atende          Atende
+
+ Atualidade                                                                                                    Atende         Atende          Atende
+
+ Série Histórica                                                                                               Atende         Atende          Atende
+
+ Filtros de Pesquisa                                                                                           Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                 20/05/2026 11:06
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/portarias
+
+
+
+
+   Foto do Avaliador                                                                                                                 20/05/2026 11:08
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Foto do Avaliador                                                                                                                 20/05/2026 11:10
+
+Foto do Avaliador                                                                                                                20/05/2026 11:10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                          12/06/2026 17:25
+Confere com a avaliação.
+
+2.7 Divulga as perguntas e respostas mais frequentes relacionadas às atividades desenvolvidas pelo
+Poder/Órgão?
+
+                                         Item de Verificação                                              Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 11:14
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/perguntas-frequentes
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 11:16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       12/06/2026 17:26
+
+  Confere com a avaliação.
+
+2.8 Participa em redes sociais e apresenta, no seu sítio institucional, link de acesso ao seu perfil?
+
+                                         Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                              Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 11:17
+
+  🔗 https://www.aparecidadorionegro.to.leg.br
+
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 11:17
+
+  🔗 https://www.instagram.com/camaradeaparecidadorionegro
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 11:18
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                          12/06/2026 17:26
+
+  Confere com a avaliação.
+
+2.9 Inclui botão do Radar da Transparência Pública no site institucional ou portal transparência?
+
+                                         Item de Verificação                                               Avaliação      Validação        Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 11:22
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 11:23
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                         12/06/2026 17:26
+
+  Confere com a avaliação.
+
+Receita
+
+
+3.1 Divulga as receitas do Poder ou órgão, evidenciando sua previsão e realização?
+
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                            Atende         Atende          Atende
+
+ Atualidade                                                                                                 Atende         Atende          Atende
+
+ Série Histórica                                                                                            Atende         Atende          Atende
+
+ Gravação de Relatórios                                                                                     Atende         Atende          Atende
+
+ Filtros de Pesquisa                                                                                        Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 11:28
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/repasseduodecimo
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 11:29
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                         15/06/2026 14:48
+
+  Confere com a avaliação.
+
+Despesa
+
+
+4.1 Divulga o total das despesas empenhadas, liquidadas e pagas?
+
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende        Atende
+
+ Atualidade                                                                                                Atende         Atende        Atende
+
+ Série Histórica                                                                                           Atende         Atende        Atende
+
+ Gravação de Relatórios                                                                                    Atende         Atende        Atende
+
+ Filtros de Pesquisa                                                                                       Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 11:56
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/despesas
+
+
+
+
+  Foto do Avaliador                                                                                                             20/05/2026 11:58
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       15/06/2026 14:50
+  Confere com a avaliação.
+
+4.2 Divulga as despesas por classificação orçamentária?
+
+                                         Item de Verificação                                              Avaliação       Validação      Revisão
+
+ Disponibilidade                                                                                            Atende         Atende         Atende
+
+ Atualidade                                                                                                 Atende         Atende         Atende
+
+ Série Histórica                                                                                            Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                     Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                        Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 14:29
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/despesas
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 14:29
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                        15/06/2026 14:50
+  Confere com a avaliação.
+
+4.3 Possibilita a consulta de empenhos com os detalhes do beneficiário do pagamento ou credor, o valor, o
+bem fornecido ou serviço prestado e a identificação do procedimento licitatório originário da despesa?
+
+                                        Item de Verificação                                              Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende         Atende
+
+ Atualidade                                                                                               Atende         Atende         Atende
+
+ Série Histórica                                                                                          Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                   Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 14:31
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/despesas
+
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 14:31
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/despesas/2202
+
+
+
+
+  Foto do Avaliador                                                                                                            20/05/2026 14:32
+
+Foto do Avaliador                                                                                                                20/05/2026 14:33
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                          15/06/2026 14:50
+Confere com a avaliação.
+
+Convênios e Transferências
+
+
+5.1 Divulga as transferências recebidas a partir da celebração de convênios/acordos com indicação, no
+mínimo, do número/ano do convênio/termo ou ajuste, do valor total previsto dos recursos envolvidos, do
+valor recebido, do objeto, da vigência, da origem (órgão repassador/concedente) e o inteiro teor do
+instrumento de convênio/transferência?
+
+                                       Item de Verificação                                            Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                        Atende        Atende         Atende
+
+ Atualidade                                                                                             Atende        Atende         Atende
+
+ Série Histórica                                                                                        Atende        Atende         Atende
+
+ Gravação de Relatórios                                                                                 Atende        Atende         Atende
+
+ Filtros de Pesquisa                                                                                    Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                         27/05/2026 17:22
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/transferencias-recebidas-de-convenios
+
+
+
+
+  Foto do Avaliador                                                                                                         27/05/2026 17:22
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                   12/06/2026 17:32
+
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+5.2 Divulga as transferências realizadas a partir da celebração de convênios/acordos/ajustes, com
+indicação, no mínimo, do número/ano do convênio/termo ou ajuste, do beneficiário, do objeto, da vigência,
+do valor total previsto para repasse, do valor concedido e inteiro teor do instrumento de convênio/termo
+ou ajuste?
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende         Atende
+
+ Atualidade                                                                                               Atende         Atende         Atende
+
+ Série Histórica                                                                                          Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                   Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 14:57
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/transferencias-realizadas-de-convenios
+
+
+
+
+  Foto do Avaliador                                                                                                            20/05/2026 14:58
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      12/06/2026 17:32
+
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+5.3 Divulga os acordos firmados que não envolvam transferência de recursos financeiros, identificando as
+partes, o número/ano do convênio/termo ou ajuste, o objeto, a vigência, as obrigações ajustadas e o inteiro
+teor do instrumento de convênio/termo ou ajuste?
+
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+ Atualidade                                                                                                Atende         Atende         Atende
+
+ Série Histórica                                                                                           Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                    Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                       Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 14:58
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/acordos-firmados-sem-transferencia-de-recursos-financeiros
+
+
+
+
+  Foto do Avaliador                                                                                                             20/05/2026 14:59
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       12/06/2026 17:33
+
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+Recursos Humanos
+
+6.1 Divulga a relação nominal dos servidores/autoridades/membros, seus cargos/funções, as respectivas
+lotações, as suas datas de admissão/exoneração/inativação e a carga horária do cargo/função
+ocupada/desempenhada?
+
+
+                                       Item de Verificação                                             Avaliação     Validação      Revisão
+
+ Disponibilidade                                                                                        Atende         Atende        Atende
+
+ Atualidade                                                                                             Atende         Atende        Atende
+
+ Série Histórica                                                                                        Atende         Atende        Atende
+
+ Gravação de Relatórios                                                                                 Atende         Atende        Atende
+
+ Filtros de Pesquisa                                                                                    Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                          20/05/2026 15:01
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/servidores
+
+
+
+
+  Foto do Avaliador                                                                                                          20/05/2026 15:02
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Avaliador                                                                                                          20/05/2026 15:03
+
+  Comentário do Validador                                                                                                       12/06/2026 17:36
+
+  Confere com a avaliação.
+
+
+
+6.2 Divulga a remuneração nominal de cada servidor/autoridade/Membro?
+
+                                         Item de Verificação                                              Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+ Atualidade                                                                                                Atende         Atende         Atende
+
+ Série Histórica                                                                                           Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                    Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                       Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 15:12
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/servidores/35?
+  chave=eyJwYWdpbmEiOjEsInRhbWFuaG9EYVBhZ2luYSI6NSwib3JkZW5hY2FvIjpbXSwibWF0cmljdWxhIjozNSwibWVzIjoiMDQiL
+  CJhbm8iOjIwMjYsIm1lc0ludGVnZXIiOjR9
+
+
+
+
+  Foto do Avaliador                                                                                                             20/05/2026 15:16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       12/06/2026 17:36
+
+  Confere com a avaliação.
+
+6.3 Divulga a tabela com o padrão remuneratório dos cargos e funções?
+
+                                         Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende          Atende
+
+ Atualidade                                                                                                  Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 15:17
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/tabela-remuneratoria-de-cargos
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 15:17
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                          12/06/2026 17:37
+
+  Confere com a avaliação.
+
+6.4 Divulga a lista de seus estagiários, contendo o nome dos estudantes; a data de contratação e a data de
+término do respectivo contrato?
+
+                                         Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende          Atende         Atende
+
+ Atualidade                                                                                                  Atende          Atende         Atende
+
+ Série Histórica                                                                                             Atende          Atende         Atende
+
+ Gravação de Relatórios                                                                                      Atende          Atende         Atende
+
+ Filtros de Pesquisa                                                                                         Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 15:18
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lista-de-estagiarios
+
+
+
+
+  Foto do Avaliador                                                                                                                27/05/2026 17:34
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                          12/06/2026 17:38
+
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+6.5 Publica lista dos terceirizados que prestam serviços para o Poder ou órgão/entidades, contendo, em
+relação a cada um deles: nome completo, função ou atividade exercida e nome da empresa empregadora?
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+ Atualidade                                                                                                Atende         Atende         Atende
+
+ Série Histórica                                                                                           Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                    Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                       Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 15:24
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lista-de-terceirizados
+
+
+
+
+  Foto do Avaliador                                                                                                             27/05/2026 17:34
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       12/06/2026 17:38
+
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+6.6 Divulga a íntegra dos editais de concursos e seleções públicas realizados pelo Poder ou órgão para
+provimento de cargos e empregos públicos?
+
+                                         Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                            Atende         Atende         Atende
+
+ Atualidade                                                                                                 Atende         Atende         Atende
+
+ Série Histórica                                                                                            Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                        Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 15:25
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/editais-de-concursos
+
+
+
+
+  Foto do Avaliador                                                                                                              27/05/2026 17:44
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                        12/06/2026 17:38
+
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+6.7 Divulga informações sobre os demais atos dos concursos públicos e processos seletivos do Poder ou
+órgão, contendo no mínimo a lista de aprovados com as classificações e as nomeações?
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende        Atende
+
+ Atualidade                                                                                                Atende         Atende        Atende
+
+ Filtros de Pesquisa                                                                                       Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             27/05/2026 17:45
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/editais-de-concursos-e-demais-atos-lista-de-aprovados
+
+
+
+
+  Foto do Avaliador                                                                                                             27/05/2026 17:45
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       12/06/2026 17:39
+
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+Diárias
+
+
+7.1 Divulga o nome e o cargo/função do beneficiário, além do valor total recebido, número de diárias
+usufruídas por afastamento, período de afastamento, motivo do afastamento e local de destino?
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende         Atende
+
+ Atualidade                                                                                               Atende         Atende         Atende
+
+ Série Histórica                                                                                          Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                   Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 15:27
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/diarias
+
+
+
+
+  Foto do Avaliador                                                                                                            20/05/2026 15:28
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      12/06/2026 17:41
+
+  Confere com a avaliação.
+
+7.2 Divulga tabela ou relação que explicite os valores das diárias dentro do Estado, fora do Estado e fora
+do país, conforme legislação local?
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+ Atualidade                                                                                                  Atende         Atende         Atende
+
+ Série Histórica                                                                                             Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                         Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 15:29
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/tabela-de-valores-das-diarias
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 15:30
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                         12/06/2026 17:41
+
+  Confere com a avaliação.
+
+Licitações
+
+8.1 Divulga a relação das licitações em ordem sequencial, informando o número e modalidade licitatória, o
+objeto, a data, o valor estimado/homologado e a situação?
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+ Atualidade                                                                                                Atende         Atende         Atende
+
+ Série Histórica                                                                                           Atende         Atende          Não
+                                                                                                                                         atende
+
+ Gravação de Relatórios                                                                                    Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                       Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 15:32
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/licitacoes
+
+
+
+
+  Foto do Avaliador                                                                                                             20/05/2026 15:33
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Validador                                                                                                             15/06/2026 15:13
+
+Foto do Validador                                                                                                               15/06/2026 15:13
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                         15/06/2026 15:14
+Consta declaração informando a inexistência de informações de dados. Atende ao requisito de
+transparência exigido.
+
+
+
+
+Foto do Revisor                                                                                                                 03/09/2026 10:46
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Revisor                                                                                                           03/09/2026 10:47
+
+Não foi possível filtrar anos anteriores, logo não há como conferir a série histórica.
+
+8.2 Divulga a íntegra dos editais de licitação?
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+ Atualidade                                                                                                Atende         Atende         Atende
+
+ Série Histórica                                                                                           Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                       Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 15:33
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/editais-de-licitacao
+
+
+
+
+  Foto do Avaliador                                                                                                             27/05/2026 17:47
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       15/06/2026 15:15
+  Consta declaração informando a inexistência de informações de dados. Atende ao critério de
+  transparência exigido.
+
+8.3 Divulga a íntegra dos demais documentos das fases interna e externa das licitações?
+
+                                         Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende          Atende         Atende
+
+ Atualidade                                                                                                  Atende          Atende         Atende
+
+ Série Histórica                                                                                             Atende          Atende         Atende
+
+ Filtros de Pesquisa                                                                                         Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 15:36
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/licitacoes/2
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 15:36
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Validador                                                                                                                15/06/2026 15:16
+
+Foto do Validador                                                                                                          15/06/2026 15:16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                    15/06/2026 15:17
+
+Consta declaração informando a inexistência de informações de dados. Atende ao critério de
+transparência exigido.
+Segue link correto:
+
+https://www.aparecidadorionegro.to.leg.br/transparencia/licitacoes
+
+8.4 Divulga a íntegra dos principais documentos dos processos de dispensa e inexigibilidade de licitação?
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+ Atualidade                                                                                                  Atende         Atende         Atende
+
+ Série Histórica                                                                                             Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                         Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 15:40
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/dispensas-e-inexigibilidades
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 15:41
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Validador                                                                                                               15/06/2026 15:23
+
+Foto do Validador                                                                                                    15/06/2026 15:23
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                              25/06/2026 10:52
+Foi identificada apenas declaração de inexistência de informações referente aos processos de
+Dispensas e Inexigibilidades.
+
+
+
+
+Foto do Validador                                                                                                    25/06/2026 10:59
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                              25/06/2026 11:04
+Série Histórica.
+Foi identificada apenas declaração de inexistência de informações referente aos processos de
+Dispensas e Inexigibilidades nos anos de 2025, 2024 e 2023. Considerando que a publicação do
+documento é obrigatória, a declaração apresentada não atende ao requisito de transparência
+exigido.
+
+
+
+
+Comentário do Avaliador                                                                                              01/07/2026 10:18
+
+Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+Link do Validador                                                                                                                         07/07/2026 11:18
+
+🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/dispensas-e-inexigibilidades
+
+
+
+
+Foto do Validador                                                                                                                         07/07/2026 11:20
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                                   07/07/2026 11:23
+
+Foi apresentada declaração assinada confirmando a inexistência de informações. Atendendo ao requisito.
+
+8.5 Divulga a íntegra das Atas de Adesão – SRP?
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende        Atende
+
+ Atualidade                                                                                               Atende         Atende        Atende
+
+ Série Histórica                                                                                          Atende         Atende        Atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 15:41
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/integra-das-atas-de-adesao
+
+
+
+
+  Foto do Avaliador                                                                                                            27/05/2026 17:47
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      15/06/2026 15:19
+  Consta declaração informando a inexistência de informações de dados. Confere com a avaliação.
+
+8.6 Divulga o plano de contratações anual?
+
+                                        Item de Verificação                                             Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                         Atende         Atende         Atende
+
+ Atualidade                                                                                              Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 15:45
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/plano-de-contratacoes-anual
+
+
+
+
+  Foto do Avaliador                                                                                                           27/05/2026 17:48
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                     15/06/2026 15:19
+  Consta declaração informando a inexistência de informações de dados. Confere com a avaliação.
+
+8.7 Divulga a relação dos licitantes e/ou contratados sancionados administrativamente pelo Poder ou
+órgão?
+
+                                        Item de Verificação                                             Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                          Atende        Atende         Atende
+
+ Atualidade                                                                                               Atende        Atende         Atende
+
+ Série Histórica                                                                                          Atende        Atende         Atende
+
+ Gravação de Relatórios                                                                                   Atende        Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 15:46
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/relacao-dos-licitantes-e-contratados-sancionados-administrativamente
+
+
+
+
+  Foto do Avaliador                                                                                                           27/05/2026 17:48
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                     15/06/2026 15:19
+  Consta declaração informando a inexistência de informações de dados. Confere com a avaliação.
+
+Contratos
+
+
+9.1 Divulga a relação dos contratos celebrados em ordem sequencial, com o seu respectivo resumo,
+contendo, no mínimo, indicação do contratado(a), do valor, do objeto e da vigência, bem como dos aditivos
+deles decorrentes?
+
+                                        Item de Verificação                                            Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                         Atende         Atende        Atende
+
+ Atualidade                                                                                              Atende         Atende        Atende
+
+ Série Histórica                                                                                         Atende         Atende        Atende
+
+ Gravação de Relatórios                                                                                  Atende         Atende        Atende
+
+ Filtros de Pesquisa                                                                                     Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                          20/05/2026 15:49
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/contratos-e-aditivos
+
+
+
+
+  Foto do Avaliador                                                                                                          20/05/2026 15:50
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                    15/06/2026 15:25
+
+  Confere com a avaliação.
+
+9.2 Divulga o inteiro teor dos contratos e dos respectivos termos aditivos?
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+ Atualidade                                                                                                  Atende         Atende         Atende
+
+ Série Histórica                                                                                             Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                         Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 15:57
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/contratos-e-aditivos/15
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 15:58
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                         15/06/2026 15:25
+  Confere com a avaliação.
+
+9.3 Divulga a relação/lista dos fiscais de cada contrato vigente e encerrado?
+
+                                         Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende          Atende         Atende
+
+ Atualidade                                                                                                  Atende          Atende         Atende
+
+ Série Histórica                                                                                             Atende          Atende         Atende
+
+ Gravação de Relatórios                                                                                      Atende          Atende         Atende
+
+ Filtros de Pesquisa                                                                                         Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                20/05/2026 15:59
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lista-dos-fiscais-de-contratos
+
+
+
+
+  Foto do Avaliador                                                                                                                20/05/2026 16:00
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                          15/06/2026 15:26
+  Confere com a avaliação.
+
+9.4 Divulga a ordem cronológica de seus pagamentos, bem como as justificativas que fundamentaram a
+eventual alteração dessa ordem?
+
+                                        Item de Verificação                                             Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                          Atende        Atende         Atende
+
+ Atualidade                                                                                               Atende        Atende         Atende
+
+ Série Histórica                                                                                          Atende        Atende          Não
+                                                                                                                                       atende
+
+ Gravação de Relatórios                                                                                   Atende        Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 16:00
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/ordem-cronologica-de-pagamentos
+
+
+
+
+  Foto do Avaliador                                                                                                           20/05/2026 16:00
+
+Comentário do Validador                                                                                                                    15/06/2026 15:30
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                                    15/06/2026 15:32
+
+Série Histórica:
+Constam dados dos anos de 2023, 2024, 2025.
+Atualidade:
+Não consta.
+
+
+
+
+
+Comentário do Avaliador                                                                                                                    01/07/2026 10:18
+
+Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+Link do Validador                                                                                                                          07/07/2026 11:28
+
+🔗 https://avalia.atricon.org.br/validacoes/20616/validacao-form/
+
+
+
+
+Comentário do Validador                                                                                                                    07/07/2026 11:28
+
+Em conformidade com a avaliação.
+
+
+
+
+
+Comentário do Revisor                                                                                                                      03/09/2026 10:50
+
+Não foi possível consultar anos anteriores. Filtro de pesquisa não facilita o acesso às informações.
+
+Obras
+
+
+10.1 Divulga informações sobre as obras contendo o objeto, a situação atual, as datas de início e de
+conclusão da obra, empresa contratada e o percentual concluído?
+
+                                       Item de Verificação                                           Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                       Atende        Atende        Atende
+
+ Atualidade                                                                                            Atende        Atende        Atende
+
+ Gravação de Relatórios                                                                                Atende        Atende        Atende
+
+ Filtros de Pesquisa                                                                                   Atende        Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                        20/05/2026 16:09
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/obras
+
+
+
+
+  Foto do Avaliador                                                                                                        27/05/2026 17:49
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                  15/06/2026 15:33
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+10.2 Divulga os quantitativos, os preços unitários e totais contratados?
+
+                                        Item de Verificação                                            Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                         Atende         Atende        Atende
+
+ Atualidade                                                                                              Atende         Atende        Atende
+
+ Gravação de Relatórios                                                                                  Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                          27/05/2026 17:50
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/obras
+
+
+
+
+  Foto do Avaliador                                                                                                          27/05/2026 17:50
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                    15/06/2026 15:33
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+10.3 Divulga os quantitativos executados e os preços efetivamente pagos?
+
+                                       Item de Verificação                                             Avaliação     Validação      Revisão
+
+ Disponibilidade                                                                                        Atende         Atende        Atende
+
+ Atualidade                                                                                             Atende         Atende        Atende
+
+ Gravação de Relatórios                                                                                 Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                          27/05/2026 17:50
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/obras
+
+
+
+
+  Foto do Avaliador                                                                                                          27/05/2026 17:50
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                    15/06/2026 15:34
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+10.4 Divulga relação das obras paralisadas contendo o motivo, o responsável pela inexecução temporária
+do objeto do contrato e a data prevista para o reinício da sua execução?
+
+
+                                       Item de Verificação                                            Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                        Atende        Atende        Atende
+
+ Atualidade                                                                                             Atende        Atende        Atende
+
+ Gravação de Relatórios                                                                                 Atende        Atende        Atende
+
+ Filtros de Pesquisa                                                                                    Atende        Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                         27/05/2026 17:51
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/relacao-de-obras-paralisadas
+
+
+
+
+  Foto do Avaliador                                                                                                         27/05/2026 17:51
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                   15/06/2026 15:34
+  Consta informação declarando a inexistência de informações de dados. Confere com a avaliação.
+
+Planejamento e Prestação de Contas
+
+
+11.1 Publica a Prestação de Contas do Ano Anterior (Balanço Geral)?
+
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende        Atende
+
+ Atualidade                                                                                               Atende         Atende        Atende
+
+ Série Histórica                                                                                          Atende         Atende          Não
+                                                                                                                                        atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 16:21
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/balanco-geral
+
+
+
+
+  Foto do Avaliador                                                                                                            20/05/2026 16:21
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      15/06/2026 15:37
+  Confere com a avaliação.
+
+
+
+
+  Comentário do Revisor                                                                                                        03/09/2026 10:51
+
+  Ano de 2022 não localizado.
+
+11.2 Divulga o Relatório de Gestão ou Atividades?
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende          Não
+                                                                                                                                        atende
+
+ Atualidade                                                                                               Atende         Atende          Não
+                                                                                                                                        atende
+
+ Série Histórica                                                                                          Atende         Atende          Não
+                                                                                                                                        atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende          Não
+                                                                                                                                        atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 16:22
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/relatorio-de-gestao-e-atividades
+
+
+
+
+  Foto do Avaliador                                                                                                            27/05/2026 17:51
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      25/06/2026 11:06
+  Foi identificada apenas declaração de inexistência de informações referente ao Relatório de Gestão
+  ou Relatório de Atividades.
+
+Foto do Revisor                                                                                                          03/09/2026 10:52
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Revisor                                                                                                    03/09/2026 10:54
+
+Nota explicativa não justifica o atendimento do item. O órgão deve publicar o seu Relatório, conforme determina a Cartilha
+PNTP:  Deverá ser feita a divulgação do relatório de gestão ou atividades    elaborado pelo chefe do Poder ou órgão a
+respeito de sua gestão no exercício anterior, em seção específica, abrangendo os principais
+resultados sejam nas áreas finalísticas e/ou de gestão (dados gerais para o acompanhamento
+de programas, ações, projetos e obras de órgãos e entidades).
+
+11.3 Divulga a íntegra da decisão da apreciação ou julgamento das contas pelo Tribunal de Contas?
+
+                                           Item de Verificação                                                 Avaliação      Validação        Revisão
+
+ Disponibilidade                                                                                                 Atende         Atende          Atende
+
+ Atualidade                                                                                                      Atende           Não             Não
+                                                                                                                                atende          atende
+
+ Série Histórica                                                                                                 Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                   20/05/2026 16:23
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/resultado-de-apreciacao-e-julgamento-das-contas-pelo-tribunal-de-
+   contas
+
+
+
+
+   Foto do Avaliador                                                                                                                   20/05/2026 16:23
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                             15/06/2026 16:16
+
+   Atualidade - Não consta publicação referente ao ano de 2024.
+
+
+
+
+   Comentário do Avaliador                                                                                                             01/07/2026 10:18
+
+   Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+   Link do Validador                                                                                                                   07/07/2026 11:31
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/resultado-de-apreciacao-e-julgamento-das-contas-pelo-tribunal-de-
+   contas
+
+Foto do Validador                                                                                                                         07/07/2026 11:33
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                                   07/07/2026 11:34
+
+Atualidade: Não consta informações dos anos de 2024 e 2025.
+
+11.5 Divulga o Relatório de Gestão Fiscal (RGF)?
+
+                                          Item de Verificação                                                 Avaliação      Validação        Revisão
+
+ Disponibilidade                                                                                                Atende         Atende          Atende
+
+ Atualidade                                                                                                     Atende         Atende           Não
+                                                                                                                                               atende
+
+ Série Histórica                                                                                                Atende         Atende          Atende
+
+ Filtros de Pesquisa                                                                                            Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                 20/05/2026 16:24
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/relatorio-de-gestao-fiscal-rgf
+
+
+
+
+   Foto do Avaliador                                                                                                                 20/05/2026 16:24
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                           15/06/2026 16:16
+
+   Confere com a avaliação.
+
+Foto do Revisor                                                                                                                                03/09/2026 10:55
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Revisor                                                                                                                          03/09/2026 10:56
+
+Não foi possível baixar os arquivos referentes aos relatórios do ano vigente.
+
+11.7 Divulga o plano estratégico institucional?
+
+                                       Item de Verificação                                          Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                      Atende        Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                       20/05/2026 16:26
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/plano-estrategico-institucional
+
+
+
+
+  Foto do Avaliador                                                                                                       27/05/2026 17:52
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                 15/06/2026 16:17
+  Foi identificada apenas declaração de inexistência de informações referente ao Plano estratégico.
+  Considerando que a publicação do documento é Recomendado, a declaração apresentada atende
+  ao requisito de transparência exigido.
+
+SIC
+
+
+12.1 Existe o SIC no site ou no portal de transparência e indica a unidade/setor responsável?
+
+
+                                         Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                            Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 16:28
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/ouvidoria
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 16:30
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 16:30
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                        15/06/2026 15:45
+  Confere com a avaliação.
+
+12.2 Indica o endereço físico, o telefone e o e-mail da unidade responsável pelo SIC, além do horário de
+funcionamento?
+
+
+                                        Item de Verificação                                             Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                          Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 16:31
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/ouvidoria
+
+
+
+
+  Foto do Avaliador                                                                                                           20/05/2026 16:31
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                     15/06/2026 15:45
+  Confere com a avaliação.
+
+12.3 Há possibilidade de envio de pedidos de informação de forma eletrônica (e                                                                                                                                        -SIC)?
+
+                                             Item de Verificação                                                    Avaliação        Validação        Revisão
+
+ Disponibilidade                                                                                                      Atende           Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                         20/05/2026 16:31
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/ouvidoria
+
+
+
+
+   Foto do Avaliador                                                                                                                         20/05/2026 16:32
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Foto do Avaliador                                                                                                                         20/05/2026 16:33
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                                   15/06/2026 15:45
+   Confere com a avaliação.
+
+12.4 A solicitação por meio de eSic é simples, ou seja, sem a exigência de itens de identificação do
+requerente que dificultem ou impossibilitem o acesso à informação, tais como: envio de documentos,
+assinatura reconhecida, declaração de responsabilidade, maioridade?
+
+
+                                       Item de Verificação                                            Avaliação     Validação      Revisão
+
+ Disponibilidade                                                                                       Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                        20/05/2026 16:33
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/ouvidoria
+
+
+
+
+  Foto do Avaliador                                                                                                        20/05/2026 16:34
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Avaliador                                                                                                        20/05/2026 16:35
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                  15/06/2026 15:45
+  Confere com a avaliação.
+
+12.5 Divulga nesta seção, instrumento normativo local que regulamente a Lei nº 12.527/2011 – LAI?
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 16:44
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia
+
+
+
+
+  Foto do Avaliador                                                                                                             20/05/2026 16:45
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       15/06/2026 15:47
+  Não consta publicado normativo local que regulamente a Lei nº 12.527/2011 – LAI. O que consta é
+  a própria Lei 12.527/11.
+  Considerando que a publicação do documento é obrigatória,  não atende ao requisito de transparência
+  exigido.
+
+
+
+
+  Comentário do Avaliador                                                                                                       01/07/2026 10:18
+
+  Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+  Link do Validador                                                                                                             07/07/2026 11:36
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/regulamentacao-da-lei-federal-n-12527
+
+
+
+
+  Comentário do Validador                                                                                                       07/07/2026 11:36
+
+  Em conformidade com a avaliação.
+
+12.6 Divulga, na seção relativa ao e-SIC, os prazos de resposta ao cidadão, incluindo o recursal, e as
+autoridades competentes para o exame dos pedidos, além do procedimento referente à realização do
+pedido e de eventual recurso?
+
+
+                                       Item de Verificação                                             Avaliação     Validação      Revisão
+
+ Disponibilidade                                                                                        Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                          20/05/2026 16:50
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/ouvidoria
+
+
+
+
+  Foto do Avaliador                                                                                                          20/05/2026 16:51
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                    15/06/2026 15:47
+
+  Confere com a avaliação.
+
+12.7 Divulga relatório anual estatístico contendo a quantidade de pedidos de acesso recebidos, atendidos,
+indeferidos, bem como informações genéricas sobre os solicitantes?
+
+
+                                          Item de Verificação                                                Avaliação       Validação       Revisão
+
+ Disponibilidade                                                                                               Atende         Atende          Atende
+
+ Atualidade                                                                                                    Atende         Atende          Atende
+
+ Série Histórica                                                                                               Atende         Atende          Atende
+
+ Gravação de Relatórios                                                                                        Atende         Atende          Atende
+
+ Filtros de Pesquisa                                                                                           Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                 20/05/2026 16:53
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/relatorio-anual-estatistico
+
+
+
+
+   Foto do Avaliador                                                                                                                 27/05/2026 17:53
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                           15/06/2026 15:48
+
+   Atualidade - Não constam dados do ano de 2025.
+
+
+
+
+   Comentário do Avaliador                                                                                                           01/07/2026 10:18
+
+   Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+   Link do Validador                                                                                                                 07/07/2026 11:37
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/relatorio-anual-estatistico
+
+
+
+
+   Comentário do Validador                                                                                                           07/07/2026 11:37
+
+   Em conformidade com a avaliação.
+
+12.8 Divulga lista de documentos classificados em cada grau de sigilo, contendo pelo menos o assunto
+sobre o qual versa a informação, a categoria na qual ela se encontra, o dispositivo legal que fundamenta a
+classificação e o respectivo prazo?
+
+
+                                       Item de Verificação                                            Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                        Atende        Atende         Atende
+
+ Atualidade                                                                                             Atende        Atende         Atende
+
+ Série Histórica                                                                                        Atende        Atende         Atende
+
+ Gravação de Relatórios                                                                                 Atende        Atende         Atende
+
+ Filtros de Pesquisa                                                                                    Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                         20/05/2026 16:54
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lista-de-documentos-classificados-por-grau-de-sigilo
+
+
+
+
+  Foto do Avaliador                                                                                                         27/05/2026 17:54
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                   15/06/2026 15:49
+  Foi identificada apenas declaração de inexistência de informações para consulta. Confere com a
+  avaliação.
+
+12.9 Divulga lista das informações que tenham sido desclassificadas nos últimos 12 (doze) meses?
+
+                                        Item de Verificação                                             Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                          Atende        Atende         Atende
+
+ Atualidade                                                                                               Atende        Atende         Atende
+
+ Série Histórica                                                                                          Atende        Atende         Atende
+
+ Gravação de Relatórios                                                                                   Atende        Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 16:56
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lista-de-informacoes-desclassificadas
+
+
+
+
+  Foto do Avaliador                                                                                                           27/05/2026 17:54
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                     15/06/2026 15:49
+  Foi identificada apenas declaração de inexistência de informações para consulta. Confere com a
+  avaliação.
+
+Acessibilidade
+
+
+13.1 O site oficial e o portal de transparência contêm símbolo de acessibilidade em destaque?
+
+
+                                       Item de Verificação                                             Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                         Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                          20/05/2026 17:00
+
+  🔗 https://www.aparecidadorionegro.to.leg.br
+
+
+
+
+  Foto do Avaliador                                                                                                          20/05/2026 17:00
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                    15/06/2026 15:50
+  Confere com a avaliação.
+
+13.2 O site e o portal de transparência contêm exibição do “caminho” de páginas percorridas pelo
+usuário?
+
+
+                                        Item de Verificação                                             Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                          Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Foto do Avaliador                                                                                                           20/05/2026 17:05
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 17:06
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/despesas
+
+
+
+
+  Comentário do Validador                                                                                                     15/06/2026 15:50
+  Confere com a avaliação.
+
+13.3 O site e o portal de transparência contêm opção de alto contraste?
+
+                                        Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                           Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                             20/05/2026 17:07
+
+  🔗 https://www.aparecidadorionegro.to.leg.br
+
+
+
+
+  Foto do Avaliador                                                                                                             20/05/2026 17:07
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                       15/06/2026 15:50
+  Confere com a avaliação.
+
+13.4 O site e o portal de transparência contêm ferramenta de redimensionamento de texto?
+
+                                        Item de Verificação                                             Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                          Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 17:08
+
+  🔗 https://www.aparecidadorionegro.to.leg.br
+
+
+
+
+  Foto do Avaliador                                                                                                           20/05/2026 17:09
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                     15/06/2026 15:50
+  Confere com a avaliação.
+
+13.5 Contém mapa do site institucional?
+
+                                         Item de Verificação                                              Avaliação       Validação      Revisão
+
+ Disponibilidade                                                                                            Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 17:10
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/mapa-site
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 17:10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                        15/06/2026 15:50
+  Confere com a avaliação.
+
+Ouvidoria
+
+
+14.1 Há informações sobre o atendimento presencial pela Ouvidoria (Indicação de endereço físico e
+telefone, além do horário de funcionamento)?
+
+
+                                       Item de Verificação                                            Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                        Atende        Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Foto do Avaliador                                                                                                         20/05/2026 17:14
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Link do Avaliador                                                                                                         20/05/2026 17:14
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/ouvidoria
+
+
+
+
+  Comentário do Validador                                                                                                   15/06/2026 15:51
+  Confere com a avaliação.
+
+14.2. Há canal eletrônico de acesso/interação com a ouvidoria?
+
+                                         Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                            Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 17:15
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/ouvidoria
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 17:16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                        15/06/2026 15:51
+  Confere com a avaliação.
+
+14.3 Divulga Carta de Serviços ao Usuário?
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 17:17
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/carta-de-servicos
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 17:18
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                         15/06/2026 15:51
+  Confere com a avaliação.
+
+LGPD e Governo Digital
+
+
+15.1 Identifica o encarregado/responsável pelo tratamento de dados pessoais e disponibiliza Canal de
+Comunicação com esse servidor (telefone e/ou e-mail)?
+
+
+                                       Item de Verificação                                           Avaliação     Validação      Revisão
+
+ Disponibilidade                                                                                      Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                       20/05/2026 17:24
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lgpd
+
+
+
+
+  Foto do Avaliador                                                                                                       20/05/2026 17:25
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                 15/06/2026 15:52
+  Confere com a avaliação.
+
+15.2 Publica a sua Política de Privacidade e Proteção de Dados?
+
+                                         Item de Verificação                                              Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                            Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                              20/05/2026 17:26
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lgpd
+
+
+
+
+  Foto do Avaliador                                                                                                              20/05/2026 17:26
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                        15/06/2026 15:52
+  Confere com a avaliação.
+
+15.3 Possibilita a demanda e o acesso a serviços públicos por meio digital, sem necessidade de solicitação
+presencial?
+
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 17:27
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/carta-de-servicos
+
+
+
+
+  Foto do Avaliador                                                                                                            20/05/2026 17:28
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      15/06/2026 15:53
+  Confere com a avaliação.
+
+15.4 Possibilita o acesso automatizado por sistemas externos em dados abertos (estruturados e legíveis
+por máquina), e a página contém as regras de utilização?
+
+
+                                        Item de Verificação                                            Avaliação     Validação       Revisão
+
+ Disponibilidade                                                                                         Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                          20/05/2026 17:28
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/api
+
+
+
+
+  Foto do Avaliador                                                                                                          20/05/2026 17:29
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                    15/06/2026 15:53
+  Confere com a avaliação.
+
+15.5 Regulamenta a Lei Federal nº 14.129/2021 (Governo Digital) e divulga a normativa em seu portal?
+
+                                      Item de Verificação                                           Avaliação     Validação      Revisão
+
+ Disponibilidade                                                                                     Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                      20/05/2026 17:30
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia
+
+
+
+
+  Foto do Avaliador                                                                                                      20/05/2026 17:30
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                15/06/2026 15:54
+  Não consta publicado normativo local que regulamente a Lei nº 14.129/2021. O que consta é a
+  própria Lei 14.129/2021.
+  Considerando que a publicação do documento é recomendado, atende ao requisito de transparência
+  exigido.
+
+15.6 Realiza e divulga resultados de pesquisas de satisfação?
+
+                                          Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                               Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                20/05/2026 17:31
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/formulario/pesquisa-de-satisfacao
+
+
+
+
+   Foto do Avaliador                                                                                                                20/05/2026 17:31
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                          15/06/2026 15:54
+
+   Confere com a avaliação.
+
+Atividade Finalísticas
+
+20.1 Divulga a composição da Casa, com a biografia dos parlamentares?
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 17:33
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/parlamentares
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 17:33
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 17:34
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/parlamentar/23
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 17:34
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                         15/06/2026 15:55
+  Confere com a avaliação.
+
+20.2 Divulga as leis e atos infralegais (resoluções, decretos, etc.) produzidos?
+
+                                           Item de Verificação                                                 Avaliação      Validação        Revisão
+
+ Disponibilidade                                                                                                 Atende         Atende          Atende
+
+ Atualidade                                                                                                      Atende         Atende          Atende
+
+ Série Histórica                                                                                                 Atende         Atende          Atende
+
+ Filtros de Pesquisa                                                                                             Atende         Atende          Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                  20/05/2026 17:35
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/decretos
+
+
+
+
+   Foto do Avaliador                                                                                                                  20/05/2026 17:36
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Link do Validador                                                                                                                  15/06/2026 16:02
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/leis
+
+
+
+
+   Comentário do Validador                                                                                                            15/06/2026 16:03
+
+   Atende aos critérios de transparência exigidos. Segue link correto.
+
+20.3 Divulga projetos de leis e de atos infralegais, bem como as respectivas tramitações (contemplando
+ementa, documentos anexos, situação atual e autor/relator)?
+
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende        Atende
+
+ Atualidade                                                                                               Atende         Atende        Atende
+
+ Série Histórica                                                                                          Atende         Atende        Atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 17:46
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/projeto-de-lei-executivo
+
+
+
+
+  Foto do Avaliador                                                                                                            20/05/2026 17:46
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      15/06/2026 16:03
+  Confere com o resultado da avaliação.
+
+20.4 Divulga a pauta das sessões do Plenário?
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende         Atende
+
+ Atualidade                                                                                               Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                   Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 17:38
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/pauta-das-sessoes
+
+
+
+
+  Foto do Avaliador                                                                                                            27/05/2026 17:55
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      15/06/2026 16:04
+  Foi identificada apenas declaração de inexistência de informações referente a não informações de
+  dados disponíveis. Considerando que a publicação do documento é obrigatória, a declaração
+  apresentada não atende ao requisito de transparência exigido.
+
+
+
+
+  Comentário do Avaliador                                                                                                      01/07/2026 10:19
+
+  Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+  Link do Validador                                                                                                            07/07/2026 11:39
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/pauta-das-sessoes
+
+
+
+
+  Comentário do Validador                                                                                                      07/07/2026 11:40
+
+  Em conformidade com a avaliação.
+
+20.5 Divulga a pauta das Comissões?
+
+                                        Item de Verificação                                             Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                          Atende         Atende         Atende
+
+ Atualidade                                                                                               Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                   Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                            20/05/2026 17:39
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/pautas-das-comissoes
+
+
+
+
+  Foto do Avaliador                                                                                                            27/05/2026 17:56
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                      15/06/2026 16:04
+  Foi identificada apenas declaração de inexistência de informações referente a não informações de
+  dados disponíveis. Considerando que a publicação do documento é obrigatória, a declaração
+  apresentada não atende ao requisito de transparência exigido.
+
+
+
+
+  Comentário do Avaliador                                                                                                      01/07/2026 10:19
+
+  Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+  Link do Validador                                                                                                            07/07/2026 11:40
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/pautas-das-comissoes
+
+
+
+
+  Comentário do Validador                                                                                                      07/07/2026 11:40
+
+  Em conformidade com a avaliação.
+
+20.6 Divulga as atas das sessões, incluindo a lista de presença dos parlamentares em cada sessão?
+
+                                          Item de Verificação                                                 Avaliação       Validação       Revisão
+
+ Disponibilidade                                                                                                Atende          Atende         Atende
+
+ Atualidade                                                                                                     Atende          Atende         Atende
+
+ Série Histórica                                                                                                Atende          Atende         Atende
+
+ Gravação de Relatórios                                                                                         Atende          Atende         Atende
+
+ Filtros de Pesquisa                                                                                            Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+   Link do Avaliador                                                                                                                  20/05/2026 17:40
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/ata-das-sessoes
+
+
+
+
+   Foto do Avaliador                                                                                                                  20/05/2026 17:40
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Comentário do Validador                                                                                                            15/06/2026 16:07
+
+   Atualidade - Não constam publicações do ano de 2026.
+   Série Histórica - Não constam publicações do ano de 2023.
+
+
+
+
+   Comentário do Avaliador                                                                                                            01/07/2026 10:19
+
+   Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+   Link do Validador                                                                                                                  07/07/2026 11:41
+
+   🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/ata-das-sessoes
+
+
+
+
+   Comentário do Validador                                                                                                            07/07/2026 11:41
+
+   Em conformidade com a avaliação.
+
+20.7 Divulga lista sobre as votações nominais?
+
+                                       Item de Verificação                                           Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                       Atende         Atende        Atende
+
+ Atualidade                                                                                            Atende         Atende        Atende
+
+ Série Histórica                                                                                       Atende         Atende        Atende
+
+ Gravação de Relatórios                                                                                Atende         Atende        Atende
+
+ Filtros de Pesquisa                                                                                   Atende         Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                        20/05/2026 17:41
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/lista-de-votacoes-nominais
+
+
+
+
+  Foto do Avaliador                                                                                                        27/05/2026 17:56
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                  15/06/2026 16:08
+  Foi identificada apenas declaração de inexistência de informações referente a não informações de
+  dados disponíveis. Considerando que a publicação do documento é recomendada, atende aos
+  critérios de transparência exigidos.
+
+20.8 Divulga o ato que aprecia as Contas do Chefe do Poder Executivo (Decreto) e o teor do julgamento
+(Ata ou Resumo da Sessão que aprovou ou rejeitou as contas)?
+
+
+                                        Item de Verificação                                             Avaliação      Validação      Revisão
+
+ Disponibilidade                                                                                          Atende        Atende         Atende
+
+ Atualidade                                                                                               Atende        Atende         Atende
+
+ Série Histórica                                                                                          Atende        Atende         Atende
+
+ Filtros de Pesquisa                                                                                      Atende        Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                           20/05/2026 17:42
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/resultado-do-julgamento-das-contas-do-chefe-do-poder-executivo-
+  pelo-poder-legislativo
+
+
+
+
+  Foto do Avaliador                                                                                                           27/05/2026 17:57
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Comentário do Validador                                                                                                     15/06/2026 16:09
+  Foi identificada apenas declaração de inexistência de informações referente a não informações de
+  dados disponíveis. Considerando que a publicação do documento é obrigatória, a declaração
+  apresentada não atende ao requisito de transparência exigido.
+
+
+
+
+  Comentário do Avaliador                                                                                                     01/07/2026 10:19
+
+  Resolvida. A reavaliação pode ser realizada utilizando o mesmo link de acesso.
+
+
+
+
+  Link do Validador                                                                                                            07/07/2026 11:44
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/resultado-do-julgamento-das-contas-do-chefe-do-poder-executivo-
+  pelo-poder-legislativo
+
+Comentário do Validador                                                                                                                07/07/2026 11:46
+
+Em conformidade com a avaliação.
+
+20.9 Há transmissão de sessões, audiências públicas, consultas públicas ou outras formas de participação
+popular via meios de comunicação como rádio, TV, internet, entre outros?
+
+
+                                      Item de Verificação                                          Avaliação     Validação      Revisão
+
+ Disponibilidade                                                                                     Atende        Atende        Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                      20/05/2026 17:43
+
+  🔗 https://www.instagram.com/camaradeaparecidadorionegro
+
+Foto do Avaliador                                                                                                                          20/05/2026 17:44
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                                    15/06/2026 16:09
+
+Confere com o resultado da avaliação.
+
+20.10 Divulga a regulamentação e os valores relativos às cotas para exercício da atividade
+parlamentar/verba indenizatória?
+
+
+                                         Item de Verificação                                               Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                             Atende         Atende         Atende
+
+ Atualidade                                                                                                  Atende         Atende         Atende
+
+ Série Histórica                                                                                             Atende         Atende         Atende
+
+ Gravação de Relatórios                                                                                      Atende         Atende         Atende
+
+ Filtros de Pesquisa                                                                                         Atende         Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                               20/05/2026 17:45
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/projeto-de-lei-executivo
+
+
+
+
+  Foto do Avaliador                                                                                                               20/05/2026 17:46
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Foto do Validador                                                                                                               15/06/2026 16:10
+
+Comentário do Validador                                                                                             15/06/2026 16:11
+
+Foi identificada apenas declaração de inexistência de informações referente a não informações de
+dados disponíveis. Considerando que a publicação do documento é recomendada, atende aos
+critérios de transparência exigidos.
+Segue link correto
+
+https://www.aparecidadorionegro.to.leg.br/transparencia/cotas-para-a-atividade-parlamentar
+
+20.11 Divulga dados sobre as atividades legislativas dos parlamentares?
+
+                                          Item de Verificação                                                Avaliação      Validação       Revisão
+
+ Disponibilidade                                                                                              Atende          Atende         Atende
+
+ Atualidade                                                                                                   Atende          Atende         Atende
+
+ Série Histórica                                                                                              Atende          Atende         Atende
+
+ Filtros de Pesquisa                                                                                          Atende          Atende         Atende
+
+
+Evidências do Critério
+
+
+
+  Link do Avaliador                                                                                                                 20/05/2026 17:47
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/ata-das-sessoes
+
+
+
+
+  Foto do Avaliador                                                                                                                 20/05/2026 17:48
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Link do Avaliador                                                                                                                 20/05/2026 17:49
+
+  🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/pautas-das-comissoes
+
+
+
+
+  Foto do Avaliador                                                                                                                 27/05/2026 17:58
+
+Link do Avaliador                                                                                                                      27/05/2026 17:58
+
+🔗 https://www.aparecidadorionegro.to.leg.br/transparencia/cotas-para-a-atividade-parlamentar
+
+
+
+
+Foto do Avaliador                                                                                                                      27/05/2026 17:58
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Comentário do Validador                                                                                                                15/06/2026 16:12
+Confere com o resultado da avaliação.
+
+
+
+
+
+
+
+                                                Programa Nacional de Transparência Pública – PNTP
+                                                        Relatório emitido em 11/11/2026 10:30

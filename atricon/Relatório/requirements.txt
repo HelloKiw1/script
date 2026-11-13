@@ -1,0 +1,5 @@
+playwright>=1.56,<2
+pymupdf>=1.26,<2
+pypdf>=6,<7
+reportlab>=4.4,<5
+Pillow>=11,<13

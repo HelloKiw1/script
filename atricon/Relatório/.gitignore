@@ -1,0 +1,5 @@
+.venv/
+.dependencias/
+__pycache__/
+execucoes/
+configuracao.json

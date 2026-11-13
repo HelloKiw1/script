@@ -1,5 +1,13 @@
 # Atricon: coleta e análise consolidada
 
+## Programa de relatórios Barco Digital
+
+O programa com janela está em [`Relatório/README.md`](Relat%C3%B3rio/README.md).
+Abra `Relatório/iniciar.bat` para selecionar um PDF original ou um órgão do
+cadastro, capturar as páginas públicas atuais e gerar o relatório. A revisão
+dos comentários pode ser feita por API ou pelo pacote com prompt para outra
+IA, com importação posterior. As saídas ficam em `analise_2026/barco/`.
+
 ## HTML com gráficos e Comentário do Revisor
 
 Abra `analise_revisores_2026.html` para a análise consolidada preparada em

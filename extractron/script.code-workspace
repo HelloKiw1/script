@@ -5,6 +5,18 @@
         },
         {
             "path": "../../../../Downloads"
+        },
+        {
+            "path": "../../barco/sgp-backend"
+        },
+        {
+            "path": "../../barco/sgp-frontend"
+        },
+        {
+            "path": "../../barco/radar-da-transparencia-nuxt"
+        },
+        {
+            "path": "../../barco/bonbarco"
         }
     ]
 }

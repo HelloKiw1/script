@@ -6,13 +6,15 @@ import json
 import re
 import shutil
 import threading
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
 from ambiente import ATRICON, ENTRADA, EXECUCOES, PASTA, agora, ler_json, salvar_json
 from capturador import Capturador, url_publica
-from revisao_ia import revisar, validar_resposta
+from revisao_ia import validar_resposta
+from pacote_codex import gerar_prompt, identificar_pdf, ler_dados_prompt, restaurar_capturas
 
 
 class Cancelado(Exception):
@@ -25,10 +27,9 @@ class Opcoes:
     arquivo: Path | None = None
     conta_indice: int | None = None
     cadastro: Path = ATRICON / 'entrada/orgaos_avalia.json'
-    modo: str = 'pacote'
-    modelo: str = ''
+    modo: str = 'codex'
     resposta: Path | None = None
-    reutilizar: bool = False
+    prompt: Path | None = None
     capturar: bool = True
     navegador_visivel: bool = False
     espera: int = 25
@@ -279,31 +280,38 @@ class Processo:
     def verificar(self) -> None:
         """Interrompe entre operações, sem eliminar arquivos ou publicar PDF incompleto."""
         if self.cancelar.is_set():
-            raise Cancelado('Processamento cancelado. As evidências já coletadas foram preservadas.')
+            raise Cancelado('Processamento cancelado. Os arquivos temporários foram excluídos.')
 
     def executar(self) -> dict:
         """Acumula primeiro, revisa depois e só publica após a validação do PDF."""
+        if self.opcoes.modo not in {'codex', 'pacote', 'importar'}:
+            raise ValueError('Use o modo codex para gerar o pré-PDF e o prompt, ou importar para concluir a revisão.')
         import gerar_pdfs_barco as gerador
         self.informar(1, 'Preparando o processamento')
         arquivo = self.opcoes.arquivo or baixar_relatorio(self.opcoes, self.informar, self.verificar)
         arquivo = arquivo.resolve()
         if not arquivo.is_file() or arquivo.suffix.lower() != '.pdf' or not arquivo.read_bytes().startswith(b'%PDF-'):
             raise ValueError('Selecione um PDF original válido.')
-        sha = hashlib.sha256(arquivo.read_bytes()).hexdigest()
-        pasta = self.opcoes.execucoes / arquivo.stem / sha[:12]
-        self.pasta = pasta
-        pasta.mkdir(parents=True, exist_ok=True)
-        bloqueio = pasta / '.em_execucao'
+        sha, _ = identificar_pdf(arquivo, self.opcoes.execucoes)
+        raiz_temporaria = self.opcoes.execucoes.resolve()
+        raiz_existia = raiz_temporaria.exists()
+        raiz_temporaria.mkdir(parents=True, exist_ok=True)
         try:
-            descritor = bloqueio.open('x')
-        except FileExistsError:
-            raise ValueError('Já existe um processamento deste PDF. Se o programa anterior foi encerrado à força, remova o arquivo .em_execucao dessa execução.') from None
-        try:
-            with descritor:
-                descritor.write(agora())
-            return self.processar(arquivo, sha, pasta, gerador)
+            with tempfile.TemporaryDirectory(prefix='relatorio-', dir=raiz_temporaria) as temporarios:
+                pasta = Path(temporarios)
+                if not pasta.resolve().is_relative_to(raiz_temporaria):
+                    raise ValueError('Diretório temporário fora da pasta de execuções.')
+                self.pasta = pasta
+                try:
+                    return self.processar(arquivo, sha, pasta, gerador)
+                finally:
+                    # ReportLab mantém leitores de imagem abertos em alguns fluxos.
+                    import gc
+                    gc.collect()
         finally:
-            bloqueio.unlink(missing_ok=True)
+            self.pasta = None
+            if not raiz_existia and raiz_temporaria.exists() and not any(raiz_temporaria.iterdir()):
+                raiz_temporaria.rmdir()
 
     def processar(self, arquivo: Path, sha: str, pasta: Path, gerador: Any) -> dict:
         """Monta o pacote e o relatório, mantendo artefatos manuais existentes separados."""
@@ -316,7 +324,7 @@ class Processo:
             raise ValueError('Este PDF não apresenta Revisão. O programa não usa outra etapa como substituta.')
         if dados['divergencias_enunciado']:
             salvar_json(pasta / 'divergencias_enunciado.json', dados['divergencias_enunciado'])
-            raise ValueError('Há enunciados diferentes da cartilha. Confira divergencias_enunciado.json antes de gerar.')
+            raise ValueError('Há enunciados diferentes da cartilha: ' + json.dumps(dados['divergencias_enunciado'][:5], ensure_ascii=False))
         shutil.copy2(arquivo, pasta / 'original.pdf')
         shutil.copy2(PASTA / 'PROMPT_REVISAO.md', pasta / 'PROMPT_REVISAO.md')
         self.informar(15, 'Extraindo histórico, imagens e datas das etapas')
@@ -330,29 +338,15 @@ class Processo:
         contexto = {'versao': 1, 'entidade': dados['entidade_pdf'], 'questionario_id': dados['questionario_id'],
                     'sha256_origem': sha, 'arquivo_origem': 'original.pdf', 'criado_em': agora(), 'criterios': criterios}
         salvar_json(pasta / 'contexto.json', contexto)
-        estado_arquivo = pasta / 'estado.json'
-        estado_anterior = ler_json(estado_arquivo) if estado_arquivo.exists() else {}
         salvo = pasta / 'capturas.json'
-        retomar = self.opcoes.modo == 'importar' or self.opcoes.reutilizar
-        pode_reusar = salvo.exists() and estado_anterior.get('coleta_concluida') and estado_anterior.get('sha256_origem') == sha
-        if self.opcoes.modo == 'importar' and not pode_reusar:
-            raise ValueError('Importação exige uma coleta concluída para este PDF. Primeiro gere o pacote de revisão.')
-        salvar_json(estado_arquivo, {'sha256_origem': sha, 'coleta_concluida': False, 'etapa': 'coleta', 'iniciado_em': agora()})
-        if retomar and pode_reusar:
-            manifesto = ler_json(salvo)
-            capturas, pendencias_coleta = manifesto['itens'], manifesto.get('pendencias', [])
-            self.informar(60, 'Reaproveitando capturas da coleta anterior, com as datas originais')
+        if self.opcoes.modo == 'importar':
+            if not self.opcoes.prompt:
+                raise ValueError('Selecione o prompt gerado junto ao PDF para importar a revisão.')
+            pacote = ler_dados_prompt(self.opcoes.prompt, sha)
+            capturas = restaurar_capturas(pacote, pasta)
+            pendencias_coleta = pacote['contexto'].get('pendencias_coleta', [])
+            self.informar(60, 'Recuperando temporariamente as capturas incorporadas ao PDF, com as datas originais')
         elif self.opcoes.capturar and criterios:
-            anteriores = pasta / 'capturas'
-            if anteriores.exists():
-                arquivo_rodada = pasta / 'rodadas_anteriores' / agora().replace(':', '-')
-                destino_rodada = arquivo_rodada / 'capturas'
-                if not anteriores.resolve().is_relative_to(pasta.resolve()) or not destino_rodada.resolve().is_relative_to(pasta.resolve()):
-                    raise ValueError('Pasta de arquivamento de capturas fora da execução.')
-                arquivo_rodada.mkdir(parents=True, exist_ok=True)
-                if salvo.exists():
-                    shutil.copy2(salvo, arquivo_rodada / 'capturas.json')
-                shutil.move(str(anteriores), str(destino_rodada))
             capturador = Capturador(pasta, self.opcoes, self.informar, self.verificar)
             capturas, pendencias_coleta = capturador.executar(plano, dados['reprovados'])
         else:
@@ -365,12 +359,9 @@ class Processo:
         contexto['pendencias_coleta'] = list(dict.fromkeys(pendencias_historico + pendencias_coleta))
         salvar_json(pasta / 'contexto.json', contexto)
         salvar_json(salvo, {'sha256_origem': sha, 'itens': capturas, 'pendencias': pendencias_coleta})
-        salvar_json(estado_arquivo, {'sha256_origem': sha, 'coleta_concluida': True, 'etapa': 'revisao', 'coletado_em': agora()})
         self.verificar()
         self.informar(63, 'Coleta acumulada. Preparando a revisão dos textos')
-        if self.opcoes.modo == 'ia':
-            resposta = revisar(pasta, contexto, capturas, self.opcoes.modelo, self.informar, self.verificar)
-        elif self.opcoes.modo == 'importar':
+        if self.opcoes.modo == 'importar':
             if not self.opcoes.resposta:
                 raise ValueError('Selecione o JSON da revisão a importar.')
             resposta = validar_resposta(ler_json(self.opcoes.resposta), contexto, capturas)
@@ -380,7 +371,7 @@ class Processo:
         resolvidas = resposta.get('pendencias_resolvidas', {})
         pendencias = list(dict.fromkeys([p for p in contexto['pendencias_coleta'] if p not in resolvidas] + resposta.get('pendencias', [])))
         salvar_json(pasta / 'pendencias_resolvidas.json', resolvidas)
-        if self.opcoes.modo == 'pacote' and not criterios:
+        if self.opcoes.modo in {'codex', 'pacote'} and not criterios:
             pendencias = []
         salvar_json(pasta / 'pendencias.json', pendencias)
         for itens in capturas.values():
@@ -388,7 +379,9 @@ class Processo:
                 item['observacao'] = resposta.get('observacoes_capturas', {}).get(item['id'], item['observacao'])
         salvar_json(pasta / 'capturas_pdf.json', {'itens': capturas})
         salvar_json(pasta / 'resumos_pdf.json', resposta)
-        modelo_resposta = minutas(contexto)
+        modelo_resposta = {'sha256_origem': sha, 'explicacoes': {c['criterio_id']: '' for c in criterios},
+                           'observacoes_capturas': {i['id']: '' for itens in capturas.values() for i in itens},
+                           'pendencias_resolvidas': {}}
         modelo_resposta['pendencias'] = ['Preencha os comentários após examinar todas as evidências.']
         salvar_json(pasta / 'modelo_resposta.json', modelo_resposta)
         dados['_arquivo_resumos'] = pasta / 'resumos_pdf.json'
@@ -411,19 +404,32 @@ class Processo:
         destino = self.opcoes.destino / arquivo.name
         if destino.resolve() == arquivo.resolve():
             raise ValueError('A saída não pode substituir o PDF original.')
+        if destino.resolve().is_relative_to(pasta.resolve()):
+            raise ValueError('O PDF de saída não pode ficar na pasta temporária.')
         # Um rascunho não substitui silenciosamente um exemplo já concluído.
         if pendencias:
             destino = destino.with_name(destino.stem + '_rascunho.pdf')
-        if destino.exists():
-            anteriores = pasta / 'versoes_anteriores'
-            anteriores.mkdir(exist_ok=True)
-            shutil.copy2(destino, anteriores / (agora().replace(':', '-') + '-' + destino.name))
+        prompt = gerar_prompt(pasta, contexto, arquivo, self.opcoes.destino, self.opcoes.execucoes,
+                              pdf=caminho, pdf_publicado=destino, capturas=capturas,
+                              posicoes=dados['_posicoes_capturas_atuais'], modelo=modelo_resposta)
         temporario = destino.with_suffix('.novo.pdf')
-        shutil.copy2(caminho, temporario)
-        temporario.replace(destino)
-        resultado = {'arquivo': str(destino), 'pacote': str(pasta), 'rascunho': bool(pendencias),
+        prompt_destino = destino.with_name(destino.stem + '_PROMPT_CODEX.md')
+        try:
+            shutil.copy2(caminho, temporario)
+            temporario.replace(destino)
+            shutil.copy2(prompt, prompt_destino)
+        finally:
+            temporario.unlink(missing_ok=True)
+        # Os contatos de conferência são temporários; o resultado conserva a contagem.
+        conferencia.pop('conferencia_visual', None)
+        resultado = {'arquivo': str(destino.resolve()), 'pacote': str(destino.parent.resolve()), 'origem': str(arquivo),
+                     'pre_pdf': str(destino.resolve()), 'somente_pdf_prompt': True,
+                     'prompt': str(prompt_destino.resolve()),
+                     'revisao_importada': self.opcoes.modo == 'importar', 'rascunho': bool(pendencias),
                      'pendencias': pendencias, **conferencia}
-        salvar_json(pasta / 'resultado.json', resultado)
-        salvar_json(estado_arquivo, {'sha256_origem': sha, 'coleta_concluida': True, 'etapa': 'concluido', 'concluido_em': agora(), 'resultado': resultado})
-        self.informar(100, 'Rascunho e pacote de revisão prontos' if pendencias else 'Relatório concluído')
+        if self.opcoes.resposta and self.opcoes.prompt:
+            resposta_gerada = self.opcoes.prompt.with_name(self.opcoes.prompt.stem + '_resposta_ia.json')
+            if self.opcoes.resposta.resolve() == resposta_gerada.resolve():
+                self.opcoes.resposta.unlink(missing_ok=True)
+        self.informar(100, 'PDF e prompt prontos. Imagens separadas e arquivos auxiliares removidos ao encerrar.')
         return resultado

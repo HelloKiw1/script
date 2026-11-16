@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="app-token" content="__LOCAL_TOKEN__">
+  <meta name="theme-color" content="#132d50">
+  <title>Relatórios · Barco Digital</title>
+  <link rel="icon" href="/logo.png">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4"/></symbol>
+    <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M8 13h8M8 17h5"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="m3 9 9-6 9 6M4 10h16M6 10v9m6-9v9m6-9v9M3 21h18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="3"/><path d="M15 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9M6 6a9 9 0 1 0 12 0"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Barco Digital, início"><img src="/logo.png" alt="" width="45" height="45"><span>BARCO DIGITAL<small>Relatórios de transparência</small></span></a>
+    <div class="topbar-actions"><span class="local-badge"><span class="status-dot"></span>Rodando localmente</span><span class="year-badge">PNTP 2026</span><button class="icon-button" id="encerrar" title="Encerrar a página local" aria-label="Encerrar a página local"><svg><use href="#i-power"/></svg></button></div>
+  </header>
+
+  <main class="workspace">
+    <div id="conexao" class="alert error" role="alert" hidden>A conexão com a página local foi encerrada. Abra o iniciar.bat novamente.</div>
+    <div class="page-heading"><div><p class="eyebrow">RELATÓRIOS / PREPARAÇÃO</p><h1>Prepare seu relatório<span>.</span></h1><p class="page-subtitle">Do PDF original à revisão no Codex, em um só lugar.</p></div><span class="heading-mark"><svg><use href="#i-pdf"/></svg></span></div>
+
+    <ol class="steps" aria-label="Etapas do relatório"><li class="active" data-step="1"><span>1</span>Escolher a origem</li><li data-step="2"><span>2</span>Preparar o relatório</li><li data-step="3"><span>3</span>Revisar no Codex</li></ol>
+
+    <div id="ambiente-aviso" class="alert warning" hidden><svg><use href="#i-info"/></svg><div><strong>Vamos preparar o ambiente?</strong><p>Faltam dependências para gerar o relatório neste computador.</p></div><button class="button secondary" id="instalar-aviso">Instalar dependências</button></div>
+    <div id="erro-formulario" class="alert error" role="alert" hidden></div>
+
+    <div class="workspace-grid">
+      <div class="main-column">
+        <form id="formulario" novalidate>
+          <section class="card source-card">
+            <div class="section-heading"><span class="section-number">01</span><div><h2>Relatório de entrada</h2><p>Escolha de onde vamos começar.</p></div></div>
+            <div class="segmented" role="tablist" aria-label="Origem do relatório"><button class="selected" id="tab-pdf" type="button" role="tab" aria-selected="true" aria-controls="painel-pdf"><svg><use href="#i-pdf"/></svg>PDF original</button><button id="tab-orgao" type="button" role="tab" aria-selected="false" aria-controls="painel-orgao"><svg><use href="#i-building"/></svg>Órgão no Avalia</button></div>
+
+            <div id="painel-pdf" role="tabpanel" aria-labelledby="tab-pdf">
+              <label class="dropzone" id="dropzone" for="arquivo-pdf"><span class="upload-icon"><svg><use href="#i-upload"/></svg></span><strong>Arraste o PDF original aqui</strong><span>ou <b>escolha um arquivo</b> do computador</span><small>PDF do Avalia · até 150 MB</small><input type="file" id="arquivo-pdf" accept=".pdf,application/pdf" class="file-overlay" aria-label="Selecionar PDF original"></label>
+              <div class="selected-file" id="pdf-selecionado" hidden><span class="file-icon"><svg><use href="#i-pdf"/></svg></span><div><strong id="nome-pdf"></strong><small id="tamanho-pdf"></small></div><button id="remover-pdf" class="icon-button" type="button" aria-label="Remover PDF selecionado"><svg><use href="#i-close"/></svg></button></div>
+              <details class="existing-files"><summary>Selecionar um PDF já disponível na pasta de entrada</summary><label class="field"><span>PDF disponível</span><select id="pdf-existente"><option value="">Selecione um PDF…</option></select></label></details>
+            </div>
+
+            <div id="painel-orgao" role="tabpanel" aria-labelledby="tab-orgao" hidden><label class="field"><span>Buscar órgão ou cidade</span><input id="busca-orgao" type="search" placeholder="Digite o nome do órgão ou da cidade" autocomplete="off"></label><label class="field"><span>Órgão no Avalia <small id="total-orgaos"></small></span><select id="orgao"><option value="">Selecione um órgão…</option></select></label><div class="cadastro-line"><p>Usa o cadastro local do coletor.</p><label class="button text-button" for="arquivo-cadastro">Escolher outro cadastro<input id="arquivo-cadastro" type="file" accept=".json,application/json" class="visually-hidden"></label></div></div>
+          </section>
+
+          <section class="card settings-card"><div class="section-heading"><span class="section-number">02</span><div><h2>Coleta e saída</h2><p>Defina onde os arquivos serão salvos.</p></div></div><label class="field"><span>Pasta de saída</span><div class="input-with-icon"><svg><use href="#i-folder"/></svg><input id="destino" type="text" placeholder="Carregando pasta de saída…" spellcheck="false"></div><small>O PDF e o prompt ficam juntos nesta pasta.</small></label>
+            <details class="advanced" id="opcoes-avancadas"><summary><svg><use href="#i-settings"/></svg>Ajustar a coleta<span class="optional-label">Opcional</span></summary><div class="advanced-content"><div class="numeric-grid"><label class="field"><span>Espera por componentes</span><div class="number-field"><input id="espera" type="number" min="5" max="90" value="25"><span>segundos</span></div></label><label class="field"><span>Documentos por página</span><input id="documentos" type="number" min="0" max="10" value="3"></label></div><label class="switch-row"><span><strong>Coletar evidências atuais</strong><small>Consulta páginas e documentos do portal.</small></span><input id="capturar" type="checkbox" role="switch" checked><span class="switch" aria-hidden="true"></span></label><label class="switch-row"><span><strong>Mostrar o navegador na coleta</strong><small>Acompanhe as páginas enquanto são consultadas.</small></span><input id="visivel" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label></div></details>
+          </section>
+          <div class="form-actions"><button type="button" class="button secondary" id="abrir-importacao"><svg><use href="#i-upload"/></svg>Importar revisão</button><button type="submit" class="button primary" id="gerar" disabled>Gerar PDF e prompt<svg><use href="#i-arrow"/></svg></button></div>
+        </form>
+
+        <section id="execucao" hidden aria-label="Execução do relatório">
+          <div class="card execution-card"><div class="execution-top"><span id="situacao" class="badge blue">Em andamento</span><span id="percentual">0%</span></div><h2 id="titulo-execucao">Preparando seu relatório</h2><p id="etapa" aria-live="polite">Iniciando…</p><div class="progress-track" role="progressbar" id="progresso" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="barra-progresso"></div></div><p id="tempo-etapa" class="muted">O tempo de cada etapa varia conforme o portal e os documentos.</p><div id="resultado" hidden><div class="result-file"><span class="file-icon"><svg><use href="#i-pdf"/></svg></span><div><strong id="nome-resultado"></strong><small id="detalhes-resultado"></small></div></div><div class="result-actions"><a id="abrir-pdf" class="button primary" target="_blank" rel="noopener"><svg><use href="#i-pdf"/></svg>Abrir PDF</a><button id="copiar-prompt" class="button secondary"><svg><use href="#i-copy"/></svg>Copiar prompt</button><a id="abrir-prompt" class="button subtle" target="_blank" rel="noopener">Abrir prompt</a></div><p class="result-note"><svg><use href="#i-check"/></svg>Somente o PDF e o prompt foram mantidos. Auxiliares excluídos.</p><p id="pasta-resultado" class="path-text"></p><button id="abrir-pasta" class="button text-button"><svg><use href="#i-folder"/></svg>Abrir pasta de saída</button></div></div>
+          <div class="card log-card"><div class="log-heading"><h3>Histórico da execução</h3><span class="live-indicator" id="indicador-ativo">AO VIVO</span></div><pre id="historico" tabindex="0" aria-label="Mensagens da execução"></pre></div><div class="execution-actions"><button class="button secondary" id="cancelar">Cancelar execução</button><button class="button secondary" id="voltar" hidden>Preparar outro relatório</button><button class="button primary" id="importar-resultado" hidden>Importar revisão<svg><use href="#i-arrow"/></svg></button></div>
+        </section>
+      </div>
+
+      <aside class="side-column"><section class="codex-card"><span class="codex-icon"><svg><use href="#i-code"/></svg></span><span class="side-eyebrow">SEU PRÓXIMO PASSO</span><h2>Pronto para revisar <br>no Codex.</h2><p>O programa organiza as evidências. Você continua a análise no VS Code.</p><ol class="codex-steps"><li><span>1</span><div><strong>Gere o pré-PDF</strong><p>Histórico e imagens incorporados ao relatório.</p></div></li><li><span>2</span><div><strong>Copie o prompt</strong><p>Instruções e contexto para a revisão no Codex.</p></div></li><li><span>3</span><div><strong>Conclua a revisão</strong><p>Importe a resposta para atualizar o PDF.</p></div></li></ol><div class="two-files"><svg><use href="#i-check"/></svg>Somente 2 arquivos<span>PDF + prompt</span></div></section><div class="local-note"><svg><use href="#i-shield"/></svg><div><strong>No seu computador</strong><p>A página roda localmente. Os arquivos ficam na pasta escolhida, sem precisar de chave de API.</p></div></div></aside>
+    </div>
+    <footer class="page-footer"><span>Barco Digital <span class="footer-dot">·</span> Relatórios PNTP 2026</span><button id="instalar" class="environment-state"><span class="status-dot"></span><span id="ambiente-texto">Verificando ambiente…</span></button></footer>
+  </main>
+
+  <dialog id="importacao"><form id="form-importacao" novalidate><div class="dialog-heading"><div><span class="eyebrow">REVISÃO NO CODEX</span><h2>Importar comentários</h2></div><button type="button" class="icon-button" id="fechar-importacao" aria-label="Fechar importação"><svg><use href="#i-close"/></svg></button></div><p class="muted">Selecione a resposta preenchida pelo Codex. As imagens serão recuperadas do próprio PDF.</p><label class="switch-row" id="usar-ultimo-linha" hidden><span><strong>Usar a última geração</strong><small>Reutiliza o original e o prompt desta sessão.</small></span><input id="usar-ultimo" type="checkbox" role="switch" checked><span class="switch" aria-hidden="true"></span></label><div id="arquivos-importacao"><label class="field"><span>PDF original do Avalia</span><input id="importar-original" type="file" accept=".pdf,application/pdf"></label><label class="field"><span>Prompt gerado junto ao PDF</span><input id="importar-prompt" type="file" accept=".md,text/markdown"></label></div><label class="field"><span>Resposta JSON preenchida</span><input id="importar-resposta" type="file" accept=".json,application/json"></label><p id="erro-importacao" class="inline-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="button secondary" id="cancelar-importacao">Voltar</button><button type="submit" class="button primary" id="confirmar-importacao">Importar e gerar PDF<svg><use href="#i-arrow"/></svg></button></div></form></dialog>
+  <div class="toast" id="toast" role="status" hidden><svg><use href="#i-check"/></svg><span></span></div>
+</body>
+</html>
